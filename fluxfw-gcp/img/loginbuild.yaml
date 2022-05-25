@@ -1,0 +1,48 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+steps:
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+  - kms
+  - decrypt
+  - --ciphertext-file=image-builder-enc.key
+  - --plaintext-file=image-builder.key
+  - --location=global
+  - --keyring=packer
+  - --key=pk
+- name: 'gcr.io/$PROJECT_ID/packer'
+  args:
+  - build
+  - -var
+  - project_id=$PROJECT_ID
+  - -var
+  - machine_architecture=${_MACHINE_ARCHITECTURE}
+  - -var
+  - machine_type=${_MACHINE_TYPE}
+  - -var
+  - zone=${_ZONE}
+  - -var
+  - source_image=${_SOURCE_IMAGE}
+  - -var
+  - source_image_project_id=${_SOURCE_IMAGE_PROJECT_ID}
+  - -var
+  - subnetwork=${_SUBNETWORK}
+  - login.pkr.hcl
+substitutions:
+  _SOURCE_IMAGE: rocky-linux-8-optimized-gcp-v20220719
+  _SOURCE_IMAGE_PROJECT_ID: rocky-linux-cloud 
+  _SUBNETWORK: default
+tags: ['cloud-builders-community']
+timeout: 10800s
