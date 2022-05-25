@@ -1,2 +1,4 @@
-# scientific-computing-examples
-scientific-computing-examples
+# Scientific Computing with Google Cloud
+
+A repository of examples.
+
