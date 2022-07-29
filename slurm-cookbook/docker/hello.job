@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --job-name=dkr_ex
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=2
+#SBATCH --partition=cpu
+#SBATCH --array=1-30
+#SBATCH --output=out_%3A_%3a.txt
+#SBATCH --error=err_%3A_%3a.txt
+
+docker run hello-world
