@@ -33,7 +33,7 @@ When `ghpc` is in your path, you can run in this repo.
 
 ```
 cd slurm-cookbook/docker
-ghpc slurm-docker.yaml
+ghpc create slurm-docker.yaml
 ```
 The output of this job, when successful will show some terraform commands. Execute these commands to build out the Slurm cluster.
 
