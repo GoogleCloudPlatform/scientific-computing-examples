@@ -47,8 +47,8 @@ Once there you can create a Slurm job file by running:
 tee hello.job << JOB
 #!/bin/bash
 #SBATCH --job-name=dkr_ex
-#SBATCH --ntasks-per-node=30
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks-per-node=2
+#SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=2
 #SBATCH --partition=compute
 #SBATCH --array=1-10
