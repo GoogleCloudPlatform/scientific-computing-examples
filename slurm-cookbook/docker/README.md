@@ -27,6 +27,7 @@ ghpc slurm-docker.yaml
 
 * Edit the `slurm-docker.yaml` file.
   * Change `<your project>` to be the `my-project-id` of the project you created in the previous step
+  * Change `<oslogin_user_id> to your OS Login id, which should follow: `USERNAME_DOMAIN_SUFFIX`, with all punctuation replaced by underscore, `_`.
 
 When `ghpc` is in your path, you can run in this repo.
 
@@ -38,5 +39,28 @@ The output of this job, when successful will show some terraform commands. Execu
 
 # Run a job in the cluster
 
-When the cluster build has completed there will be two 
+When the cluster build has completed there will be [two VMs visible in the Cloud Console](https://console.cloud.google.com/compute/instances): the controller node and the login node. You can login to the "login" node by clicking on the "SSH" link provide in the console VM listing.
 
+Once there you can create a Slurm job file by running:
+
+```
+tee hello.job << JOB
+#!/bin/bash
+#SBATCH --job-name=dkr_ex
+#SBATCH --ntasks-per-node=30
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=2
+#SBATCH --partition=compute
+#SBATCH --array=1-10
+#SBATCH --output=out_%3A_%3a.txt
+#SBATCH --error=err_%3A_%3a.txt
+
+docker run hello-world
+JOB
+```
+
+Then run the batch file:
+```
+sbatch hello.job
+```
+You can view the queue using `squeue`. When the job is completed, there will be `*.out` files with results from the `hello-world` container. If there are only `*.err` files, there is some debugging to do.

@@ -68,7 +68,7 @@ deployment_groups:
           yum install -y docker-ce docker-ce-cli containerd.io
           systemctl start docker
           systemctl enable docker
-          usermod -aG docker drj_gcp_solutions
+          usermod -aG docker <oslogin_user_id>
 
   # This compute_partition is far more performant than debug_partition but may require requesting GCP quotas first.
   - source: community/modules/compute/SchedMD-slurm-on-gcp-partition
