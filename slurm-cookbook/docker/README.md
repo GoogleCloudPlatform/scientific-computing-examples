@@ -2,28 +2,36 @@
 
 ## Overview
 
-This example creates a Slurm Cluster and allows Docker files to run.
-All other components required to support the Slurm cluster are minimally created
-as well: VPC; subnetwork; firewall rules; service accounts.
+This example creates a Slurm Cluster that supports the execution Docker containers.
 
-# Install HPC Toolkit
+# Run HPC Toolkit
+
+## Create a project
+
+Create a GCP Project [as described here](https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+
 
 Follow [the instructions here](https://github.com/GoogleCloudPlatform/hpc-toolkit#quickstart) to install the HPC Toolkit.
+
 In the Hpc Toolkit folder run an install.
+
 ```
 make install
 ```
 
-# Run the HPC Toolkit
+## Import the repo
 
-* Create a GCP Project [as described here](https://cloud.google.com/resource-manager/docs/creating-managing-projects).
+Import this repo to your Google Cloud Shell
 
- [![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/scientific-computing-examples.git)
+[![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/scientific-computing-examples.git)
 
-```
-cd slurm-cookbook/docker
-ghpc slurm-docker.yaml
-```
+
+## Enable Google Cloud APIs
+
+To execure the required go to the [console API Library](https://console.cloud.google.com/apis/library).
+Enable the Compute Engine and Cloud Firestore APIs.
+
+## Build Terraform using the HPC Toolkit
 
 * Edit the `slurm-docker.yaml` file.
   * Change `<your project>` to be the `my-project-id` of the project you created in the previous step
@@ -41,6 +49,8 @@ The output of this job, when successful will show some terraform commands. Execu
 
 When the cluster build has completed there will be [two VMs visible in the Cloud Console](https://console.cloud.google.com/compute/instances): the controller node and the login node. You can login to the "login" node by clicking on the "SSH" link provide in the console VM listing.
 
+![VM List](console.png)
+
 Once there you can create a Slurm job file by running:
 
 ```
@@ -48,7 +58,7 @@ tee hello.job << JOB
 #!/bin/bash
 #SBATCH --job-name=dkr_ex
 #SBATCH --ntasks-per-node=2
-#SBATCH --cpus-per-task=2
+#SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=2
 #SBATCH --partition=compute
 #SBATCH --array=1-10
