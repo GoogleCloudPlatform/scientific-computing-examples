@@ -18,13 +18,21 @@ In the Hpc Toolkit folder run an install.
 ```
 make install
 ```
+To add `ghpc` to your path, add the following line to your `.bashrc`, then restart your bash shell.
+```
+export PATH=${HOME}/bin:$PATH
+```
 
 ## Import the repo
 
-Import this repo to your Google Cloud Shell
+Import this repo to your Google Cloud Shell automatically by clicking this button.
 
 [![Open in Cloud Shell](https://gstatic.com/cloudssh/images/open-btn.svg)](https://shell.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/scientific-computing-examples.git)
 
+Alternatively, you can clone it manually.
+```
+git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
+```
 
 ## Enable Google Cloud APIs
 
@@ -32,15 +40,17 @@ To execure the required go to the [console API Library](https://console.cloud.go
 Enable the Compute Engine and Cloud Firestore APIs.
 
 ## Build Terraform using the HPC Toolkit
+Change to the example directory.
+```
+cd slurm-cookbook/docker
+```
 
 * Edit the `slurm-docker.yaml` file.
   * Change `<your project>` to be the `my-project-id` of the project you created in the previous step
   * Change `<oslogin_user_id> to your OS Login id, which should follow: `USERNAME_DOMAIN_SUFFIX`, with all punctuation replaced by underscore, `_`.
 
-When `ghpc` is in your path, you can run in this repo.
-
+The commmand `ghpc` is in your path, you can run in this repo.
 ```
-cd slurm-cookbook/docker
 ghpc create slurm-docker.yaml
 ```
 The output of this job, when successful will show some terraform commands. Execute these commands to build out the Slurm cluster.
@@ -57,7 +67,7 @@ Once there you can create a Slurm job file by running:
 tee hello.job << JOB
 #!/bin/bash
 #SBATCH --job-name=dkr_ex
-#SBATCH --ntasks-per-node=2
+#SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=2
 #SBATCH --partition=compute
