@@ -71,6 +71,6 @@ variable "service_account_emails" {
 }
 
 variable "subnetwork" {
-    describing = "Subnetwork to deploy to"
-    type       = string
+    description = "Subnetwork to deploy to"
+    type        = string
 }

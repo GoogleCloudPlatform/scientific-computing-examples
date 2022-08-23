@@ -16,22 +16,22 @@ manager_machine_type = "e2-standard-8"
 manager_name_prefix  = "gffw"
 manager_scopes       = [ "cloud-platform" ]
 
-login_node_specs = {
+login_node_specs = [
     {
         name_prefix  = "gffw-login"
         machine_arch = "x86-64"
         machine_type = "e2-standard-4"
         instances    = 1
     },
-}
+]
 login_scopes = [ "cloud-platform" ]
 
-compute_node_specs = {
+compute_node_specs = [
     {
         name_prefix  = "gffw-compute-a"
         machine_arch = "x86-64"
         machine_type = "n2-standard-16"
         instances    = 1
     },
-}
+]
 compute_scopes = [ "cloud-platform" ]
