@@ -9,7 +9,7 @@ orchestrate the scientific workloads on the Google Cloud Platform (GCP).
 
 ## Flux
 
-- [Flux Framework on GCP](/fluxfw-gcp/README.md)
+- [Flux Framework on Google Cloud](/fluxfw-gcp/README.md)
 
 
 ## Kubernetes
@@ -19,5 +19,5 @@ orchestrate the scientific workloads on the Google Cloud Platform (GCP).
 
 ## Slurm
 
-- [HPC Toolkit Support for Slurm and Docker](slurm-cookbook/docker/README.md)
+- [HPC Toolkit Support for Slurm and Docker on Google Cloud](slurm-cookbook/docker/README.md)
 
