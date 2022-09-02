@@ -22,3 +22,7 @@ orchestrate the scientific workloads on the Google Cloud Platform (GCP).
 
 - [HPC Toolkit Support for Slurm and Docker on Google Cloud](slurm-cookbook/docker/README.md)
 
+## Notebooks
+Various notebooks to demonstrate running Google Cloud from a notebook.
+
+- [Hello World for Google Batch](notebooks/batch_hello_world.ipynb)
