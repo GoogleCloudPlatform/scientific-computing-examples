@@ -58,6 +58,7 @@ useradd -M -r -s /bin/false -c "flux-framework identity" flux
 cd /usr/share
 
 git clone -b v0.42.0 https://github.com/wkharold/flux-core.git
+git clone -b v0.23.0 https://github.com/flux-framework/flux-sched.git
 git clone -b v0.7.0 https://github.com/flux-framework/flux-security.git
 
 cd /usr/share/flux-security
@@ -77,6 +78,14 @@ PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 PKG_CONFIG_PATH=${PKG_CONFIG_PATH} ./configure --prefix=/usr/local --with-flux-security
 
 make -j 8
+make install
+
+cd /usr/share/flux-sched
+
+./autogen.sh
+./configure --prefix=/usr/local
+
+make
 make install
 
 chmod u+s /usr/local/libexec/flux/flux-imp
