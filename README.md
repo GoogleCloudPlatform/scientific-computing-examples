@@ -15,9 +15,14 @@ orchestrate the scientific workloads on the Google Cloud Platform (GCP).
 ## Kubernetes
 
 - [Rediscovering the Higgs boson using the Google Cloud Platform](higgs/README.md)
+- [Running Docker on Slurm (Cookbook)](slurm-cookbook/docker/README.md)
 
 
 ## Slurm
 
 - [HPC Toolkit Support for Slurm and Docker on Google Cloud](slurm-cookbook/docker/README.md)
 
+## Notebooks
+Various notebooks to demonstrate running Google Cloud from a notebook.
+
+- [Hello World for Google Batch](notebooks/batch_hello_world.ipynb)
