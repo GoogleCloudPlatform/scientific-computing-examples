@@ -1,0 +1,2 @@
+curl -L https://developer.download.nvidia.com/compute/cuda/11.7.1/local_installers/cuda-repo-rhel8-11-7-local-11.7.1_515.65.01-1.x86_64.rpm --output /var/tmp/cuda-repo-rhel8-11-7-local-11.7.1_515.65.01-1.x86_64.rpm
+curl https://raw.githubusercontent.com/GoogleCloudPlatform/compute-gpu-installation/main/linux/install_gpu_driver.py --output /var/tmp/install_gpu_driver.py

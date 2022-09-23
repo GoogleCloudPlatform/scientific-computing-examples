@@ -75,6 +75,10 @@ module "compute_nodes" {
     num_instances   = each.value.instances
     manager         = module.management_node.name
 
+    gpu             = lookup(each.value, "gpu_type", "") == "" || lookup(each.value, "gpu_count", 0) <= 0 ? null : {
+        type  = each.value.gpu_type
+        count = each.value.gpu_count
+    }
     service_account = {
         email  = var.service_account_emails["compute"]
         scopes = var.compute_scopes
