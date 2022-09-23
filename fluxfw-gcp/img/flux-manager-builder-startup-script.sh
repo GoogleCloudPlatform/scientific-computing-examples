@@ -221,12 +221,26 @@ encode_cores() {
     num_cores=$?
 
     cores="--cores=[0-$((num_cores-1))]"
+    if (( num_cores == 1 )); then
+        cores="--cores=0"
+    else
+        cores="--cores=[0-$((num_cores-1))]"
+    fi
 }
 
 encode_properties() {
     family=$(echo $machine_type | cut -d'-' -f1)
     
     properties="--property=$family:$rank_range --property=$machine_arch:$rank_range"
+}
+
+encode_gpus() {
+    if (( gpu_count == 1 )); then
+        gpu_range="0"
+    else
+        gpu_range="0-$((gpu_count-1))"
+    fi
+    gpus="--gpus=$gpu_range"
 }
 
 encode_spec() {
@@ -236,17 +250,28 @@ encode_spec() {
     machine_arch=$(echo $spec | jq -r '.machine_arch')
     machine_type=$(echo $spec | jq -r '.machine_type')
     instances=$(echo $spec | jq -r '.instances')
+    gpu_count=$(echo $spec | jq -r '.gpu_count')
 
     encode_ranks
     encode_hosts
     encode_cores
     encode_properties
 
+    if [ $gpu_count != null ] && (( gpu_count > 0 )); then
+        encode_gpus
+    else
+        gpus=null
+    fi
+
     if [ ! $first_spec -eq 1 ]; then
         resource_cmd="${resource_cmd} && "
     fi
 
-    resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $properties"
+    if [ $gpus != null ]; then
+        resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $gpus $properties"
+    else
+        resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $properties"
+    fi
 
     let last_rank=$((last_rank + instances))
 }

@@ -46,6 +46,7 @@ module "flux_compute_instance_template" {
     project_id           = var.project_id
     name_prefix          = var.name_prefix
     subnetwork           = var.subnetwork
+    gpu                  = var.gpu
     service_account      = var.service_account
     tags                 = ["ssh", "flux", "compute"]
     machine_type         = var.machine_type
@@ -55,8 +56,9 @@ module "flux_compute_instance_template" {
     metadata             = { 
         "enable-oslogin" : "TRUE",
         "flux-manager"   : "${var.manager}",
-        "VmDnsSetting"   : "GlobalDefault"
-        "nfs-mounts"     : jsonencode(var.nfs_mounts)
+        "VmDnsSetting"   : "GlobalDefault",
+        "nfs-mounts"     : jsonencode(var.nfs_mounts),
+        "gpus-attached"  : var.gpu != null ? "TRUE" : "FALSE"
     }
 }
 

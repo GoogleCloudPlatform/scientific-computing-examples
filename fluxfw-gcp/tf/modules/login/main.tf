@@ -55,8 +55,9 @@ module "flux_login_instance_template" {
     metadata             = { 
         "enable-oslogin" : "TRUE",
         "flux-manager"   : "${var.manager}",
-        "VmDnsSetting"   : "GlobalDefault"
-        "nfs-mounts"     : jsonencode(var.nfs_mounts)
+        "VmDnsSetting"   : "GlobalDefault",
+        "nfs-mounts"     : jsonencode(var.nfs_mounts),
+        "gpus-attached"  : "FALSE"
     }
 }
 

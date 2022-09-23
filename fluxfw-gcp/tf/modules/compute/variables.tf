@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "gpu" {
+    description = "The type and count of GPU(s) to attach to a compute node"
+    type        = object({
+        type  = string
+        count = number
+    })
+    default     = null
+}
+
 variable "machine_arch" {
     description = "The instruction set architecture, ARM64 or x86_64, used by the compute node"
     type        = string
