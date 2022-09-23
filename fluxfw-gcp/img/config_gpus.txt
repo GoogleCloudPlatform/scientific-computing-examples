@@ -6,7 +6,7 @@ gpus_attached=$(curl "http://metadata.google.internal/computeMetadata/v1/instanc
 if [[ "${gpus_attached}" == "TRUE" ]]; then
     python3 /var/tmp/install_gpu_driver.py
 
-    rpm -i cuda-repo-rhel8-11-7-local-11.7.1_515.65.01-1.x86_64.rpm
+    rpm -i /var/tmp/cuda-repo-rhel8-11-7-local-11.7.1_515.65.01-1.x86_64.rpm
     dnf clean all
     dnf module install -y nvidia-driver:latest-dkms
     dnf install -y cuda
