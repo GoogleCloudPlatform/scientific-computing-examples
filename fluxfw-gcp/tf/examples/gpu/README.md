@@ -18,7 +18,7 @@ Each component is deployed separately and the resources it provides are shared v
 
 The deployments occur in the following order and are described in detail in the corresponding component directories
 
-1. [network](https://github.com/GoogleCloudPlatform/scientific-computing-examples/tree/main/fluxfw-gcp/tf/examples/gpu/network)
-1. [iam](https://github.com/GoogleCloudPlatform/scientific-computing-examples/tree/main/fluxfw-gcp/tf/examples/gpu/iam)
-1. [storage](https://github.com/GoogleCloudPlatform/scientific-computing-examples/tree/main/fluxfw-gcp/tf/examples/gpu/storage)
-1. [cluster](https://github.com/GoogleCloudPlatform/scientific-computing-examples/tree/main/fluxfw-gcp/tf/examples/gpu/cluster)
+1. [network](https://github.com/GoogleCloudPlatform/scientific-computing-examples/fluxfw-gcp/tf/examples/gpu/network)
+1. [iam](https://github.com/GoogleCloudPlatform/scientific-computing-examples/fluxfw-gcp/tf/examples/gpu/iam)
+1. [storage](https://github.com/GoogleCloudPlatform/scientific-computing-examples/fluxfw-gcp/tf/examples/gpu/storage)
+1. [cluster](https://github.com/GoogleCloudPlatform/scientific-computing-examples/fluxfw-gcp/tf/examples/gpu/cluster)
