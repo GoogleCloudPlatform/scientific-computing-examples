@@ -46,3 +46,37 @@ terraform apply -var-file gpu.tfvars
 | region | The GCP region where the cluster resides | string | n/a | yes |
 | service_account_emails | A map with keys: 'compute', 'login', 'manager' that map to the service account to be used by the respective nodes | map(string) | n/a | yes |
 | subnetwork | Subnetwork to deploy to | string | n/a | yes |
+
+# Example Code
+
+Once the `terraform apply` command completes you can log into your cluster using the command:
+
+```bash
+gcloud compute ssh gpuex-login-001
+```
+
+While the cluster `manager` and `login` nodes are up the GPU compute node may take up to ten minutes to finish installing the NVIDIA drivers
+and runtime. Check the state of the compute node with the command:
+
+```bash
+flux resource list
+```
+
+When the compute node is ready you will see output that looks like:
+
+```bash
+     STATE PROPERTIES NNODES   NCORES    NGPUS NODELIST
+      free x86-64,e2       1        2        0 gpuex-login-001
+      free n1,x86-64       1        4        1 gpuex-compute-a-001
+ allocated                 0        0        0
+      down                 0        0        0
+```
+
+Once the compute node is ready you can allocate it with the command:
+
+```bash
+flux mini alloc -N1 -c4 -g1
+```
+
+Flux will allocate the node and give you a new shell on it. Now you can start working with the GPU attached to it. This 
+example will use the [Julia](http://julialang.org) programming language.
