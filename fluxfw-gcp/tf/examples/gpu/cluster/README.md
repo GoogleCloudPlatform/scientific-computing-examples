@@ -289,3 +289,36 @@ BenchmarkTools.Trial: 2756 samples with 1 evaluation.
 
  Memory estimate: 4.69 KiB, allocs estimate: 85.
  ```
+### CUBLAS SAXPY
+
+The CUDA implementation of the _Basic Linear Algebra Subprograms_ (BLAS) package, CUBLAS, also provides an implementation
+of SAXPY. The Julia CUDA package wraps many of the libraries included in NVIDIAs CUDA toolkit and CUBLAS is one of them.
+So, in this last example you will call the CUBLAS `axpy!` function.
+
+```julia
+julia> using CUDA.CUBLAS
+julia> CUDA.@sync CUBLAS.axpy!(dim,a,x_d,y_d)
+```
+
+Note that unlike the other examples which returned the computed values in a separate vector the CUBLAS `axpy!` function
+modifies the `y` argument with the result of the computation. 
+
+Benchmarking the CUBLAS function may show a very small improvement over the SAXPY kernel fuction.
+
+```julia
+julia> @benchmark CUDA.@sync CUBLAS.axpy!(dim,a,x_d,y_d)
+```
+```bash
+BenchmarkTools.Trial: 2835 samples with 1 evaluation.
+ Range (min … max):  1.615 ms …  2.213 ms  ┊ GC (min … max): 0.00% … 0.00%
+ Time  (median):     1.742 ms              ┊ GC (median):    0.00%
+ Time  (mean ± σ):   1.756 ms ± 81.147 μs  ┊ GC (mean ± σ):  0.00% ± 0.00%
+
+ Memory estimate: 2.98 KiB, allocs estimate: 49.
+```
+
+### Summary
+
+For _large_ inputs running even simple codes like SAXPY on a GPU can acheive significant speed ups. As demonstrated above
+Julia makes GPU programming very approachable. Of course there are CUDA libraries for other common HPC languages like FORTRAN,
+C/C++, and Python as well. You should choose the one that best fits your programming environment and skill set.
