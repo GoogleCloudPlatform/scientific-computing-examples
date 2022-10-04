@@ -28,6 +28,7 @@ data "google_compute_zones" "available" {
 }
 
 locals {
+    automatic_restart = var.compact_placement ? false : var.automatic_restart
     compute_images = {
         "arm64" = {
             image   = data.google_compute_image.fluxfw_compute_arm64_image.self_link
@@ -37,6 +38,18 @@ locals {
             image   = data.google_compute_image.fluxfw_compute_x86_64_image.self_link
             project = data.google_compute_image.fluxfw_compute_x86_64_image.project
         }
+    }
+    on_host_maintenance = var.compact_placement ? "TERMINATE" : var.on_host_maintenance
+}
+
+resource "google_compute_resource_policy" "collocated" {
+    count   = var.compact_placement ? 1 : 0
+    name    = "${var.name_prefix}-collocated-policy"
+    project = var.project_id
+    region  = var.region
+    group_placement_policy {
+      vm_count = var.num_instances
+      collocation = "COLLOCATED"
     }
 }
 
@@ -53,6 +66,9 @@ module "flux_compute_instance_template" {
     disk_size_gb         = 256
     source_image         = local.compute_images["${var.machine_arch}"].image
     source_image_project = local.compute_images["${var.machine_arch}"].project
+    automatic_restart    = local.automatic_restart
+    on_host_maintenance  = local.on_host_maintenance
+
     metadata             = { 
         "enable-oslogin" : "TRUE",
         "flux-manager"   : "${var.manager}",
@@ -69,6 +85,7 @@ module "flux_compute_instances" {
     hostname            = var.name_prefix
     add_hostname_suffix = true
     num_instances       = var.num_instances
+    resource_policies   = var.compact_placement ? [ google_compute_resource_policy.collocated[0].self_link ] : []
     instance_template   = module.flux_compute_instance_template.self_link
     subnetwork          = var.subnetwork
 }

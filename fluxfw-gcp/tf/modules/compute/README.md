@@ -13,6 +13,7 @@ That information includes:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
+| compact_placement | A boolean that determines whether the compute nodes should have a compact placement resource policy attached to them | bool | false | no |
 | machine_arch | The instruction set architecture, ARM64 or x86_64, used by the compute node | string | n/a | yes |
 | machine_type | The Compute Engine machine type to be used for the compute node | string | n/a | yes |
 | manager | The hostname of the Flux cluster management node | string | n/a | yes |

@@ -12,6 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "automatic_restart" {
+  type        = bool
+  description = "(Optional) Specifies whether the instance should be automatically restarted if it is terminated by Compute Engine (not terminated by a user)."
+  default     = true
+}
+
+variable "compact_placement" {
+    description = "(Optional) a boolean which determines whether a set of compute nodes has a compact placement resource policy attached to them."
+    type        = bool
+    default     = false
+}
+
 variable "gpu" {
     description = "The type and count of GPU(s) to attach to a compute node"
     type        = object({
@@ -51,6 +63,12 @@ variable "num_instances" {
     description = "The number of compute node instances to create"
     type        = number
     default     = 1
+}
+
+variable "on_host_maintenance" {
+  type        = string
+  description = "Instance availability Policy"
+  default     = "MIGRATE"
 }
 
 variable "project_id" {
