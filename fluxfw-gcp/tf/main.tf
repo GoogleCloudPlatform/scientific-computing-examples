@@ -65,24 +65,25 @@ module "compute_nodes" {
         for index, node in var.compute_node_specs:
         node.name_prefix => node
     }
-    project_id      = var.project_id
-    region          = var.region
+    project_id        = var.project_id
+    region            = var.region
 
-    name_prefix     = each.value.name_prefix
-    subnetwork      = var.subnetwork
-    machine_arch    = each.value.machine_arch
-    machine_type    = each.value.machine_type
-    num_instances   = each.value.instances
-    manager         = module.management_node.name
+    name_prefix       = each.value.name_prefix
+    subnetwork        = var.subnetwork
+    machine_arch      = each.value.machine_arch
+    machine_type      = each.value.machine_type
+    num_instances     = each.value.instances
+    manager           = module.management_node.name
 
-    gpu             = lookup(each.value, "gpu_type", "") == "" || lookup(each.value, "gpu_count", 0) <= 0 ? null : {
+    compact_placement = lookup(each.value, "compact", false)
+    gpu               = lookup(each.value, "gpu_type", "") == "" || lookup(each.value, "gpu_count", 0) <= 0 ? null : {
         type  = each.value.gpu_type
         count = each.value.gpu_count
     }
-    service_account = {
+    service_account   = {
         email  = var.service_account_emails["compute"]
         scopes = var.compute_scopes
     }
 
-    nfs_mounts      = var.cluster_storage
+    nfs_mounts        = var.cluster_storage
 }
