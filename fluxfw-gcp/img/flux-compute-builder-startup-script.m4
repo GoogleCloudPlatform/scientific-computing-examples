@@ -97,6 +97,16 @@ CONFIG_HOME_NFS
 
 ifdef(`X86_64', `include(config_gpus.txt)')dnl
 
+cat << "RUN_BOOT_SCRIPT" > /etc/flux/compute/conf.d/99-boot-script.sh
+#!/bin/bash
+
+curl -f "http://metadata.google.internal/computeMetadata/v1/instance/attributes/boot-script" -H "Metadata-Flavor: Google" --output /var/tmp/boot-script.sh
+if [ "$?" == "0" ]; then
+    . /var/tmp/boot-script.sh
+fi
+
+RUN_BOOT_SCRIPT
+
 cat << "COMPUTE_FIRST_BOOT" > /etc/flux/compute/first-boot.sh
 #!/bin/bash
 
