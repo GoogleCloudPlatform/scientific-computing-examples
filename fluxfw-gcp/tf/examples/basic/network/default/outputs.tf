@@ -13,5 +13,11 @@
 # limitations under the License.
 
 output "subnet" {
-    value = data.google_compute_subnetwork.subnet
+    value = {
+        project = data.google_compute_subnetwork.subnet.project
+        region  = data.google_compute_subnetwork.subnet.region
+        network_name = "default"
+        self_link = data.google_compute_subnetwork.subnet.self_link
+    }
 }
+
