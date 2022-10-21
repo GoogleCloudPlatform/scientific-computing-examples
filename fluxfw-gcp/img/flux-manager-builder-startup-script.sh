@@ -230,8 +230,20 @@ encode_cores() {
 
 encode_properties() {
     family=$(echo $machine_type | cut -d'-' -f1)
-    
-    properties="--property=$family:$rank_range --property=$machine_arch:$rank_range"
+
+    family_arch_properties="--property=$family:$rank_range --property=$machine_arch:$rank_range"
+
+    properties=$family_arch_properties
+
+    if [ "$spec_properties_json" != "null" ]; then
+        # do some magic to turn a JSON array into a bash array
+        spec_properties_json_unquoted=$(echo ${spec_properties_json//\"/""})
+        declare -a spec_properties=( $(echo $spec_properties_json_unquoted | tr [',','[',']' " ") )
+
+        for spec_property in ${spec_properties[@]}; do
+            properties="$properties --property=$spec_property:$rank_range"
+        done
+    fi
 }
 
 encode_gpus() {
@@ -251,6 +263,7 @@ encode_spec() {
     machine_type=$(echo $spec | jq -r '.machine_type')
     instances=$(echo $spec | jq -r '.instances')
     gpu_count=$(echo $spec | jq -r '.gpu_count')
+    spec_properties_json=$(echo $spec | jq -c '.properties')
 
     encode_ranks
     encode_hosts
