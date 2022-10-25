@@ -70,6 +70,7 @@ module "flux_compute_instance_template" {
     on_host_maintenance  = local.on_host_maintenance
 
     metadata             = { 
+        "boot-script"    : var.boot_script
         "enable-oslogin" : "TRUE",
         "flux-manager"   : "${var.manager}",
         "VmDnsSetting"   : "GlobalDefault",

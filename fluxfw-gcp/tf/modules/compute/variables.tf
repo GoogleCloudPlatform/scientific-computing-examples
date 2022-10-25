@@ -18,6 +18,12 @@ variable "automatic_restart" {
   default     = true
 }
 
+variable "boot_script" {
+    description = "(Optional) the name of a file containing a script to be executed on compute nodes at boot time"
+    type        = string
+    default     = null
+}
+
 variable "compact_placement" {
     description = "(Optional) a boolean which determines whether a set of compute nodes has a compact placement resource policy attached to them."
     type        = bool
