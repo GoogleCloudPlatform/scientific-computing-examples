@@ -19,7 +19,18 @@ variable "cluster_storage" {
 
 variable "compute_node_specs" {
     description = "A list of maps each with the keys: 'name_prefix', 'machin_arch', 'machine_type', and 'instances' which describe the compute node instances to create"
-    type = list(map(string))
+    type = list(object({
+       name_prefix  = string
+       machine_arch = string
+       machine_type = string
+       gpu_type     = string
+       gpu_count    = number
+       compact      = bool
+       instances    = number
+       properties   = set(string)
+       boot_script  = string
+    }))
+    default = []
 }
 
 variable "compute_scopes" {
