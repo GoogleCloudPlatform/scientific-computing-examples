@@ -16,7 +16,7 @@ output "subnet" {
     value = { 
         project = module.network.subnets["${var.region}/${module.network.subnets_names[0]}"].project,
         region  = var.region,
-        network = module.network.network
+        network_name = module.network.network_name
         self_link = module.network.subnets_self_links[0]
     }
 }

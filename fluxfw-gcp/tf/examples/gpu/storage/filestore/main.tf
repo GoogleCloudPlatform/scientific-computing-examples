@@ -31,7 +31,7 @@ resource "google_filestore_instance" "instance" {
     }
     
     networks {
-        network = data.terraform_remote_state.network.outputs.subnet.network.network_name
+        network = data.terraform_remote_state.network.outputs.subnet.network_name
         modes   = ["MODE_IPV4"]
     }
 }
