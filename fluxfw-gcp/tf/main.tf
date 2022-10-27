@@ -75,9 +75,9 @@ module "compute_nodes" {
     num_instances     = each.value.instances
     manager           = module.management_node.name
 
-    boot_script       = lookup(each.value, "boot_script", "") == "" ? null : file("${each.value.boot_script}")
+    boot_script       = lookup(each.value, "boot_script", null) == null ? null : file("${each.value.boot_script}")
     compact_placement = lookup(each.value, "compact", false)
-    gpu               = lookup(each.value, "gpu_type", "") == "" || lookup(each.value, "gpu_count", 0) <= 0 ? null : {
+    gpu               = lookup(each.value, "gpu_type", null) == null || lookup(each.value, "gpu_count", 0) <= 0 ? null : {
         type  = each.value.gpu_type
         count = each.value.gpu_count
     }

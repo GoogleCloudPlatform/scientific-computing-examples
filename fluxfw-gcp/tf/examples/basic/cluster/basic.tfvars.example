@@ -31,7 +31,12 @@ compute_node_specs = [
         name_prefix  = "gffw-compute-a"
         machine_arch = "x86-64"
         machine_type = "n2-standard-16"
+        gpu_type     = null
+        gpu_count    = 0
+        compact      = false
         instances    = 1
+        properties   = []
+        boot_script  = null
     },
 ]
 compute_scopes = [ "cloud-platform" ]
