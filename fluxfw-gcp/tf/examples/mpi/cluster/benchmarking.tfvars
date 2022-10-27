@@ -13,12 +13,12 @@
 # limitations under the License.
 
 manager_machine_type = "e2-standard-8"
-manager_name_prefix  = "gpuex"
+manager_name_prefix  = "benchmark"
 manager_scopes       = [ "cloud-platform" ]
 
 login_node_specs = [
     {
-        name_prefix  = "gpuex-login"
+        name_prefix  = "benchmark-login"
         machine_arch = "x86-64"
         machine_type = "e2-standard-4"
         instances    = 1
@@ -28,15 +28,26 @@ login_scopes = [ "cloud-platform" ]
 
 compute_node_specs = [
     {
-        name_prefix  = "gpuex-compute-a"
+        name_prefix  = "intel-benchmark-compute"
         machine_arch = "x86-64"
-        machine_type = "n1-standard-8"
-        gpu_count    = 1
-        gpu_type     = "nvidia-tesla-v100"
-        compact      = false
-        instances    = 1
-        properties   = []
-        boot_script  = "install-juliacuda.sh"
+        machine_type = "c2-standard-8"
+        gpu_type     = null
+        gpu_count    = 0
+        compact      = true
+        instances    = 2
+        properties   = [ "Intel" ]
+        boot_script  = "install-mpitests.sh"
+    },
+    {
+        name_prefix  = "amd-benchmark-compute"
+        machine_arch = "x86-64"
+        machine_type = "c2d-standard-8"
+        gpu_type     = null
+        gpu_count    = 0
+        compact      = true
+        instances    = 2
+        properties   = [ "AMD" ]
+        boot_script  = "install-mpitests.sh"
     },
 ]
 compute_scopes = [ "cloud-platform" ]

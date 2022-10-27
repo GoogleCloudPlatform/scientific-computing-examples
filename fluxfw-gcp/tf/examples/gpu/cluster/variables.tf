@@ -13,7 +13,17 @@
 # limitations under the License.
 
 variable "compute_node_specs" {
-    type = list(map(string))
+    type = list(object({
+       name_prefix  = string
+       machine_arch = string
+       machine_type = string
+       gpu_type     = string
+       gpu_count    = number
+       compact      = bool
+       instances    = number
+       properties   = set(string)
+       boot_script  = string
+    }))
 }
 
 variable "compute_scopes" {
