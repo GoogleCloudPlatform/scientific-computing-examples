@@ -30,6 +30,12 @@ storage: $(STORAGE_STATE)
 $(STORAGE_STATE): $(NETWORK_STATE)
 	@cd storage && $(MAKE) .filestore storage_name=$(storage_name) share_name=$(share_name)
 
+.PHONY: init
+init:
+	cd network && $(MAKE) init
+	cd iam && $(MAKE) init
+	cd storage && $(MAKE) init
+
 .PHONY: clean
 clean:
 	cd storage && $(MAKE) clean storage_name=$(storage_name) share_name=$(share_name)
