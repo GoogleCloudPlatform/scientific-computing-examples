@@ -17,6 +17,7 @@
 unset zone
 
 unset arm_machine_type
+unset login_machine_type
 unset manager_machine_type
 unset x86_machine_type
 
@@ -24,10 +25,11 @@ rocky_linux_version="8"
 
 OPTIND=1
 
-while getopts a:m:r:x:z: flag
+while getopts a:l:m:r:x:z: flag
 do
     case "${flag}" in
         a) arm_machine_type=${OPTARG} ;;
+        l) login_machine_type=${OPTARG} ;;
         m) manager_machine_type=${OPTARG} ;;
         r) rocky_linux_version=${OPTARG} ;;
         x) x86_machine_type=${OPTARG} ;;
@@ -36,7 +38,7 @@ do
 done
 
 if [ "X${zone}" == "X" ]; then
-    echo "Usage build-image.sh -z ZONE [-a ARM_MACHINE_TYPE -m MANAGER_MACHINE_TYPE -x X86_64_MACHINE_TYPE -r ROCKY_LINUX_VERSION]"
+    echo "Usage build-image.sh -z ZONE [-a ARM_MACHINE_TYPE -l LOGIN_MACHINE_TYPE -m MANAGER_MACHINE_TYPE -x X86_64_MACHINE_TYPE -r ROCKY_LINUX_VERSION]"
     exit 1
 fi
 
@@ -45,6 +47,12 @@ substitutions="_ZONE=${zone}"
 if [ "X${manager_machine_type}" != "X" ]; then
     source_image=$(gcloud compute images list --filter="name ~ rocky-linux-${rocky_linux_version}-optimized-gcp-v" --format="value(name)")
     gcloud builds submit --config=managerbuild.yaml --substitutions=_ZONE=${zone},_MACHINE_TYPE=${manager_machine_type},_SOURCE_IMAGE=${source_image} .
+fi
+
+if [ "X${login_machine_type}" != "X" ]; then
+    source_image=$(gcloud compute images list --filter="name ~ rocky-linux-${rocky_linux_version}-optimized-gcp-v" --format="value(name)")
+    m4 --define=ROCKY_VERSION=${rocky_linux_version} flux-login-builder-startup-script.m4 > flux-login-builder-startup-script.sh
+    gcloud builds submit --config=loginbuild.yaml --substitutions=_ZONE=${zone},_MACHINE_ARCHITECTURE="x86-64",_MACHINE_TYPE=${login_machine_type},_SOURCE_IMAGE=${source_image} .
 fi
 
 if [ "X${arm_machine_type}" != "X" ]; then

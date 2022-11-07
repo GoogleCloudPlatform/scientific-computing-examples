@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-data "google_compute_image" "fluxfw_compute_arm64_image" {
+data "google_compute_image" "fluxfw_login_x86_64_image" {
     project = var.project_id
-    family  = "flux-fw-compute-arm64"
-}
-
-data "google_compute_image" "fluxfw_compute_x86_64_image" {
-    project = var.project_id
-    family  = "flux-fw-compute-x86-64"
+    family  = "flux-fw-login-x86-64"
 }
 
 data "google_compute_zones" "available" {
@@ -28,14 +23,10 @@ data "google_compute_zones" "available" {
 }
 
 locals {
-    compute_images = {
-        "arm64" = {
-            image   = data.google_compute_image.fluxfw_compute_arm64_image.self_link
-            project = data.google_compute_image.fluxfw_compute_arm64_image.project
-        },
+    login_images = {
         "x86-64" = {
-            image   = data.google_compute_image.fluxfw_compute_x86_64_image.self_link
-            project = data.google_compute_image.fluxfw_compute_x86_64_image.project
+            image   = data.google_compute_image.fluxfw_login_x86_64_image.self_link
+            project = data.google_compute_image.fluxfw_login_x86_64_image.project
         }
     }
 }
@@ -50,8 +41,8 @@ module "flux_login_instance_template" {
     tags                 = ["ssh", "flux", "login"]
     machine_type         = var.machine_type
     disk_size_gb         = 256
-    source_image         = local.compute_images["${var.machine_arch}"].image
-    source_image_project = local.compute_images["${var.machine_arch}"].project
+    source_image         = local.login_images["${var.machine_arch}"].image
+    source_image_project = local.login_images["${var.machine_arch}"].project
     metadata             = { 
         "enable-oslogin" : "TRUE",
         "flux-manager"   : "${var.manager}",
