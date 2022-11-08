@@ -97,6 +97,48 @@ CONFIG_HOME_NFS
 
 ifdef(`X86_64', `include(config_gpus.txt)')dnl
 
+cat << "CONFIG_HOSTBASED_AUTH" > /etc/flux/compute/conf.d/04-hostbased-auth.sh
+#!/bin/bash
+
+cd /etc/ssh
+
+login_node_specs=$(curl "http://metadata.google.internal/computeMetadata/v1/instance/attributes/login-node-specs" -H "Metadata-Flavor: Google")
+
+for s in $(echo $login_node_specs | jq -c '.[]')
+do 
+    np=$(echo $s | jq -r '.name_prefix')
+    for i in $(seq $(echo $s | jq -r '.instances'))
+    do 
+        nm=$(printf "%s-%03d\n" $np $i)
+
+        while [[ -z "$(ping $nm -c1 2>&1 | grep 'packets transmitted')" ]]; do sleep 2; done
+
+        ip=$(ping -c1 $nm | grep -i ^ping | cut -d' ' -f3 | tr -d '()')
+        
+        while [[ -z "$(ssh-keyscan -T 60 -t rsa $ip 2> /dev/null)" ]]; do sleep 2; done
+
+        ssh-keyscan -t rsa $ip >> ssh_known_hosts
+        echo $ip >> shosts.equiv
+    done
+done
+
+fluxmgr=$(curl "http://metadata.google.internal/computeMetadata/v1/instance/attributes/flux-manager" -H "Metadata-Flavor: Google")
+
+while [[ -z "$(ping $fluxmgr -c1 2>&1 | grep 'packets transmitted')" ]]; do sleep 2; done
+
+ip=$(ping -c1 $fluxmgr | grep -i ^ping | cut -d' ' -f3 | tr -d '()')
+
+while [[ -z "$(ssh-keyscan -T 60 -t rsa $ip 2> /dev/null)" ]]; do sleep 2; done
+
+ssh-keyscan -t rsa $ip >> ssh_known_hosts
+echo $ip >> shosts.equiv
+
+sed -i 's/#HostbasedAuthentication no/HostbasedAuthentication yes/g' /etc/ssh/sshd_config
+sed -i 's/#IgnoreRhosts yes/IgnoreRhosts no/g' /etc/ssh/sshd_config
+
+systemctl restart sshd
+CONFIG_HOSTBASED_AUTH
+
 cat << "RUN_BOOT_SCRIPT" > /etc/flux/compute/conf.d/99-boot-script.sh
 #!/bin/bash
 

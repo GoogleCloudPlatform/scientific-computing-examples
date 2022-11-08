@@ -93,6 +93,16 @@ if [[ "X${nfsmounts}" != "X" ]]; then
 fi
 CONFIG_HOME_NFS
 
+cat << "CONFIG_HOSTBASED_AUTH" > /etc/flux/login/conf.d/03-hostbased-auth.sh
+#!/bin/bash
+
+cd /etc/ssh
+ 
+chmod u+s /usr/libexec/openssh/ssh-keysign
+ 
+sed -i 's/#   HostbasedAuthentication no/    HostbasedAuthentication yes\n    EnableSSHkeysign yes/g' /etc/ssh/ssh_config
+CONFIG_HOSTBASED_AUTH
+
 cat << "RUN_BOOT_SCRIPT" > /etc/flux/login/conf.d/99-boot-script.sh
 #!/bin/bash
 
