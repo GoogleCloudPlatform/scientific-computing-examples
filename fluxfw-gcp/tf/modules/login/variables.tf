@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "boot_script" {
+    description = "(Optional) the name of a file containing a script to be executed on compute nodes at boot time"
+    type        = string
+    default     = null
+}
+
 variable "machine_arch" {
     description = "The instruction set architecture, ARM64 or x86_64, used by the login node"
     type        = string

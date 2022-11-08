@@ -39,6 +39,11 @@ variable "gpu" {
     default     = null
 }
 
+variable "login_node_specs" {
+    description = "A JSON encoded list of maps each with the keys: 'name_prefix', 'machin_arch', 'machine_type', and 'instances' which describe the login node instances to create"
+    type        = string
+}
+
 variable "machine_arch" {
     description = "The instruction set architecture, ARM64 or x86_64, used by the compute node"
     type        = string
