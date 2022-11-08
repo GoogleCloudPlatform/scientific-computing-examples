@@ -50,6 +50,7 @@ module "login_nodes" {
     num_instances   = each.value.instances
     manager         = module.management_node.name
 
+    boot_script       = lookup(each.value, "boot_script", null) == null ? null : file("${each.value.boot_script}")
     service_account = {
         email  = var.service_account_emails["login"]
         scopes = var.login_scopes
@@ -86,5 +87,6 @@ module "compute_nodes" {
         scopes = var.compute_scopes
     }
 
+    login_node_specs  = jsonencode(var.login_node_specs)
     nfs_mounts        = var.cluster_storage
 }

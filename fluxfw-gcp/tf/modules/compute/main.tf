@@ -70,12 +70,13 @@ module "flux_compute_instance_template" {
     on_host_maintenance  = local.on_host_maintenance
 
     metadata             = { 
-        "boot-script"    : var.boot_script
-        "enable-oslogin" : "TRUE",
-        "flux-manager"   : "${var.manager}",
-        "VmDnsSetting"   : "GlobalDefault",
-        "nfs-mounts"     : jsonencode(var.nfs_mounts),
-        "gpus-attached"  : var.gpu != null ? "TRUE" : "FALSE"
+        "boot-script"      : var.boot_script
+        "login-node-specs" : var.login_node_specs
+        "enable-oslogin"   : "TRUE",
+        "flux-manager"     : "${var.manager}",
+        "VmDnsSetting"     : "GlobalDefault",
+        "nfs-mounts"       : jsonencode(var.nfs_mounts),
+        "gpus-attached"    : var.gpu != null ? "TRUE" : "FALSE"
     }
 }
 
