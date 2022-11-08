@@ -31,7 +31,14 @@ variable "compute_scopes" {
 }
 
 variable "login_node_specs" {
-    type = list(map(string))
+    type = list(object({
+       name_prefix  = string
+       machine_arch = string
+       machine_type = string
+       instances    = number
+       properties   = set(string)
+       boot_script  = string
+    }))
 }
 
 variable "login_scopes" {
