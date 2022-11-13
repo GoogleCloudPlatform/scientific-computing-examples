@@ -1,0 +1,41 @@
+project_id: "wdc-hpc-demo1"
+region: "us-central1"
+
+job_prefix: 'build-'
+#template_link: "projects/wdc-hpc-demo1/global/instanceTemplates/wdc-template3"
+machine_type: "n1-standard-4"
+
+nfs_server: "10.243.163.34"
+#nfs_path: "/mnt/nfs1"
+nfs_remote_path: "/nfsshare"
+
+bucket_name:  "wdc-hpc-demo1-bucket"
+#gcs_path: "/mnt/gcs1" #optional
+
+task_count: 4 #optional
+parallelism: 2 #optional
+task_count_per_node: 1 #optional
+
+accelerator:
+ type: "nvidia-tesla-v100"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+
+labels: 
+  env: "wdc2"
+  type: "gpu-v100"
+
+# No comments allowed in script text. 
+
+script_text: | 
+  #!/bin/bash 
+  git clone https://github.com/NVIDIA/cuda-samples.git
+  cd cuda-samples/Samples/4_CUDA_Libraries/batchCUBLAS/
+  make
+  ./batchCUBLAS
+
+  sleep 1200
+ 

@@ -1,0 +1,19 @@
+project_id: "wdc-hpc-demo1"
+region: "us-central1"
+
+job_prefix: 'container-'
+#template_link: "projects/wdc-hpc-demo1/global/instanceTemplates/wdc-hpc"
+machine_type: "n2-standard-2"
+container: 
+  image_uri: "gcr.io/google-containers/busybox"
+  entry_point: "/bin/sh"
+  commands: ["-c", "echo Hello world! This is task ${BATCH_TASK_INDEX}. This job has a total of ${BATCH_TASK_COUNT} tasks."]
+
+task_count: 4 #optional
+parallelism: 4 #optional
+task_count_per_node: 2 #optional
+
+
+labels: 
+  env: "wdc2"
+  type: "fftw2"
