@@ -113,7 +113,7 @@ echo $USER
 Now you can start the JupyterLab server. Starting the server is accomplished with the command:
 
 ```bash
-jupyter-lab
+jupyter-lab --no-browser
 ```
 
 which will produce output similar to:
@@ -132,7 +132,6 @@ which will produce output similar to:
 [I 2022-12-09 17:10:17.991 ServerApp] http://localhost:8888/lab?token=50f3a3052239dba85b4fa15e02c8162e9409931c4a45df96
 [I 2022-12-09 17:10:17.991 ServerApp]  or http://127.0.0.1:8888/lab?token=50f3a3052239dba85b4fa15e02c8162e9409931c4a45df96
 [I 2022-12-09 17:10:17.991 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
-[W 2022-12-09 17:10:18.067 ServerApp] No web browser found: could not locate runnable browser.
 [C 2022-12-09 17:10:18.067 ServerApp] 
     
     To access the server, open this file in a browser:
@@ -145,6 +144,14 @@ which will produce output similar to:
 Note that the jupyter server is listening on the localhost interface of the node where your flux shell is running.
 To access the interface from a web browser on your local machine you will create an `ssh tunnel` that forwards a
 connection made to a port on your local machine to the node in your allocation where the jupyter server is running.
+
+Open a terminal on your local machine. Before you create the tunnel copy some notebooks that demonstrate the
+flux Python API to your cluster:
+
+```bash
+gcloud compute scp *.ipynb nb-login-001:~ --zone us-central1-a
+```
+
 Use this command to setup the ssh tunnel from your local machine to your server host:
 
 ```bash
@@ -157,4 +164,8 @@ gcloud compute ssh nb-login-001 --zone us-central1-a -- -L 8888:localhost:8888 -
 When the tunnel is established you can access the jupyter lab server running in your allocation via a 
 web browser on your local machine. Just paste either of the `http` URLs from the output juypter-lab
 start up output into a local web browser and press `enter`. You should see output that looks like
+
 ![JupyterLab](./images/jupyterlab-interface.png)
+
+You can double click on any of the .ipynb files to experiment with various aspects of the flux Python API, or
+you can use the File menu to create a new notebook for your own work.
