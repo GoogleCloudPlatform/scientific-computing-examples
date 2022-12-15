@@ -1,7 +1,7 @@
 # Flux Framework Notebook Example
 
-This example demostrates how to deploy a [Jupyter notebook]() in a flux allocation on GCP. Several
-example notebooks are provided that illustrate using the [flux-framework Python API]() to interact
+This example demostrates how to deploy a [Jupyter notebook](https://jupyter.org/try-jupyter/lab/) in a flux allocation on GCP. Several
+example notebooks are provided that illustrate using the [flux-framework Python API](https://flux-framework.readthedocs.io/projects/flux-core/en/latest/python/index.html) to interact
 with flux programatically in a Jupyter context.
 
 ## Deployment
@@ -89,7 +89,7 @@ conda install jupyter-lab
 
 ## Operation
 
-Two steps are required to work notebooks via [JupyterLab](jupyter.org). First you need to start the `JupyterLab` server and then create an [ssh tunnel](https://www.ssh.com/academy/ssh/tunneling) so that you can access the interface via a web browser.
+Two steps are required to run notebooks with JupyterLab. First you need to start the `jupyter-lab` server and then create an [ssh tunnel](https://www.ssh.com/academy/ssh/tunneling) so that you can access the interface via a web browser.
 
 If you haven't done so already activate the `conda` environment:
 
