@@ -83,6 +83,9 @@ chmod a+x Miniconda-latest-aarch64.sh
 ./Miniconda-latest-aarch64.sh
 ```
 
+Press `enter` to review the Conda license agreement. If it is acceptable type "yes" to proceed with 
+the installation.
+
 ```bash
 conda install jupyter-lab
 ```
