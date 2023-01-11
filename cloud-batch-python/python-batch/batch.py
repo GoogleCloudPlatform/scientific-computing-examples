@@ -7,6 +7,8 @@ __author__ = "J Ross Thomson drj@"
 __version__ = "0.0.0"
 
 from absl import app
+from absl import flags
+
 from venv import create
 import list_jobs
 import delete_job
@@ -16,7 +18,6 @@ import parse_yaml
 import uuid
 from google.cloud import batch_v1
 
-from absl import flags
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("config_file", None, "Config file in YAML")
