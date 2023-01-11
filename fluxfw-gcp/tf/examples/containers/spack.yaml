@@ -1,0 +1,32 @@
+spack:
+  specs:
+  - gromacs+mpi
+  - mpich
+
+  container:
+    # Select the format of the recipe e.g. docker,
+    # singularity or anything else that is currently supported
+    format: singularity
+
+    # Sets the base images for the stages where Spack builds the
+    # software or where the software gets installed after being built..
+    images:
+      os: "ubuntu:22.04"
+      spack: develop
+
+    # Whether or not to strip binaries
+    strip: true
+
+    # Additional system packages that are needed at runtime
+    os_packages:
+      final:
+      - libgomp1
+      - libatomic1
+
+    # Labels for the image
+    labels:
+      app: "gromacs"
+      mpi: "mpich"
+
+    singularity:
+      runscript: /opt/view/bin/gmx_mpi $@
