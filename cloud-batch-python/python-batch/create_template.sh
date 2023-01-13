@@ -1,4 +1,4 @@
-gcloud compute instance-templates create wdc-template3  \
+gcloud compute instance-templates create fluent-template3  \
     --machine-type=n1-standard-4   \
     --maintenance-policy=TERMINATE    \
     --image-family=schedmd-v5-slurm-22-05-3-hpc-centos-7   \

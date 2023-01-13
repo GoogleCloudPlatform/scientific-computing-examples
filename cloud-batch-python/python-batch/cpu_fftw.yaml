@@ -1,21 +1,21 @@
-project_id: "wdc-hpc-demo1"
+project_id: "fluent-hpc-demo1"
 region: "us-central1"
 
-job_prefix: 'fftw-2proc-'
+job_prefix: 'fluent-2proc-'
 machine_type: "c2-standard-4"
 
 nfs_server: "10.243.163.34"
 nfs_remote_path: "/nfsshare"
 
-bucket_name:  "wdc-hpc-demo1-bucket"
+bucket_name:  "fluent-hpc-demo1-bucket"
 
 task_count: 16 #optional
 parallelism: 4 #optional
 task_count_per_node: 2 #optional
 
 labels: 
-  env: "wdc2"
-  type: "fftw2"
+  env: "fluent2"
+  type: "fluent2"
 
 script_text: | 
   #!/bin/sh 

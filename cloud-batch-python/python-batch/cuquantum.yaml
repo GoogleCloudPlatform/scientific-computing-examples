@@ -1,4 +1,4 @@
-project_id: "wdc-hpc-demo1"
+project_id: "fluent-demo"
 region: "us-central1"
 
 job_prefix: 'cuquantum-'
@@ -21,5 +21,5 @@ cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
 labels: 
-  env: "wdc2"
-  type: "fftw2"
+  env: "fluent2"
+  type: "fluent2"

@@ -1,15 +1,15 @@
-project_id: "wdc-hpc-demo1"
+project_id: "fluent-hpc-demo1"
 region: "us-central1"
 
 job_prefix: 'v100-no-template-'
-#template_link: "projects/wdc-hpc-demo1/global/instanceTemplates/wdc-template3"
+#template_link: "projects/fluent-hpc-demo1/global/instanceTemplates/fluent-template3"
 machine_type: "n1-standard-4"
 
 nfs_server: "10.243.163.34"
 #nfs_path: "/mnt/nfs1"
 nfs_remote_path: "/nfsshare"
 
-bucket_name:  "wdc-hpc-demo1-bucket"
+bucket_name:  "fluent-hpc-demo1-bucket"
 #gcs_path: "/mnt/gcs1" #optional
 
 task_count: 4 #optional
@@ -25,7 +25,7 @@ memory_mib: 102400 #optional
 
 
 labels: 
-  env: "wdc2"
+  env: "fluent2"
   type: "gpu-v100"
 
 # No comments allowed in script text. 
