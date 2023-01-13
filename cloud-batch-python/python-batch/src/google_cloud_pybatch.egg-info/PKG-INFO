@@ -1,0 +1,76 @@
+Metadata-Version: 2.1
+Name: google-cloud-pybatch
+Version: 0.0.1
+Summary: A small example package
+Author-email: "J. Ross Thomson" <jrossthomson@google.com>
+Project-URL: Homepage, https://github.com/pypa/sampleproject
+Project-URL: Bug Tracker, https://github.com/pypa/sampleproject/issues
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+
+# GCP PyBatch 
+
+This is a simple example of using the [Google Cloud Batch Python API](https://cloud.google.com/python/docs/reference/batch/latest)
+
+## Usage
+The goal of this setup is to simplify some of the syntax of the JSON, assuming a few more default settings. We replace the JSON with YAML, which is marginally easier to create and maintain.
+
+This allows a 
+```
+python3 batch.py --config_file container.yaml  --create_job
+```
+
+## Installation
+Use `git` to clone this repo, then from the directory:
+```
+cd scientific-computing-examples/cloud-batch-python/python-batch
+```
+Run pip3:
+```
+python3 -m pip install . --upgrade
+```
+If you get errors around pip, make sure pip is (correctly installed)[https://pip.pypa.io/en/stable/installation/].
+
+This should give you a local install of the google-cloud-pybatch repo.
+
+## Test
+The simplest command is for `--help`:
+```
+python3 batch.py --help
+```
+
+Which outputs:
+```
+Tools to run batch API
+
+flags:
+
+batch.py:
+  --config_file: Config file in YAML
+  --[no]container: If true, run container jobs.
+    (default: 'false')
+  --[no]create_job: Creates job, otherwise just prints config.
+    (default: 'false')
+  --[no]debug: If true, print debug info.
+    (default: 'false')
+  --delete_job: Job name to delete.
+    (default: '')
+  --[no]list_jobs: If true, list jobs for config.
+    (default: 'false')
+
+Try --helpfull to get a list of all flags.
+```
+
+
+## Enable APIs
+
+* Batch API
+
+
+## IAM
+
+* gcloud auth application-default login
+* roles/batch.jobsEditor

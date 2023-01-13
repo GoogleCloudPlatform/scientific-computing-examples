@@ -1,0 +1,28 @@
+project_id: "cuquatum-demo-1"
+region: "us-central1"
+
+job_prefix: 'cuquantum-'
+#template_link: "projects/fluent-hpc-demo1/global/instanceTemplates/instance-template-1"
+template_link: "projects/cuquatum-demo-1/global/instanceTemplates/demo2-instance-template-20221112214150866700000001"
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
+
+bucket_name:  "cuquatum-demo-1-bucket"
+gcs_path: "/scratch"
+
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+labels: 
+  env: "container"
+  type: "quantum"
+
+script_text: | 
+  #!/bin/bash 
+  docker run --gpus all \
+    -v /scratch:/scratch \
+    --entrypoint="/bin/bash" \
+    nvcr.io/nvidia/cuquantum-appliance:22.07-cirq \
+    -c  "python3 /workspace/examples/ghz.py  --nqubits 32 --nsamples 3000 --ngpus 1 >> /scratch/${JOB_ID}.txt"
+    

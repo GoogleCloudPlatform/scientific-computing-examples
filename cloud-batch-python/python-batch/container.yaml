@@ -1,0 +1,18 @@
+project_id: "fluent-demo"
+region: "us-central1"
+
+job_prefix: 'container-'
+machine_type: "n2-standard-2"
+container: 
+  image_uri: "gcr.io/google-containers/busybox"
+  entry_point: "/bin/sh"
+  commands: ["-c", "echo Hello world! This is task ${BATCH_TASK_INDEX}. This job has a total of ${BATCH_TASK_COUNT} tasks."]
+
+task_count: 4 #optional
+parallelism: 4 #optional
+task_count_per_node: 2 #optional
+
+
+labels: 
+  env: "pybatch"
+  type: "hello"
