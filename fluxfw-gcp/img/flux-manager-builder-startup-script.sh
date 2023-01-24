@@ -19,8 +19,8 @@ dnf clean all
 
 dnf group install -y "Development Tools"
 
-dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 dnf config-manager --set-enabled powertools
+dnf install -y epel-release
 
 dnf install -y \
     munge \
