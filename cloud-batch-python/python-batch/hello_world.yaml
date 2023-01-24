@@ -1,0 +1,25 @@
+project_id: "fluent-demo"
+region: "us-central1"
+
+job_prefix: 'hello-'
+machine_type: "n2-standard-2"
+
+task_count: 4 #optional
+parallelism: 2 #optional
+task_count_per_node: 2 #optional
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+
+labels: 
+  env: "hello"
+  type: "world"
+
+script_text: | 
+  #!/bin/bash 
+
+  echo "Hello World"
+  env
+
+
+ 

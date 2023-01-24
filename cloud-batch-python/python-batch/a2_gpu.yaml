@@ -1,0 +1,50 @@
+project_id: "fluent-hpc-demo1"
+region: "us-central1"
+
+job_prefix: 'a2-'
+#template_link: "projects/fluent-hpc-demo1/global/instanceTemplates/fluent-template3"
+machine_type: "a2-highgpu-1g"
+
+nfs_server: "10.243.163.34"
+#nfs_path: "/mnt/nfs1"
+nfs_remote_path: "/nfsshare"
+
+bucket_name:  "fluent-hpc-demo1-bucket"
+#gcs_path: "/mnt/gcs1" #optional
+
+task_count: 4 #optional
+parallelism: 2 #optional
+task_count_per_node: 1 #optional
+
+accelerator:
+ type: "nvidia-tesla-a100"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+
+labels: 
+  env: "fluent2"
+  type: "gpu-a100"
+
+script_text: | 
+  #!/bin/bash 
+
+  curl https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg
+  echo 'deb [signed-by=/usr/share/keyrings/nvidia-hpcsdk-archive-keyring.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64 /' | sudo tee /etc/apt/sources.list.d/nvhpc.list
+  sudo apt-get update -y
+  sudo apt-get install -y nvhpc-22-9
+
+  export LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/22.9/math_libs/11.7/targets/x86_64-linux/lib/
+  
+  cp -n /mnt/gcs/matrixMulCUBLAS .
+
+  echo "Starting ./matrixMulCUBLAS ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}"
+  SIM_TIME=$(./matrixMulCUBLAS)
+
+  echo ${JOB_ID} ${BATCH_TASK_INDEX}  ${SIM_TIME}
+  echo ${JOB_ID} ${BATCH_TASK_INDEX}  ${SIM_TIME} >> /mnt/gcs/${JOB_ID}.txt  
+
+
+ 
