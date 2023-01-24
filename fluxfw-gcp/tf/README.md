@@ -8,7 +8,7 @@ It creates:
 - one or more `login nodes`
 - one or more `compute nodes`
 
-submodules are provided for creating the components. See the [modules]() directory for the individual submodules 
+submodules are provided for creating the components. See the [modules](modules) directory for the individual submodules 
 usage.
 
 ## Usage
