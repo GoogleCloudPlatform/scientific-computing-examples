@@ -25,6 +25,9 @@ dnf install -y epel-release
 dnf install -y \
 include(packages.txt)dnl
 
+include(install_apptainer.txt)dnl
+dnf install -y podman
+
 useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
 cd /usr/share

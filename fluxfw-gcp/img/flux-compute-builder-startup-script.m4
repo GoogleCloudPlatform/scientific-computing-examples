@@ -26,6 +26,7 @@ dnf install -y \
 include(packages.txt)dnl
 
 ifdef(`X86_64', `include(nvidia_downloads.txt)')dnl
+ifdef(`X86_64', `include(install_apptainer.txt)')dnl
 
 useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
