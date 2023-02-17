@@ -40,11 +40,6 @@ executing==0.9.1
 fasteners==0.17.3
 future==0.18.2
 gbulb==0.6.1
-glinux-boot-image-kthresher==1.4.1
-glinux-homedir-helper==1
-glinux-identity==1
-glinux-shutdown-installer==1.0
-glinux-welcome==32
 goobuntu-config-tools==0.1
 goobuntu-gce-login-policy==0.1
 goobuntu-sso-watcher==0.1
