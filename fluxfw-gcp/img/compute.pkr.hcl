@@ -12,11 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "enable_secure_boot" {
+    type    = bool
+    default = true
+}
+
 variable "machine_architecture" {
     type    = string
 }
 
 variable "machine_type" {
+    type    = string
+}
+
+variable "project_id" {
     type    = string
 }
 
@@ -28,8 +37,9 @@ variable "source_image_project_id" {
     type    = string
 }
 
-variable "project_id" {
+variable "subnetwork" {
     type    = string
+    default = "default"
 }
 
 variable "zone" {
@@ -46,10 +56,12 @@ source "googlecompute" "flux_fw_compute_node_builder" {
     image_description       = "flux-fw-compute"
     machine_type            = var.machine_type
     disk_size               = 256
+    subnetwork              = var.subnetwork
     tags                    = ["packer","flux", "compute", "${var.machine_architecture}"]
     account_file            = "image-builder.key"
     startup_script_file     = "flux-compute-builder-startup-script.sh"
     ssh_username            = "rocky"
+    enable_secure_boot      = var.enable_secure_boot
 }
 
 build {

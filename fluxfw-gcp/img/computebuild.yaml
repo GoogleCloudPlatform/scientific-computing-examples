@@ -37,9 +37,12 @@ steps:
   - source_image=${_SOURCE_IMAGE}
   - -var
   - source_image_project_id=${_SOURCE_IMAGE_PROJECT_ID}
+  - -var
+  - subnetwork=${_SUBNETWORK}
   - compute.pkr.hcl
 substitutions:
   _SOURCE_IMAGE: rocky-linux-8-optimized-gcp-v20220719
   _SOURCE_IMAGE_PROJECT_ID: rocky-linux-cloud 
+  _SUBNETWORK: default
 tags: ['cloud-builders-community']
 timeout: 10800s
