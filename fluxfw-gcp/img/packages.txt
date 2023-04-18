@@ -25,6 +25,7 @@
     aspell \
     aspell-en \
     valgrind-devel \
-    mpich-devel \
+    openmpi.x86_64 \
+    openmpi-devel.x86_64 \
     gcsfuse \
     jq

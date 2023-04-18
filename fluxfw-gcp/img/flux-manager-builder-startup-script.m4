@@ -34,6 +34,7 @@ cd /usr/share
 git clone -b v0.49.0 https://github.com/flux-framework/flux-core.git
 git clone -b v0.27.0 https://github.com/flux-framework/flux-sched.git
 git clone -b v0.8.0 https://github.com/flux-framework/flux-security.git
+git clone -b v0.3.0 https://github.com/flux-framework/flux-pmix.git
 
 cd /usr/share/flux-security
 
@@ -54,6 +55,14 @@ make -j 8
 make install
 
 cd /usr/share/flux-sched
+
+./autogen.sh
+./configure --prefix=/usr/local
+
+make
+make install
+
+cd /usr/share/flux-pmix
 
 ./autogen.sh
 ./configure --prefix=/usr/local
