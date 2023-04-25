@@ -132,10 +132,10 @@ mkdir -p /etc/flux/manager/conf.d
 cat << "CONFIG_FLUX_SYSTEM" > /etc/flux/manager/conf.d/01-system.sh
 #!/bin/bash
 
-sed -i "s/FLUXMANGER/$(hostname)/g" /usr/local/etc/flux/system/conf.d/system.toml
+sed -i "s/FLUXMANGER/$(hostname -s)/g" /usr/local/etc/flux/system/conf.d/system.toml
 
 CORES=$(($(hwloc-ls -p | grep -i core | wc -l)-1))
-/usr/local/bin/flux R encode --ranks=0 --hosts=$(hostname) --cores=0-$CORES --property=manager | tee /usr/local/etc/flux/system/R > /dev/null
+/usr/local/bin/flux R encode --ranks=0 --hosts=$(hostname -s) --cores=0-$CORES --property=manager | tee /usr/local/etc/flux/system/R > /dev/null
 chown flux:flux /usr/local/etc/flux/system/R
 
 cp /usr/share/flux-core/etc/flux.service /usr/lib/systemd/system
