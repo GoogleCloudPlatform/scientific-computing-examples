@@ -239,41 +239,42 @@ encode_spec() {
     gpu_count=$(echo $spec | jq -r '.gpu_count')
     spec_properties_json=$(echo $spec | jq -c '.properties')
 
-    encode_ranks
-    encode_hosts
-    encode_cores
-    encode_properties
-
-    if [ $gpu_count != null ] && (( gpu_count > 0 )); then
-        encode_gpus
-    else
-        gpus=null
+    if (( instances > 0 )); then
+        encode_ranks
+        encode_hosts
+        encode_cores
+        encode_properties
+    
+        if [ $gpu_count != null ] && (( gpu_count > 0 )); then
+            encode_gpus
+        else
+            gpus=null
+        fi
+    
+        if [ ! $first_spec -eq 1 ]; then
+            resource_cmd="${resource_cmd} && "
+        fi
+    
+        if [ $gpus != null ]; then
+            resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $gpus $properties"
+        else
+            resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $properties"
+        fi
+    
+        let last_rank=$((last_rank + instances))
+        first_spec=0
     fi
-
-    if [ ! $first_spec -eq 1 ]; then
-        resource_cmd="${resource_cmd} && "
-    fi
-
-    if [ $gpus != null ]; then
-        resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $gpus $properties"
-    else
-        resource_cmd="${resource_cmd} /usr/local/bin/flux R encode $ranks $hosts $cores $properties"
-    fi
-
-    let last_rank=$((last_rank + instances))
 }
 
 mk_encode_cmd() {
     for s in $(echo $1 | jq -c '.[]')
     do
         encode_spec $s
-        first_spec=0
     done
    
     for s in $(echo $2 | jq -c '.[]')
     do
         encode_spec $s
-        first_spec=0
     done
 }
 
@@ -282,9 +283,11 @@ login_node_specs=$(curl -s "http://metadata.google.internal/computeMetadata/v1/i
 
 mk_encode_cmd $login_node_specs $compute_node_specs
 
-echo $(cat /usr/local/etc/flux/system/R) $(eval $resource_cmd) | /usr/local/bin/flux R append | tee /var/tmp/R > /dev/null
-cp /var/tmp/R /usr/local/etc/flux/system/R
-chown flux:flux /usr/local/etc/flux/system/R
+if [ ! -v "$resource_cmd" ]; then
+    echo $(cat /usr/local/etc/flux/system/R) $(eval $resource_cmd) | /usr/local/bin/flux R append | tee /var/tmp/R > /dev/null
+    cp /var/tmp/R /usr/local/etc/flux/system/R
+    chown flux:flux /usr/local/etc/flux/system/R
+fi
 
 nodelist=$(jq '.execution.nodelist[0]' /usr/local/etc/flux/system/R)
 
