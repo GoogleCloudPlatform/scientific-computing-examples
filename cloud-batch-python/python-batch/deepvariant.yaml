@@ -1,0 +1,23 @@
+project_id: "gromacs-demo-jrt"
+region: "us-central1"
+
+job_prefix: 'deepvariant-'
+machine_type: "n1-standard-64"
+volumes:
+  - {bucket_name:  "gromacs-demo-jrt", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name:  "deepvariant", gcs_path:  "/mnt/disks/deepvariant"}
+
+container: 
+  image_uri: "gcr.io/deepvariant-docker/deepvariant:1.2.0"
+  #image_uri: "gcr.io/google-containers/busybox"
+  entry_point: "/bin/sh"
+  commands: ["/mnt/disks/work/deepvariant.sh"]
+
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
+
+
+labels: 
+  env: "deepvariant"
+  type: "1_2_0"

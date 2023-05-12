@@ -1,0 +1,28 @@
+project_id: "gromacs-demo-jrt"
+region: "us-central1"
+
+volumes:
+  - {bucket_name: "gromacs-demo-jrt", gcs_path:  "/mnt/disks/work"}
+
+job_prefix: 'cuquantum-noise-'
+
+task_count: 100 #optional
+parallelism: 10 #optional
+task_count_per_node: 2 #optional
+
+machine_type: "n1-standard-2"
+accelerator:
+ type: "nvidia-tesla-t4"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+container: 
+  image_uri: "nvcr.io/nvidia/cuquantum-appliance:22.07-cirq" 
+  entry_point: "/bin/bash"
+  commands: ["-c", "python3 /mnt/disks/work/noise.py"]
+
+labels: 
+  env: "container"
+  type: "quantum"

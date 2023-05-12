@@ -1,0 +1,31 @@
+project_id: "gromacs-demo-jrt"
+region: "us-central1"
+
+volumes:
+  - {bucket_name: "gromacs-demo-jrt", gcs_path:  "/mnt/disks/work"}
+
+task_count: 1 #optional
+parallelism: 1 #optional
+
+job_prefix: 'nvidia-smi-'
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
+
+#machine_type: "a2-highgpu-1g"
+machine_type: "n1-standard-2"
+accelerator:
+ type: "nvidia-tesla-t4"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+container: 
+  image_uri: "nvidia/cuda:12.1.1-devel-centos7" 
+  entry_point: "/bin/bash"
+  commands: ["-c", "nvidia-smi"]
+
+labels: 
+  env: "container"
+  type: "nvidia"

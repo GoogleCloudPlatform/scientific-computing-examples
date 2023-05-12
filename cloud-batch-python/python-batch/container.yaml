@@ -11,7 +11,7 @@ container:
 task_count: 4 #optional
 parallelism: 4 #optional
 task_count_per_node: 2 #optional
-
+install_gpu_drivers: true
 
 labels: 
   env: "pybatch"

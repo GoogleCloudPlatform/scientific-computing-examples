@@ -14,9 +14,6 @@
 
 # [START batch_create_job_with_template]
 
-import json
-import re
-import sys
 
 from google.cloud import batch_v1
 from io import TextIOWrapper, BytesIO
@@ -37,7 +34,17 @@ class CreateJob:
       self.runnable.container.image_uri = self.config["container"]["image_uri"] 
       self.runnable.container.entrypoint =  self.config["container"]["entry_point"] 
       self.runnable.container.commands =  self.config["container"]["commands"] 
-      self.runnable.container.options  =  self.config["container"]["options"] if "options" in self.config["container"] else None
+      if "install_gpu_drivers" in self.config:
+        self.runnable.container.volumes.append("/var/lib/nvidia/lib64:/usr/local/nvidia/lib64")
+        self.runnable.container.volumes.append("/var/lib/nvidia/bin:/usr/local/nvidia/bin")
+      
+
+      #self.runnable.container.volumes = [
+      #  "/mnt/disks/work:/mnt/disks/work:rw", 
+      #  "/var/lib/nvidia/lib64:/usr/local/nvidia/lib64", 
+      #  "/var/lib/nvidia/bin:/usr/local/nvidia/bin"
+      # ]
+      self.runnable.container.options = "--privileged"
     else:
       self.runnable.script = batch_v1.Runnable.Script()
       self.runnable.script.text = self.config["script_text"]
@@ -47,9 +54,7 @@ class CreateJob:
   def create_task(self) -> batch_v1.TaskSpec:
     self.task = batch_v1.TaskSpec()
     self.task.max_retry_count = 2
-    self.task.max_run_duration = "3600s"
-
-  # set up storage volumes
+    self.task.max_run_duration = "604800s"
 
     self.task.volumes = []
 
@@ -65,15 +70,17 @@ class CreateJob:
 
       self.task.volumes.append(nfs_volume)
 
-    if "bucket_name" in self.config:
-      gcs_bucket = batch_v1.GCS()
-      gcs_bucket.remote_path = self.config["bucket_name"]
-      
-      gcs_volume = batch_v1.Volume()
-      gcs_volume.gcs = gcs_bucket
-      gcs_volume.mount_path = self.config["gcs_path"] if "gcs_path" in self.config else "/mnt/gcs"
 
-      self.task.volumes.append(gcs_volume)
+    if "volumes" in self.config:
+      gcs_volume = batch_v1.Volume()
+      for volume in self.config["volumes"]:
+        gcs_bucket = batch_v1.GCS()
+        gcs_bucket.remote_path = volume["bucket_name"]
+        gcs_volume.mount_path = volume["gcs_path"]
+        gcs_volume.gcs = gcs_bucket
+        self.task.volumes.append(gcs_volume)
+        self.runnable.container.volumes.append(
+          volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
 
   # We can specify what resources are requested by each task.
 
@@ -147,7 +154,7 @@ class CreateJob:
       self.job.logs_policy.destination = batch_v1.LogsPolicy.Destination.CLOUD_LOGGING
       return(self.job)
     
-  def create_script_job(self) -> batch_v1.Job:
+  def create_job_request(self) -> batch_v1.Job:
 
       # Define what will be done as part of the job.
 
