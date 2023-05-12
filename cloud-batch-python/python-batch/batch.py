@@ -21,6 +21,7 @@ __author__ = "J Ross Thomson drj@"
 __version__ = "0.1.0"
 
 import json
+import os
 import uuid
 import yaml
 
@@ -33,6 +34,7 @@ from yaml.loader import SafeLoader
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("config_file", None, "Config file in YAML")
+flags.DEFINE_string("project_id", None, "Google Cloud Project ID, not name")
 flags.DEFINE_boolean("create_job", False, "Creates job, otherwise just prints config.")
 flags.DEFINE_boolean("list_jobs", False, "If true, list jobs for config.")
 flags.DEFINE_boolean("container", False, "If true, run container jobs.")
@@ -47,6 +49,20 @@ class CreateJob:
   def __init__(self, job_name: str, config) -> None:
     self.config = config
     self.job_name = job_name
+    
+    #set  "project_id"  based on config, env, or argv in that order.
+  
+    if self.config["project_id"]: 
+      self.project_id = self.config["project_id"] 
+    if os.environ.get('PROJECT_ID'): 
+      self.project_id  = os.environ.get('PROJECT_ID') 
+    if FLAGS.project_id:
+      self.project_id = FLAGS.project_id
+
+    print(self.project_id)
+    exit(0)
+  
+      
     
   def create_runnable(self) -> batch_v1.Runnable:
 
@@ -101,7 +117,7 @@ class CreateJob:
         self.runnable.container.volumes.append(
           volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
 
-  # We can specify what resources are requested by each task.
+  # We can specify what resources are requoested by each task.
 
     resources = batch_v1.ComputeResource()
     resources.cpu_milli = self.config["cpu_milli"] if "cpu_milli" in self.config else 1000 
