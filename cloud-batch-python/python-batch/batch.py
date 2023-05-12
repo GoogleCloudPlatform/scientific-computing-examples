@@ -37,7 +37,6 @@ flags.DEFINE_string("config_file", None, "Config file in YAML")
 flags.DEFINE_string("project_id", None, "Google Cloud Project ID, not name")
 flags.DEFINE_boolean("create_job", False, "Creates job, otherwise just prints config.")
 flags.DEFINE_boolean("list_jobs", False, "If true, list jobs for config.")
-flags.DEFINE_boolean("container", False, "If true, run container jobs.")
 flags.DEFINE_string("delete_job", "", "Job name to delete.")
 flags.DEFINE_boolean("debug", False, "If true, print debug info.")
 
@@ -54,7 +53,7 @@ class CreateJob:
   
     if self.config["project_id"]: 
       self.project_id = self.config["project_id"] 
-    if os.environ.get('PROJECT_ID'): 
+    if os.environ.get('GOOGLE_CLOUD_PROJECT'): 
       self.project_id  = os.environ.get('GOOGLE_CLOUD_PROJECT') 
     if FLAGS.project_id:
       self.project_id = FLAGS.project_id
@@ -274,11 +273,6 @@ def main(argv):
   jobid = config["job_prefix"] + uuid.uuid4().hex[:8]
   client = batch_v1.BatchServiceClient()
 
-#  if(FLAGS.container):
-#    print("Container job")
-#    print(create_container_job.create_container_job(jobid, config))
-#    exit()
-	
   create = CreateJob(jobid, config)
   create_request = create.create_job_request()
 

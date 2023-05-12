@@ -21,7 +21,7 @@ memory_mib: 102400 #optional
 container: 
   image_uri: "nvcr.io/nvidia/cuquantum-appliance:22.07-cirq" 
   entry_point: "/bin/bash"
-  commands: ["-c", "python3 /mnt/disks/work/noise.py"]
+  commands: ["-c", "mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; python3 /mnt/disks/work/cuquantum-noise.py >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt"]
 
 labels: 
   env: "container"
