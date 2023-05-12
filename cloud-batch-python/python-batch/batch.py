@@ -55,12 +55,10 @@ class CreateJob:
     if self.config["project_id"]: 
       self.project_id = self.config["project_id"] 
     if os.environ.get('PROJECT_ID'): 
-      self.project_id  = os.environ.get('PROJECT_ID') 
+      self.project_id  = os.environ.get('GOOGLE_CLOUD_PROJECT') 
     if FLAGS.project_id:
       self.project_id = FLAGS.project_id
 
-    print(self.project_id)
-    exit(0)
   
       
     
