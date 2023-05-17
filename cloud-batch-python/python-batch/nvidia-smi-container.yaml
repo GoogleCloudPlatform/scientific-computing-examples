@@ -11,11 +11,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "gromacs-demo-jrt"
+project_id: "project_id"
 region: "us-central1"
 
 volumes:
-  - {bucket_name: "gromacs-demo-jrt", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name: "demo-jrt", gcs_path:  "/mnt/disks/work"}
 
 task_count: 1 #optional
 parallelism: 1 #optional

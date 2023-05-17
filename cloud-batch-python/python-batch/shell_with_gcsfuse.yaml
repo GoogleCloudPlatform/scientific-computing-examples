@@ -11,12 +11,12 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "gromacs-demo-jrt"
+project_id: "project_id"
 region: "us-central1"
 
 job_prefix: 'hello-'
 machine_type: "n2-standard-2"
-bucket_name:  "gromacs-demo-jrt"
+bucket_name:  "demo-jrt"
 gcs_path:  "/mnt/disks/deepvariant"
 
 task_count: 4 #optional
