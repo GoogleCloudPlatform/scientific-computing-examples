@@ -17,11 +17,12 @@ cd scientific-computing-examples/cloud-batch-python/python-batch
 ```
 Run pip3:
 ```
-python3 -m pip install . --upgrade
+python3 -m pip install  --upgrade
+python3 -m pip install  -r requirements.txt
 ```
 If you get errors around pip, make sure pip is (correctly installed)[https://pip.pypa.io/en/stable/installation/].
 
-This should give you a local install of the google-cloud-pybatch repo.
+You should now be able test `batch.py`
 
 ### Test
 The simplest command is for `--help`:
@@ -37,8 +38,6 @@ flags:
 
 batch.py:
   --config_file: Config file in YAML
-  --[no]container: If true, run container jobs.
-    (default: 'false')
   --[no]create_job: Creates job, otherwise just prints config.
     (default: 'false')
   --[no]debug: If true, print debug info.
@@ -86,7 +85,7 @@ python3 batch.py --config_file hello_world.yaml  --create_job
 
 You can then check the status of the jobs
 ```
-python3 batch.py --config_file hello_world.yaml  --list_jobs.
+python3 batch.py --config_file hello_world.yaml  --list_jobs
 ```
 To see what is really happening, you can go to the Google Cloud [Console for Batch](https://console.cloud.google.com/batch/jobs).
 

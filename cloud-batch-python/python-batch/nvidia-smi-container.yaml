@@ -11,33 +11,34 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "fluent-hpc-demo1"
+project_id: "project_id"
 region: "us-central1"
 
-job_prefix: 'fluent-2proc-'
-machine_type: "c2-standard-4"
+volumes:
+  - {bucket_name: "demo-jrt", gcs_path:  "/mnt/disks/work"}
 
-nfs_server: "10.243.163.34"
-nfs_remote_path: "/nfsshare"
+task_count: 1 #optional
+parallelism: 1 #optional
 
-bucket_name:  "fluent-hpc-demo1-bucket"
+job_prefix: 'nvidia-smi-'
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
 
-task_count: 16 #optional
-parallelism: 4 #optional
-task_count_per_node: 2 #optional
+#machine_type: "a2-highgpu-1g"
+machine_type: "n1-standard-2"
+accelerator:
+ type: "nvidia-tesla-t4"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+container: 
+  image_uri: "nvidia/cuda:12.1.1-devel-centos7" 
+  entry_point: "/bin/bash"
+  commands: ["-c", "nvidia-smi"]
 
 labels: 
-  env: "fluent2"
-  type: "fluent2"
-
-script_text: | 
-  #!/bin/sh 
-  
-  cp -n /mnt/gcs/WP_time .
-
-  echo "Starting ./WP_time ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}"
-  
-  SIM_TIME=$( ./WP_time | grep simulation)
-
-  echo ${JOB_ID} ${BATCH_TASK_INDEX}  ${SIM_TIME} >> /mnt/gcs/${JOB_ID}.txt 
- 
+  env: "container"
+  type: "nvidia"

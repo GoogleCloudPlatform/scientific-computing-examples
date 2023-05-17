@@ -11,33 +11,31 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "fluent-hpc-demo1"
+project_id: "project_id"
 region: "us-central1"
 
-job_prefix: 'fluent-2proc-'
-machine_type: "c2-standard-4"
+volumes:
+  - {bucket_name: "demo-jrt", gcs_path:  "/mnt/disks/work"}
 
-nfs_server: "10.243.163.34"
-nfs_remote_path: "/nfsshare"
+job_prefix: 'cuquantum-noise-'
 
-bucket_name:  "fluent-hpc-demo1-bucket"
-
-task_count: 16 #optional
-parallelism: 4 #optional
+task_count: 100 #optional
+parallelism: 10 #optional
 task_count_per_node: 2 #optional
 
+machine_type: "n1-standard-2"
+accelerator:
+ type: "nvidia-tesla-t4"
+ count: 1
+install_gpu_drivers: y
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
+container: 
+  image_uri: "nvcr.io/nvidia/cuquantum-appliance:22.07-cirq" 
+  entry_point: "/bin/bash"
+  commands: ["-c", "mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; python3 /mnt/disks/work/cuquantum-noise.py >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt"]
+
 labels: 
-  env: "fluent2"
-  type: "fluent2"
-
-script_text: | 
-  #!/bin/sh 
-  
-  cp -n /mnt/gcs/WP_time .
-
-  echo "Starting ./WP_time ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}"
-  
-  SIM_TIME=$( ./WP_time | grep simulation)
-
-  echo ${JOB_ID} ${BATCH_TASK_INDEX}  ${SIM_TIME} >> /mnt/gcs/${JOB_ID}.txt 
- 
+  env: "container"
+  type: "quantum"

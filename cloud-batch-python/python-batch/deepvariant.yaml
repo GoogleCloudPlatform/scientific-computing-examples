@@ -11,14 +11,26 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+project_id: "project_id"
+region: "us-central1"
 
-import yaml
-from yaml.loader import SafeLoader
+job_prefix: 'deepvariant-'
+machine_type: "n1-standard-64"
+volumes:
+  - {bucket_name:  "demo-jrt", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name:  "deepvariant", gcs_path:  "/mnt/disks/deepvariant"}
 
-def parse_yaml_file(file_name: str):
-  with open(file_name) as f:
-    data = yaml.load(f, Loader=SafeLoader)
-    return(data)
+container: 
+  image_uri: "gcr.io/deepvariant-docker/deepvariant:1.2.0"
+  #image_uri: "gcr.io/google-containers/busybox"
+  entry_point: "/bin/sh"
+  commands: ["/mnt/disks/work/deepvariant.sh"]
 
-if __name__ == "__main__":
-  parse_yaml_file("test.yaml")
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
+
+
+labels: 
+  env: "deepvariant"
+  type: "1_2_0"
