@@ -35,6 +35,7 @@ from yaml.loader import SafeLoader
 FLAGS = flags.FLAGS
 flags.DEFINE_string("config_file", None, "Config file in YAML")
 flags.DEFINE_string("project_id", None, "Google Cloud Project ID, not name")
+flags.DEFINE_spaceseplist("volumes", None, "List of GCS paths to mount. Example, \"bucket_name1:mountpath1 bucket_name2:mountpath2\"" )
 flags.DEFINE_boolean("create_job", False, "Creates job, otherwise just prints config.")
 flags.DEFINE_boolean("list_jobs", False, "If true, list jobs for config.")
 flags.DEFINE_string("delete_job", "", "Job name to delete.")
@@ -103,16 +104,26 @@ class CreateJob:
       self.task.volumes.append(nfs_volume)
 
 
-    if "volumes" in self.config:
-      gcs_volume = batch_v1.Volume()
-      for volume in self.config["volumes"]:
-        gcs_bucket = batch_v1.GCS()
-        gcs_bucket.remote_path = volume["bucket_name"]
-        gcs_volume.mount_path = volume["gcs_path"]
-        gcs_volume.gcs = gcs_bucket
-        self.task.volumes.append(gcs_volume)
-        self.runnable.container.volumes.append(
-          volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
+# Use commmand line flags first, then config file, to set
+# gcs bucket mounts
+    if(FLAGS.volumes):
+      self.volumes_list = []
+      for volume_pair in FLAGS.volumes:
+        (bucket_name, gcs_path) = volume_pair.split(":")
+        self.volumes_list.append({"bucket_name":bucket_name, "gcs_path":gcs_path})
+    else:
+      if "volumes" in self.config:
+        self.volumes_list = self.config["volumes"]
+
+    gcs_volume = batch_v1.Volume()
+    for volume in self.volumes_list:
+      gcs_bucket = batch_v1.GCS()
+      gcs_bucket.remote_path = volume["bucket_name"]
+      gcs_volume.mount_path = volume["gcs_path"]
+      gcs_volume.gcs = gcs_bucket
+      self.task.volumes.append(gcs_volume)
+      self.runnable.container.volumes.append(
+        volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
 
   # We can specify what resources are requoested by each task.
 
@@ -124,6 +135,7 @@ class CreateJob:
 
     return(self.task)
 
+    
   def create_allocation_policy(self) -> batch_v1.AllocationPolicy:
 
       # Policies are used to define on what kind of virtual machines the tasks will run on.
