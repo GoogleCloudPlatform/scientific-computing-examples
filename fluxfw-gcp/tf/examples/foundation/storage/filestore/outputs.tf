@@ -14,7 +14,8 @@
 
 output "cluster_storage" {
     value = {
-        share = "${resource.google_filestore_instance.instance.networks[0].ip_addresses[0]}:/${var.share_name}",
-        mountpoint = "/${var.share_name}"
+        share_ip   = resource.google_filestore_instance.instance.networks[0].ip_addresses[0],
+        share_name = format("/%s", resource.google_filestore_instance.instance.file_shares[0].name),
+        mountpoint = format("/%s", var.share_name)
     }
 }

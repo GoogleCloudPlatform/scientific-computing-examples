@@ -308,7 +308,12 @@ cat << "CONFIG_HOME_NFS" > /etc/flux/manager/conf.d/04-home-nfs.sh
 nfsmounts=$(curl "http://metadata.google.internal/computeMetadata/v1/instance/attributes/nfs-mounts" -H "Metadata-Flavor: Google")
 
 if [[ "X${nfsmounts}" != "X" ]]; then
-    bash -c "sudo echo $(echo $nfsmounts | jq -r '.share') $(echo $nfsmounts | jq -r '.mountpoint') nfs defaults,hard,intr,_netdev 0 0 >> /etc/fstab"
+    share_ip=$(echo $nfsmounts | jq -r '.share_ip')
+    share_name=$(echo $nfsmounts | jq -r '.share_name')
+    mountpoint=$(echo $nfsmounts | jq -r '.mountpoint')
+
+    bash -c "sudo echo ${share_ip}:${share_name} ${mountpoint} nfs defaults,hard,intr,_netdev 0 0 >> /etc/fstab"
+
     mount -a
 fi
 CONFIG_HOME_NFS
