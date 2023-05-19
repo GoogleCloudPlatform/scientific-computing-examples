@@ -43,16 +43,15 @@ a `-z <zone>` command line argument. The following arguments control which image
 - `-a <arm-machine-type>` creates a Flux Framework compute node image for the ARM64 architecture
 - `-x <x86_64-machine-type>` creates a Flux Framework compute node image for the x86_64 architecture
 - `-m <manager-machine-type>` creates a Flux Framework management node image, must be an x86_64 architecture machine type in this release
+- `-l <x86_64-machine-type>` creates a Flux Framework login node image for the x86_64 architecture
 - `-r <rocky-linux-version>` version of Rocky Linux to use as the basis for image creation
 
 For example, the command
 
 ```bash
-./build-images.sh -z us-central1-a -a t2a-standard-16 -x n2-standard-16 -m e2-standard-8
+./build-images.sh -z us-central1-a -a t2a-standard-16 -x n2-standard-16 -m e2-standard-8 -l e2-standard-8
 ```
 
-will create a management node image using an e2-standard-8 machine type in the us-central1-a zone and compute node
-images for the ARM64 and x86_64 architectures using t2a-standard-16 and n2-standard-16 machine types respectively.
+will create management and login node images using an e2-standard-8 machine type in the us-central1-a zone and compute node images for the ARM64 and x86_64 architectures using t2a-standard-16 and n2-standard-16 machine types respectively.
 
-Note that the `zone` argument only specifies the zone in which the build runs. The images can be used in any region/zone
-in your project where the underlying machine types are available.
+Note that the `zone` argument only specifies the zone in which the build runs. The images can be used in any region/zone in your project where the underlying machine types are available.
