@@ -14,7 +14,7 @@
 
 data "google_compute_image" "fluxfw_login_x86_64_image" {
     project = var.project_id
-    family  = "flux-fw-login-x86-64"
+    family  = var.family
 }
 
 data "google_compute_zones" "available" {

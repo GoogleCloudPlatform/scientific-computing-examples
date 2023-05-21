@@ -17,6 +17,18 @@ variable "cluster_storage" {
     type        = map(string)
 }
 
+variable "compute_arm_family" {
+    description = "The source arm image family prefix to be used by the compute node(s)"
+    type        = string
+    default     = "flux-fw-compute-arm64"
+}
+
+variable "compute_family" {
+    description = "The source image x86 prefix to be used by the compute node(s)"
+    type        = string
+    default     = "flux-fw-compute-x86-64"
+}
+
 variable "compute_node_specs" {
     description = "A list of compute node specifications"
     type = list(object({
@@ -39,6 +51,14 @@ variable "compute_scopes" {
     type        = set(string)
 }
 
+
+variable "login_family" {
+    description = "The source image prefix to be used by the login node"
+    type        = string
+    default     = "flux-fw-login-x86-64"
+}
+
+
 variable "login_node_specs" {
     description = "A list of login node specifications"
     type = list(object({
@@ -56,6 +76,12 @@ variable "login_scopes" {
     description = "The set of access scopes for login node instances"
     default     = [ "cloud-platform" ]
     type = set(string)
+}
+
+variable "manager_family" {
+    description = "The source image prefix to be used by the manager"
+    type        = string
+    default     = "flux-fw-manager"
 }
 
 variable "manager_machine_type" {

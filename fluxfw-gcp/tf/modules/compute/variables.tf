@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+variable "arm_family" {
+    description = "The source arm image family prefix to use"
+    type        = string
+    default     = "flux-fw-compute-arm64"
+}
+
 variable "automatic_restart" {
   type        = bool
   description = "(Optional) Specifies whether the instance should be automatically restarted if it is terminated by Compute Engine (not terminated by a user)."
@@ -28,6 +34,12 @@ variable "compact_placement" {
     description = "(Optional) a boolean which determines whether a set of compute nodes has a compact placement resource policy attached to them."
     type        = bool
     default     = false
+}
+
+variable "family" {
+    description = "The source X86 image family prefix to use"
+    type        = string
+    default     = "flux-fw-compute-x86-64"
 }
 
 variable "gpu" {

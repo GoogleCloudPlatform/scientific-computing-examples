@@ -17,6 +17,12 @@ variable "compute_node_specs" {
     type        = string
 }
 
+variable "family" {
+    description = "The source image family prefix to use"
+    type        = string
+    default     = "flux-fw-manager"
+}
+
 variable "login_node_specs" {
     description = "A JSON encoded list of maps each with the keys: 'name_prefix', 'machin_arch', 'machine_type', and 'instances' which describe the login node instances to create"
     type        = string
