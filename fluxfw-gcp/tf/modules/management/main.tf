@@ -14,7 +14,7 @@
 
 data "google_compute_image" "fluxfw_manager_image" {
     project = var.project_id
-    family  = "flux-fw-manager"
+    family  = var.family
 }
 
 module "flux_manager_instance_template" {

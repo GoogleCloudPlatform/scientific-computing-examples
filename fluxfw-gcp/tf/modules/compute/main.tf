@@ -14,12 +14,12 @@
 
 data "google_compute_image" "fluxfw_compute_arm64_image" {
     project = var.project_id
-    family  = "flux-fw-compute-arm64"
+    family  = var.arm_family
 }
 
 data "google_compute_image" "fluxfw_compute_x86_64_image" {
     project = var.project_id
-    family  = "flux-fw-compute-x86-64"
+    family  = var.family
 }
 
 data "google_compute_zones" "available" {

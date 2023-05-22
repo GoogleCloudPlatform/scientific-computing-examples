@@ -18,6 +18,12 @@ variable "boot_script" {
     default     = null
 }
 
+variable "family" {
+    description = "The source image family prefix to use"
+    type        = string
+    default     = "flux-fw-login-x86-64"
+}
+
 variable "machine_arch" {
     description = "The instruction set architecture, ARM64 or x86_64, used by the login node"
     type        = string
