@@ -30,7 +30,7 @@ module "flux_manager_instance_template" {
     source_image         = data.google_compute_image.fluxfw_manager_image.self_link
     source_image_project = data.google_compute_image.fluxfw_manager_image.project
     metadata             = {
-        "enable-oslogin"     : "TRUE",
+        "enable-oslogin"     : var.enable_os_login,
         "VmDnsSetting"       : "GlobalDefault"
         "nfs-mounts"         : jsonencode(var.nfs_mounts)
         "compute-node-specs" : var.compute_node_specs

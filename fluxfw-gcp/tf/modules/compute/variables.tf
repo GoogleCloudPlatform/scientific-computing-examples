@@ -36,6 +36,12 @@ variable "compact_placement" {
     default     = false
 }
 
+variable "enable_os_login" {
+    description = "Use OS Login to determine username for uid/gid"
+    type        = string
+    default     = "TRUE"
+}
+
 variable "family" {
     description = "The source X86 image family prefix to use"
     type        = string

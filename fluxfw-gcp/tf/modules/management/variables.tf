@@ -17,6 +17,12 @@ variable "compute_node_specs" {
     type        = string
 }
 
+variable "enable_os_login" {
+    description = "Use OS Login to determine username for uid/gid"
+    type        = string
+    default     = "TRUE"
+}
+
 variable "family" {
     description = "The source image family prefix to use"
     type        = string

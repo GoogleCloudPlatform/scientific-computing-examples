@@ -29,18 +29,26 @@ variable "compute_family" {
     default     = "flux-fw-compute-x86-64"
 }
 
+# This is directed to the manager, which doesn't have a spec block
+variable "enable_os_login" {
+    description = "Use OS Login to determine username for uid/gid"
+    type        = string
+    default     = "TRUE"
+}
+
 variable "compute_node_specs" {
     description = "A list of compute node specifications"
     type = list(object({
-       name_prefix  = string
-       machine_arch = string
-       machine_type = string
-       gpu_type     = string
-       gpu_count    = number
-       compact      = bool
-       instances    = number
-       properties   = set(string)
-       boot_script  = string
+       name_prefix     = string
+       machine_arch    = string
+       machine_type    = string
+       gpu_type        = string
+       gpu_count       = number
+       compact         = bool
+       instances       = number
+       properties      = set(string)
+       boot_script     = string
+       enable_os_login = string
     }))
     default = []
 }
@@ -62,12 +70,13 @@ variable "login_family" {
 variable "login_node_specs" {
     description = "A list of login node specifications"
     type = list(object({
-       name_prefix  = string
-       machine_arch = string
-       machine_type = string
-       instances    = number
-       properties   = set(string)
-       boot_script  = string
+       name_prefix     = string
+       machine_arch    = string
+       machine_type    = string
+       instances       = number
+       properties      = set(string)
+       boot_script     = string
+       enable_os_login = string
     }))
     default = []
 }

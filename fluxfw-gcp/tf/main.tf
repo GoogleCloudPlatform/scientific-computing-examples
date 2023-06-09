@@ -15,6 +15,7 @@
 module "management_node" {
     source             = "./modules/management"
     name_prefix        = var.manager_name_prefix
+    enable_os_login    = var.enable_os_login
     family             = var.manager_family  
     
     project_id         = var.project_id
@@ -45,6 +46,7 @@ module "login_nodes" {
     region          = var.region
 
     name_prefix     = each.value.name_prefix
+    enable_os_login = var.enable_os_login
     family          = var.login_family
 
     subnetwork      = var.subnetwork
@@ -73,6 +75,7 @@ module "compute_nodes" {
     region            = var.region
 
     family            = var.compute_family
+    enable_os_login   = var.enable_os_login
     arm_family        = var.compute_arm_family
     
     name_prefix       = each.value.name_prefix

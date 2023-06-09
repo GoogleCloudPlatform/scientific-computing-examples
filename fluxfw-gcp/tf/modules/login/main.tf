@@ -45,7 +45,7 @@ module "flux_login_instance_template" {
     source_image_project = local.login_images["${var.machine_arch}"].project
     metadata             = { 
         "boot-script"    : var.boot_script
-        "enable-oslogin" : "TRUE",
+        "enable-oslogin" : var.enable_os_login,
         "flux-manager"   : "${var.manager}",
         "VmDnsSetting"   : "GlobalDefault",
         "nfs-mounts"     : jsonencode(var.nfs_mounts),

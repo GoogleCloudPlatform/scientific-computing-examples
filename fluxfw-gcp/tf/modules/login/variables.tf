@@ -24,6 +24,12 @@ variable "family" {
     default     = "flux-fw-login-x86-64"
 }
 
+variable "enable_os_login" {
+    description = "Use OS Login to determine username for uid/gid"
+    type        = string
+    default     = "TRUE"
+}
+
 variable "machine_arch" {
     description = "The instruction set architecture, ARM64 or x86_64, used by the login node"
     type        = string

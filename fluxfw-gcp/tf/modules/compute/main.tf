@@ -72,7 +72,7 @@ module "flux_compute_instance_template" {
     metadata             = { 
         "boot-script"      : var.boot_script
         "login-node-specs" : var.login_node_specs
-        "enable-oslogin"   : "TRUE",
+        "enable-oslogin"   : var.enable_os_login,
         "flux-manager"     : "${var.manager}",
         "VmDnsSetting"     : "GlobalDefault",
         "nfs-mounts"       : jsonencode(var.nfs_mounts),
