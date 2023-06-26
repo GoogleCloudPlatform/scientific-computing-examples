@@ -44,6 +44,16 @@ resource "google_project_service" "vertex_ai_notebooks_api" {
   # }
 }
 
+
+
+resource "google_project_service" "resourcemanager" {
+  service = "cloudresourcemanager.googleapis.com"
+  disable_dependent_services = false
+  project = data.google_project.project.project_id
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
+}
 resource "google_project_service" "bigquery" {
   service = "bigquery.googleapis.com"
   disable_dependent_services = false
