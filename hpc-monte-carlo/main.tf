@@ -17,6 +17,9 @@ provider "google" {
   zone   = var.zone
   project = var.project
 }
+locals {
+  sa_email = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
 
 resource "google_notebooks_instance" "instance" {
   name = "${var.name_prefix}-notebooks"
@@ -32,6 +35,35 @@ resource "google_notebooks_instance" "instance" {
   }
 }
 
+resource "google_project_service" "vertex_ai_notebooks_api" {
+  service = "notebooks.googleapis.com"
+  disable_dependent_services = false
+  project = data.google_project.project.project_id
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
+}
+
+resource "google_project_service" "bigquery" {
+  service = "bigquery.googleapis.com"
+  disable_dependent_services = false
+  project = data.google_project.project.project_id
+  # lifecycle {
+  #  prevent_destroy = true
+  # }
+}
+
+resource "google_project_iam_member" "data_editor" {
+  project = data.google_project.project.project_id
+  role = "roles/bigquery.dataEditor"
+  member = "user:${var.user_email}"
+}
+
+resource "google_project_iam_member" "metadata_viewer" {
+  project = data.google_project.project.project_id
+  role = "roles/bigquery.metadataViewer"
+  member = "user:${var.user_email}"
+}
 
 resource "google_pubsub_topic" "example" {
   name = "${var.name_prefix}_topic_${var.name_suffix}"
@@ -155,7 +187,6 @@ resource "google_bigquery_table" "pbsb" {
 ]
 EOF
 }
-
 
 data "template_file" "batch_yaml" {
   template = "${file("${path.module}/batch.tpl.yaml")}"

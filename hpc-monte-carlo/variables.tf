@@ -12,6 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+variable "user_email" {
+  description = "email of the user"
+  type        = string
+  default = "my_email@user.com"
+}
+
 variable "project" {
   description = "Cloud zone for resources"
   type        = string
