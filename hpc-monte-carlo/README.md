@@ -12,6 +12,9 @@ https://cloud.google.com/resource-manager/docs/creating-managing-projects
 
 ## Basic getting started
 
+### enable cloud resource manager
+
+
 1. Clone the repo
   > `git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git`
 1. Change to the directory: 
