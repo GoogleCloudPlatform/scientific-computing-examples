@@ -2,6 +2,7 @@
     munge-devel \
     hwloc \
     hwloc-devel \
+    systemd-devel \
     lua \
     lua-devel \
     lua-posix \
