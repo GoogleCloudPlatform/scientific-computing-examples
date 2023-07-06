@@ -20,11 +20,35 @@ provider "google" {
 locals {
   sa_email = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
+resource "google_compute_network" "vpc_network" {
+  name = "${var.name_prefix}-network"
+}
+variable "gcp_service_list" {
+  description ="The list of apis necessary for the project"
+  type = list(string)
+  default = [
+    "cloudresourcemanager.googleapis.com",
+    "batch.googleapis.com",
+    "serviceusage.googleapis.com"
+  ]
+}
+
+resource "google_project_service" "gcp_services" {
+  for_each = toset(var.gcp_service_list)
+  project = "${var.project}"
+  service = each.key
+
+}
 
 resource "google_notebooks_instance" "instance" {
   name = "${var.name_prefix}-notebooks"
-  location = "us-central1-a"
+  location = "${var.zone}"
   machine_type = "e2-medium"
+  network = google_compute_network.vpc_network.self_link
+  no_public_ip = true
+  shielded_instance_config  {
+    enable_secure_boot = true
+  }
   metadata = {
     proxy-mode = "service_account"
     terraform  = "true"
@@ -37,7 +61,7 @@ resource "google_notebooks_instance" "instance" {
 
 resource "google_project_service" "vertex_ai_notebooks_api" {
   service = "notebooks.googleapis.com"
-  disable_dependent_services = false
+  disable_dependent_services = true
   project = data.google_project.project.project_id
   # lifecycle {
   #  prevent_destroy = true
@@ -46,7 +70,7 @@ resource "google_project_service" "vertex_ai_notebooks_api" {
 
 resource "google_project_service" "bigquery" {
   service = "bigquery.googleapis.com"
-  disable_dependent_services = false
+  disable_dependent_services = true
   project = data.google_project.project.project_id
   # lifecycle {
   #  prevent_destroy = true
@@ -238,6 +262,8 @@ resource "google_storage_bucket" "fsi_bucket" {
   name          = "${var.name_prefix}_bucket_${var.name_suffix}"
   location      = "US"
   force_destroy = true
+  uniform_bucket_level_access = true
+
 
   public_access_prevention = "enforced"
   provisioner "local-exec" {
