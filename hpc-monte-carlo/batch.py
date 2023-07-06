@@ -147,6 +147,8 @@ class CreateJob:
       self.instance = batch_v1.AllocationPolicy.InstancePolicyOrTemplate()
       self.instance_policy = batch_v1.AllocationPolicy.InstancePolicy()
       self.accelerator = batch_v1.AllocationPolicy.Accelerator()
+      self.network_policy = batch_v1.AllocationPolicy.NetworkPolicy()
+      self.network = batch_v1.AllocationPolicy.NetworkInterface()
 
       if "template_link" in self.config:
         self.instance.instance_template = self.config["template_link"]
@@ -166,8 +168,12 @@ class CreateJob:
         raise(Error("No instance policy defined."))
 
       location_policy = batch_v1.AllocationPolicy.LocationPolicy()
-        
       self.allocation_policy.instances = [self.instance]
+
+      if "network" in self.config:
+        self.network.network = f'projects/{ self.config["project_id"] }/global/networks/{self.config["network"]}'
+        self.network_policy.network_interfaces = [self.network]
+        self.allocation_policy.network = self.network_policy
 
       if "allowed_locations" in self.config:
         location_policy.allowed_locations = self.config["allowed_locations"]
