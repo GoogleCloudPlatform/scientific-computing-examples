@@ -44,7 +44,7 @@ flags.DEFINE_boolean("debug", False, "If true, print debug info.")
 # Required flag.
 flags.mark_flag_as_required("config_file")
 
-class CreateJob:
+class Jobs:
 
   def __init__(self, job_name: str, config) -> None:
     self.config = config
@@ -111,19 +111,23 @@ class CreateJob:
       for volume_pair in FLAGS.volumes:
         (bucket_name, gcs_path) = volume_pair.split(":")
         self.volumes_list.append({"bucket_name":bucket_name, "gcs_path":gcs_path})
+    elif "volumes" in self.config:
+      self.volumes_list = self.config["volumes"]
     else:
-      if "volumes" in self.config:
-        self.volumes_list = self.config["volumes"]
+      self.volumes_list = None
+      
 
-    gcs_volume = batch_v1.Volume()
-    for volume in self.volumes_list:
-      gcs_bucket = batch_v1.GCS()
-      gcs_bucket.remote_path = volume["bucket_name"]
-      gcs_volume.mount_path = volume["gcs_path"]
-      gcs_volume.gcs = gcs_bucket
-      self.task.volumes.append(gcs_volume)
-      self.runnable.container.volumes.append(
-        volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
+    if(not self.volumes_list is None):
+      gcs_volume = batch_v1.Volume()
+      for volume in self.volumes_list:
+        gcs_bucket = batch_v1.GCS()
+        gcs_bucket.remote_path = volume["bucket_name"]
+        gcs_volume.mount_path = volume["gcs_path"]
+        gcs_volume.gcs = gcs_bucket
+        self.task.volumes.append(gcs_volume)
+        if "container" in self.config:
+          self.runnable.container.volumes.append(
+            volume["gcs_path"]+":"+volume["gcs_path"]+":rw")
 
   # We can specify what resources are requoested by each task.
 
@@ -146,6 +150,8 @@ class CreateJob:
       self.instance = batch_v1.AllocationPolicy.InstancePolicyOrTemplate()
       self.instance_policy = batch_v1.AllocationPolicy.InstancePolicy()
       self.accelerator = batch_v1.AllocationPolicy.Accelerator()
+      self.network_policy = batch_v1.AllocationPolicy.NetworkPolicy()
+      self.network = batch_v1.AllocationPolicy.NetworkInterface()
 
       if "template_link" in self.config:
         self.instance.instance_template = self.config["template_link"]
@@ -165,8 +171,16 @@ class CreateJob:
         raise(Error("No instance policy defined."))
 
       location_policy = batch_v1.AllocationPolicy.LocationPolicy()
-        
       self.allocation_policy.instances = [self.instance]
+
+      if "network" in self.config:
+        if "no_external_ip_address" in self.config:
+          self.network.no_external_ip_address = self.config["no_external_ip_address"]
+          self.network.subnetwork = f'regions/{self.config["region"] }/subnetworks/{self.config["subnetwork"]}'
+          
+        self.network.network = f'projects/{ self.project_id }/global/networks/{self.config["network"]}'
+        self.network_policy.network_interfaces = [self.network]
+        self.allocation_policy.network = self.network_policy
 
       if "allowed_locations" in self.config:
         location_policy.allowed_locations = self.config["allowed_locations"]
@@ -214,43 +228,37 @@ class CreateJob:
       create_request.job_id = self.job_name
       
       # The job's parent is the region in which the job will run
-      create_request.parent = f'projects/{ self.config["project_id"] }/locations/{self.config["region"]}'
+      create_request.parent = f'projects/{ self.project_id }/locations/{self.config["region"]}'
 
       return(create_request)
   # [END batch_create_job_with_template]
 
+  def delete_job(self, delete_job) -> Operation:
+      """
+      Triggers the deletion of a Job.
 
-def delete_job(project_id: str, region: str, job_name: str) -> Operation:
-    """
-    Triggers the deletion of a Job.
+      Args:
+        delete_job: name of the job to delete
 
-    Args:
-        project_id: project ID or project number of the Cloud project you want to use.
-        region: name of the region hosts the job.
-        job_name: the name of the job that you want to delete.
+      Returns:
+          An operation object related to the deletion. You can call `.result()`
+          on it to wait for its completion.
+      """
+      client = batch_v1.BatchServiceClient()
 
-    Returns:
-        An operation object related to the deletion. You can call `.result()`
-        on it to wait for its completion.
-    """
-    client = batch_v1.BatchServiceClient()
+      return client.delete_job(name=f"projects/{self.project_id}/locations/{self.config['region']}/jobs/{delete_job}")
 
-    return client.delete_job(name=f"projects/{project_id}/locations/{region}/jobs/{job_name}")
+  def list_jobs(self) -> Iterable[batch_v1.Job]:
+      """
+      Get a list of all jobs defined in given region.
 
-def list_jobs(project_id: str, region: str) -> Iterable[batch_v1.Job]:
-    """
-    Get a list of all jobs defined in given region.
+      Returns:
+          An iterable collection of Job object.
+      """
+      client = batch_v1.BatchServiceClient()
 
-    Args:
-        project_id: project ID or project number of the Cloud project you want to use.
-        region: name of the region hosting the jobs.
+      return client.list_jobs(parent=f"projects/{self.project_id}/locations/{self.config['region']}")
 
-    Returns:
-        An iterable collection of Job object.
-    """
-    client = batch_v1.BatchServiceClient()
-
-    return client.list_jobs(parent=f"projects/{project_id}/locations/{region}")
 
 
 def parse_yaml_file(file_name: str):
@@ -263,9 +271,16 @@ def main(argv):
 
   config = parse_yaml_file(FLAGS.config_file)
 
+
+  jobid = config["job_prefix"] + uuid.uuid4().hex[:8]
+  client = batch_v1.BatchServiceClient()
+
+  jobs = Jobs(jobid, config)
+  create_request = jobs.create_job_request()
+
   if(FLAGS.delete_job):
     print("Deleting job")
-    deleted_job = delete_job(config["project_id"], config["region"], FLAGS.delete_job)
+    deleted_job = jobs.delete_job(FLAGS.delete_job)
     print(deleted_job.result)
 
     exit()
@@ -273,20 +288,12 @@ def main(argv):
     
   if(FLAGS.list_jobs):
     print("Listing jobs")
-    jobs = list_jobs(config["project_id"], config["region"])
+    jobs = jobs.list_jobs()
 
     for job in jobs:
       print(job.name,"\t",job.status.state)
 
     exit()
-
-    
-
-  jobid = config["job_prefix"] + uuid.uuid4().hex[:8]
-  client = batch_v1.BatchServiceClient()
-
-  create = CreateJob(jobid, config)
-  create_request = create.create_job_request()
 
   if FLAGS.debug:
     print(config)

@@ -14,10 +14,10 @@
 project_id: "project_id"
 region: "us-central1"
 
-job_prefix: 'hello-'
+job_prefix: 'fuse-'
 machine_type: "n2-standard-2"
-bucket_name:  "demo-jrt"
-gcs_path:  "/mnt/disks/deepvariant"
+volumes: 
+  - {bucket_name:  "wdc-hpc-demo1", gcs_path:  "/mnt/disks/local"}
 
 task_count: 4 #optional
 parallelism: 2 #optional
@@ -34,5 +34,5 @@ script_text: |
   #!/bin/bash 
 
   echo "Hello World"
-  ls /mnt/disks/deepvariant
+  ls /mnt/disks/local
   env

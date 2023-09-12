@@ -171,6 +171,10 @@ class CreateJob:
       self.allocation_policy.instances = [self.instance]
 
       if "network" in self.config:
+        if "no_external_ip_address" in self.config:
+          self.network.no_external_ip_address = self.config["no_external_ip_address"]
+          self.network.subnetwork = f'regions/{self.config["region"] }/subnetworks/{self.config["subnetwork"]}'
+          
         self.network.network = f'projects/{ self.config["project_id"] }/global/networks/{self.config["network"]}'
         self.network_policy.network_interfaces = [self.network]
         self.allocation_policy.network = self.network_policy
@@ -284,12 +288,6 @@ def main(argv):
 
     for job in jobs:
       print(job.name,"\t",dir(job.status.state))
-      print(job.name,"\t",job.status.state.SCHEDULED)
-      print(job.name,"\t",job.status.state.SUCCEEDED)
-
-      print(job.name,"\t",type(job.status.state))
-      print("\n\n\n")
-      #print(job)
       exit()
 
     exit()

@@ -18,12 +18,8 @@ job_prefix: 'a2-'
 #template_link: "projects/fluent-hpc-demo1/global/instanceTemplates/fluent-template3"
 machine_type: "a2-highgpu-1g"
 
-nfs_server: "10.243.163.34"
-#nfs_path: "/mnt/nfs1"
-nfs_remote_path: "/nfsshare"
-
-bucket_name:  "fluent-hpc-demo1-bucket"
-#gcs_path: "/mnt/gcs1" #optional
+volumes:
+  - {bucket_name: "wdc-hpc-demo1", gcs_path: "/mnt/disks/wdc"}
 
 task_count: 4 #optional
 parallelism: 2 #optional
@@ -38,7 +34,7 @@ memory_mib: 102400 #optional
 
 
 labels: 
-  env: "fluent2"
+  env: "wdc"
   type: "gpu-a100"
 
 script_text: | 

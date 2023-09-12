@@ -11,32 +11,31 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "wdc-hpc-demo1"
+project_id: "gromacs-demo-jrt"
 region: "us-central1"
 
-job_prefix: 'fftw-'
-machine_type: "c2-standard-4"
-
+job_prefix: 'fsi-'
+machine_type: "n2-standard-2"
 volumes:
-  - {bucket_name: "hpc-2-jrt", gcs_path:  "/mnt/disks/hpc"}
+  - {bucket_name:  "rosstest_bucket_montecarlo", gcs_path:  "/mnt/disks/fsi"}
 
-task_count: 16 #optional
-parallelism: 16 #optional
+
+container: 
+  image_uri: "python"
+  entry_point: "/bin/bash"
+  commands: ["/mnt/disks/fsi/iteration.sh", "$BATCH_TASK_INDEX"]
+
+network: "rosstest-network"
+subnetwork: "rosstest-network"
+no_external_ip_address: true
+
+task_count: 8 #optional
+parallelism: 4 #optional
 task_count_per_node: 2 #optional
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
 
 labels: 
-  env: "hpc"
-  type: "fftw"
-
-script_text: | 
-  #!/bin/bash 
-  
-  if test ! -f "WP_time"; then  
-    cp -n /mnt/disks/hpc/WP_time . || echo "File already copied."
-  fi
-
-  mkdir  -p /mnt/disks/hpc/${JOB_ID}
-  echo "Starting ./WP_time ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}" > /mnt/disks/hpc/${JOB_ID}/${BATCH_TASK_INDEX}.txt 
-  ./WP_time >> /mnt/disks/hpc/${JOB_ID}/${BATCH_TASK_INDEX}.txt 
-
- 
+  env: "monte"
+  type: "carlo"

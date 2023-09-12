@@ -17,11 +17,11 @@ region: "us-central1"
 volumes:
   - {bucket_name: "hpc-2-jrt", gcs_path:  "/mnt/disks/work"}
 
-job_prefix: 'cuquantum-noise-'
+job_prefix: 'batchcublas-'
 
-task_count: 100 #optional
-parallelism: 10 #optional
-task_count_per_node: 2 #optional
+task_count: 1 #optional
+parallelism: 1 #optional
+task_count_per_node: 1 #optional
 
 machine_type: "n1-standard-2"
 accelerator:
@@ -32,9 +32,11 @@ cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
 container: 
-  image_uri: "nvcr.io/nvidia/cuquantum-appliance:22.07-cirq" 
+  image_uri: "nvidia/cuda:12.2.0-devel-ubuntu20.04" 
   entry_point: "/bin/bash"
-  commands: ["-c", "mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; python3 /mnt/disks/work/cuquantum-noise.py >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt"]
+  commands: 
+    - -c
+    - cp -n /mnt/disks/work/batchCUBLAS . ; mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; ./batchCUBLAS -n 1020 -m 1028 -k 1028 >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt
 
 labels: 
   env: "container"

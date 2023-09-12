@@ -11,26 +11,27 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "fluent-hpc-demo1"
+project_id: "project_id"
 region: "us-central1"
 
 job_prefix: 'build-'
 #template_link: "projects/fluent-hpc-demo1/global/instanceTemplates/fluent-template3"
 machine_type: "n1-standard-4"
 
-nfs_server: "10.243.163.34"
+#nfs_server: "10.243.163.34"
 #nfs_path: "/mnt/nfs1"
-nfs_remote_path: "/nfsshare"
+#nfs_remote_path: "/nfsshare"
 
-bucket_name:  "fluent-hpc-demo1-bucket"
-#gcs_path: "/mnt/gcs1" #optional
 
-task_count: 4 #optional
-parallelism: 2 #optional
+volumes:
+  - {bucket_name: "hpc-2-jrt", gcs_path:  "/mnt/disks/work"}
+
+task_count: 1 #optional
+parallelism: 1 #optional
 task_count_per_node: 1 #optional
 
 accelerator:
- type: "nvidia-tesla-v100"
+ type: "nvidia-tesla-t4"
  count: 1
 install_gpu_drivers: y
 cpu_milli: 1000 #optional
@@ -38,13 +39,16 @@ memory_mib: 102400 #optional
 
 
 labels: 
-  env: "fluent2"
-  type: "gpu-v100"
+  env: "build"
+  type: ""
 
 # No comments allowed in script text. 
 
 script_text: | 
   #!/bin/bash 
+  mkdir /mnt/disks/work/cublas
+  cd /mnt/disks/work/cublas
+
   git clone https://github.com/NVIDIA/cuda-samples.git
   cd cuda-samples/Samples/4_CUDA_Libraries/batchCUBLAS/
   make
