@@ -87,6 +87,7 @@ gcloud projects add-iam-policy-binding <my_project> \
    --role=roles/artifactregistry.admin
 ```
 > You may need to update your `gcloud` configuration, for example: `gcloud config set project <my_project>`
+
 > You may also need to run a `docker login` command like:
 ```
 gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://<my_region>-docker.pkg.dev

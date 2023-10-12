@@ -10,10 +10,8 @@ This allows a simplified deployment command.
 ```
 python3 batch.py --config_file hello_world.yaml  --create_job
 ```
-##
-For more details about the PyBatch code, look at this [API Documentation]()
 ## Install PyBatch
-Use `git` to clone this repo, then from the directory:
+Use `git` to clone this repo to your home directory, then from the directory:
 ```
 cd scientific-computing-examples/python-batch
 ```
