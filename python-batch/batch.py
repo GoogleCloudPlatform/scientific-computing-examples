@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 """
-Tools to run batch API
+Tools to run Google Cloud Batch API
 """
 
 __author__ = "J Ross Thomson drj@"
@@ -27,13 +27,22 @@ import yaml
 
 from absl import app
 from absl import flags
-from google.cloud import batch_v1
 from google.api_core.operation import Operation
+from google.cloud import batch_v1
+from google.cloud import pubsub_v1
+
 from typing import Iterable
 from yaml.loader import SafeLoader
 
+"""
+We define multiple command line flags:
+"""
+
 FLAGS = flags.FLAGS
+
 flags.DEFINE_string("config_file", None, "Config file in YAML")
+flags.DEFINE_boolean("pubsub", False , "Run Pubsub Topic and Subscriber")
+flags.DEFINE_string("previous_job_id", None, "For Pubsub restart, specifies topic to read from")
 flags.DEFINE_string("project_id", None, "Google Cloud Project ID, not name")
 flags.DEFINE_spaceseplist("volumes", None, "List of GCS paths to mount. Example, \"bucket_name1:mountpath1 bucket_name2:mountpath2\"" )
 flags.DEFINE_boolean("create_job", False, "Creates job, otherwise just prints config.")
@@ -44,11 +53,138 @@ flags.DEFINE_boolean("debug", False, "If true, print debug info.")
 # Required flag.
 flags.mark_flag_as_required("config_file")
 
+class PubSub:
+  def __init__(self, job_id: str, config) -> None:
+      """Class to create Pub/Sub related cloud resources.
+
+      Used to create a topic and a subscription. 
+      Topic name identical to job_id and subscription is `sub-` + job_id.
+
+      Args: 
+          config: 
+            Contains the structure defined by the Config.yaml file. 
+          job_id: 
+            The name of the job, which becomes the name of the pubsub topic.
+
+      Raises:
+        None
+
+      `project_id` is set  based on config, env, or argv in that order.
+      """
+      self.config = config
+      self.job_id = job_id
+
+      if self.config["project_id"]: 
+        self.project_id = self.config["project_id"] 
+      if os.environ.get('GOOGLE_CLOUD_PROJECT'): 
+        self.project_id  = os.environ.get('GOOGLE_CLOUD_PROJECT') 
+      if FLAGS.project_id:
+        self.project_id = FLAGS.project_id
+
+      publisher_options = pubsub_v1.types.PublisherOptions(enable_message_ordering=True)
+
+      """
+      Sending messages to the same region ensures they are received in order
+      even when multiple publishers are used.
+      """
+
+      client_options = {"api_endpoint": f'{self.config["region"]}-pubsub.googleapis.com:443'}
+      self.publisher = pubsub_v1.PublisherClient(
+          publisher_options=publisher_options, client_options=client_options
+      )
+
+  def create_topic(self):
+    """
+    Creates a topic with name the same as Job.
+
+    The `topic_path` method creates a fully qualified identifier
+    in the form `projects/{project_id}/topics/{topic_id}`
+
+    Args:
+      None
+
+    Returns:
+      None
+    """
+    self.topic_path = self.publisher.topic_path(self.project_id, self.job_id)
+    self.topic = self.publisher.create_topic(request={"name": self.topic_path})
+    print(f"Created topic {self.topic_path}\n")
+
+  def create_subscription(self, previous_job_id=None):
+    """
+    Creates a subscription with name the same as `sub-` + Job.
+
+    Subscription will be ordered and have exactly one time delivery.
+
+    Args:
+      previous_job_id: if specified, the subscription is connected to a previous pubsub subscription.
+
+    Returns:
+      None
+    """
+
+    self.subscriber = pubsub_v1.SubscriberClient()
+    self.subscription_id = "sub-" + self.job_id
+
+    if previous_job_id:
+      self.topic_path = self.publisher.topic_path(self.project_id, previous_job_id)
+    else:
+      self.topic_path = self.publisher.topic_path(self.project_id, self.job_id)
+
+    self.subscription_path = self.subscriber.subscription_path(self.project_id, self.subscription_id)
+
+    with self.subscriber:
+      self.subscription = self.subscriber.create_subscription(
+        request={
+          "name": self.subscription_path, 
+          "topic": self.topic_path,
+          "enable_message_ordering": True,
+          "enable_exactly_once_delivery": True,
+        }
+      )
+    print(f"Created subscription {self.subscription_path}\n")
+    
+
+  def publish_fifo_ids(self):
+    """
+    Publish integer ID messages to the pubsub topic.
+
+    Simple queue create via the Pubsub Topic to create queue. 
+    If the queue is not fully pulled, the project can restart with the same queue.
+    Picking up where it left off.
+
+    Args:
+      None
+
+    Returns:
+      None
+    """
+    self.order_key = "fifo"
+    for i in range(0, self.config["task_count"] ):
+        # Data must be a bytestring
+        data = str(i).encode("utf-8")
+        # When you publish a message, the client returns a future.
+        future = self.publisher.publish(self.topic_path, data=data, ordering_key=self.order_key)
+        print(f'Future: {future.result()}, Message: {data}')
+
+
+    
+
 class Jobs:
 
-  def __init__(self, job_name: str, config) -> None:
+  def __init__(self, job_id: str, config) -> None:
+    """
+    Class to create all cloud resources for Batch Jobs
+
+    Args:
+      job_id: an arbitrary string to name the job.
+      config: data structure from YAML to represent everything in the config file.
+
+    Returns:
+      None
+    """
     self.config = config
-    self.job_name = job_name
+    self.job_id = job_id
     
     #set  "project_id"  based on config, env, or argv in that order.
   
@@ -59,14 +195,11 @@ class Jobs:
     if FLAGS.project_id:
       self.project_id = FLAGS.project_id
 
-  
-      
-    
-  def create_runnable(self) -> batch_v1.Runnable:
+  def _create_runnable(self) -> batch_v1.Runnable:
 
     self.runnable = batch_v1.Runnable()
     self.runnable.environment = batch_v1.Environment()
-    self.runnable.environment = {"variables":{"JOB_ID": self.job_name}}
+    self.runnable.environment = {"variables":{"JOB_ID": self.job_id}}
 
     if "container" in self.config:
       self.runnable.container = batch_v1.Runnable.Container()
@@ -84,7 +217,13 @@ class Jobs:
     return(self.runnable)
 
     
-  def create_task(self) -> batch_v1.TaskSpec:
+  def _create_task(self) -> batch_v1.TaskSpec:
+    """
+    _summary_
+
+    :return: _description_
+    :rtype: batch_v1.TaskSpec
+    """
     self.task = batch_v1.TaskSpec()
     self.task.max_retry_count = 2
     self.task.max_run_duration = "604800s"
@@ -140,7 +279,7 @@ class Jobs:
     return(self.task)
 
     
-  def create_allocation_policy(self) -> batch_v1.AllocationPolicy:
+  def _create_allocation_policy(self) -> batch_v1.AllocationPolicy:
 
       # Policies are used to define on what kind of virtual machines the tasks will run on.
       # In this case, we tell the system to use an instance template that defines all the
@@ -188,9 +327,11 @@ class Jobs:
 
       return(self.allocation_policy)
     
-  def create_taskgroup(self):
-      # Tasks are grouped inside a job using TaskGroups.
-      # Currently, it's possible to have only one task group.
+  def _create_taskgroup(self):
+      """ 
+        Tasks are grouped inside a job using TaskGroups.
+        Currently, it's possible to have only one task group.
+      """
 
       self.group = batch_v1.TaskGroup()
       self.group.task_spec = self.task
@@ -201,8 +342,11 @@ class Jobs:
       return(self.group)
 
   def create_job(self):
+      """Creates job after configuration is completed. 
+      """
+
       self.job = batch_v1.Job()
-      self.job.labels = self.config["labels"] if "labels" in self.config else {"env": "fluent", "type": "fluent"}
+      self.job.labels = self.config["labels"] if "labels" in self.config else {"env": "hpc", "type": "hpc"}
 
       self.job.task_groups = [self.group]
       self.job.allocation_policy = self.allocation_policy
@@ -212,20 +356,20 @@ class Jobs:
       self.job.logs_policy.destination = batch_v1.LogsPolicy.Destination.CLOUD_LOGGING
       return(self.job)
     
-  def create_job_request(self) -> batch_v1.Job:
+  def _create_job_request(self) -> batch_v1.Job:
 
       # Define what will be done as part of the job.
 
-      self.create_runnable()
-      self.create_task()
+      self._create_runnable()
+      self._create_task()
       self.task.runnables = [self.runnable]
-      self.create_taskgroup()
-      self.create_allocation_policy()
+      self._create_taskgroup()
+      self._create_allocation_policy()
       self.create_job()
 
       create_request = batch_v1.CreateJobRequest()
       create_request.job = self.job
-      create_request.job_id = self.job_name
+      create_request.job_id = self.job_id
       
       # The job's parent is the region in which the job will run
       create_request.parent = f'projects/{ self.project_id }/locations/{self.config["region"]}'
@@ -262,12 +406,24 @@ class Jobs:
 
 
 def parse_yaml_file(file_name: str):
+  """
+  Parse the provided YAML file to get the job configuration
+
+  :param file_name: The path to the YAML configuration file
+  :type file_name: str
+  """
   with open(file_name) as f:
     data = yaml.load(f, Loader=SafeLoader)
     return(data)
 
 
 def main(argv):
+  """
+  This is where the Job and Pubsub objects are created and used.
+
+  :param argv: Standard commandline arguments
+  :type argv: _type_
+  """
 
   config = parse_yaml_file(FLAGS.config_file)
 
@@ -276,7 +432,8 @@ def main(argv):
   client = batch_v1.BatchServiceClient()
 
   jobs = Jobs(jobid, config)
-  create_request = jobs.create_job_request()
+  # This does not create the job yet
+  create_request = jobs._create_job_request()
 
   if(FLAGS.delete_job):
     print("Deleting job")
@@ -298,11 +455,24 @@ def main(argv):
   if FLAGS.debug:
     print(config)
 
+    
+    # If pubsub queue is required 
+  if FLAGS.pubsub and not FLAGS.debug:
+    pubsub = PubSub(jobid, config)
+
+    # If there is a previous queue to read from:
+    if FLAGS.previous_job_id:
+      pubsub.create_subscription(previous_job_id=FLAGS.previous_job_id)
+    else:
+      pubsub.create_topic()
+      pubsub.create_subscription()
+      pubsub.publish_fifo_ids()
+
   if FLAGS.create_job:
+    # Create the job
     print(client.create_job(create_request))
   else:
     print(create_request.job)
-    #print(json.dumps(create_request,default=lambda o: o.__dict__, sort_keys=True, indent=4))
     
 
 if __name__ == "__main__":

@@ -14,23 +14,25 @@
 project_id: "project_id"
 region: "us-central1"
 
-job_prefix: 'deepvariant-'
-machine_type: "n1-standard-64"
-volumes:
-  - {bucket_name:  "demo-jrt", gcs_path:  "/mnt/disks/work"}
-  - {bucket_name:  "deepvariant", gcs_path:  "/mnt/disks/deepvariant"}
+job_prefix: 'fuse-'
+machine_type: "n2-standard-2"
+volumes: 
+  - {bucket_name:  "batch-jrt-2", gcs_path:  "/mnt/disks/local"}
 
-container: 
-  image_uri: "gcr.io/deepvariant-docker/deepvariant:1.2.0"
-  #image_uri: "gcr.io/google-containers/busybox"
-  entry_point: "/bin/sh"
-  commands: ["/mnt/disks/work/deepvariant.sh"]
-
-task_count: 1 #optional
-parallelism: 1 #optional
-task_count_per_node: 1 #optional
+task_count: 4 #optional
+parallelism: 2 #optional
+task_count_per_node: 2 #optional
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
 
 
 labels: 
-  env: "deepvariant"
-  type: "1_2_0"
+  env: "hello"
+  type: "world"
+
+script_text: | 
+  #!/bin/bash 
+
+  echo "Hello World"
+  ls /mnt/disks/local
+  env

@@ -15,29 +15,37 @@ project_id: "project_id"
 region: "us-central1"
 
 volumes:
-  - {bucket_name: "demo-jrt", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name: "nextflow-2023", gcs_path:  "/mnt/disks/work"}
 
 task_count: 1 #optional
 parallelism: 1 #optional
 
-job_prefix: 'nvidia-smi-'
-task_count: 1 #optional
-parallelism: 1 #optional
-task_count_per_node: 1 #optional
+job_prefix: 'nvidia-python-'
+task_count: 100 #optional
+parallelism: 20 #optional
+task_count_per_node: 4 #optional
 
-#machine_type: "a2-highgpu-1g"
-machine_type: "n1-standard-2"
+machine_type: "n1-standard-4"
 accelerator:
  type: "nvidia-tesla-t4"
- count: 1
+ count: 2
 install_gpu_drivers: y
 cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
 container: 
-  image_uri: "nvidia/cuda:12.1.1-devel-centos7" 
+  image_uri: "us-central1-docker.pkg.dev/nextflow-2023/cuda/pybatch:latest" 
   entry_point: "/bin/bash"
-  commands: ["-c", "nvidia-smi"]
+  commands: 
+    - -c
+    - "
+       export TOPIC_ID=$BATCH_JOB_ID
+       export PID=$(gcloud config get-value project);
+       export FIFO_ID=$(python3 /tmp/pull_fifo_id.py --project_id=$PID --job_id=$TOPIC_ID);
+       if [ \"$FIFO_ID\" -eq \"\" ]; then   echo FIFO NOT DEFINED;   exit 0; fi;
+       echo Running FIFO_ID:  $FIFO_ID;
+       /tmp/simpleCUFFT_2d_MGPU
+      "
 
 labels: 
   env: "container"

@@ -14,11 +14,10 @@
 project_id: "project_id"
 region: "us-central1"
 
-volumes:
-  - {bucket_name: "hpc-2-jrt", gcs_path:  "/mnt/disks/work"}
+task_count: 1 #optional
+parallelism: 1 #optional
 
-job_prefix: 'batchcublas-'
-
+job_prefix: 'nvidia-smi-'
 task_count: 1 #optional
 parallelism: 1 #optional
 task_count_per_node: 1 #optional
@@ -32,12 +31,10 @@ cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
 container: 
-  image_uri: "nvidia/cuda:12.2.0-devel-ubuntu20.04" 
+  image_uri: "nvidia/cuda:12.1.1-devel-centos7" 
   entry_point: "/bin/bash"
-  commands: 
-    - -c
-    - cp -n /mnt/disks/work/batchCUBLAS . ; mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; ./batchCUBLAS -n 1020 -m 1028 -k 1028 >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt
+  commands: ["-c", "nvidia-smi"]
 
 labels: 
   env: "container"
-  type: "quantum"
+  type: "nvidia"
