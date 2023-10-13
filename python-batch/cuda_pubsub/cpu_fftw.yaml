@@ -11,14 +11,14 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "wdc-hpc-demo1"
+project_id: "<my_project>"
 region: "us-central1"
 
 job_prefix: 'fftw-'
 machine_type: "c2-standard-4"
 
 volumes:
-  - {bucket_name: "hpc-2-jrt", gcs_path:  "/mnt/disks/hpc"}
+  - {bucket_name: "<my_bucket>", gcs_path:  "/mnt/disks/hpc"}
 
 task_count: 16 #optional
 parallelism: 16 #optional

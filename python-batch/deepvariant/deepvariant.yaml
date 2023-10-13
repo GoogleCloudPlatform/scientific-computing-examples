@@ -17,7 +17,7 @@ region: "us-central1"
 job_prefix: 'deepvariant-'
 machine_type: "n1-standard-64"
 volumes:
-  - {bucket_name:  "demo-jrt", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name:  "<my_bucket>", gcs_path:  "/mnt/disks/work"}
   - {bucket_name:  "deepvariant", gcs_path:  "/mnt/disks/deepvariant"}
 
 container: 

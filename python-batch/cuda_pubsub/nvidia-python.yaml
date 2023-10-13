@@ -15,7 +15,7 @@ project_id: "project_id"
 region: "us-central1"
 
 volumes:
-  - {bucket_name: "nextflow-2023", gcs_path:  "/mnt/disks/work"}
+  - {bucket_name: "<my_bucket>", gcs_path:  "/mnt/disks/work"}
 
 task_count: 1 #optional
 parallelism: 1 #optional
@@ -34,7 +34,7 @@ cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
 container: 
-  image_uri: "us-central1-docker.pkg.dev/nextflow-2023/cuda/pybatch:latest" 
+  image_uri: "us-central1-docker.pkg.dev/<my_project>/cuda/pybatch:latest" 
   entry_point: "/bin/bash"
   commands: 
     - -c
