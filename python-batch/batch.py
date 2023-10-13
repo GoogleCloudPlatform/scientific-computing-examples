@@ -24,6 +24,7 @@ import json
 import os
 import uuid
 import yaml
+import sys
 
 from absl import app
 from absl import flags
@@ -108,7 +109,7 @@ class PubSub:
     """
     self.topic_path = self.publisher.topic_path(self.project_id, self.job_id)
     self.topic = self.publisher.create_topic(request={"name": self.topic_path})
-    print(f"Created topic {self.topic_path}\n")
+    print(f"Created topic {self.topic_path}\n", file=sys.stderr)
 
   def create_subscription(self, previous_job_id=None):
     """
@@ -142,7 +143,7 @@ class PubSub:
           "enable_exactly_once_delivery": True,
         }
       )
-    print(f"Created subscription {self.subscription_path}\n")
+    print(f"Created subscription {self.subscription_path}\n", file=sys.stderr)
     
 
   def publish_fifo_ids(self):
@@ -165,7 +166,8 @@ class PubSub:
         data = str(i).encode("utf-8")
         # When you publish a message, the client returns a future.
         future = self.publisher.publish(self.topic_path, data=data, ordering_key=self.order_key)
-        print(f'Future: {future.result()}, Message: {data}')
+        if FLAGS.debug:
+          print(f'Future: {future.result()}, Message: {data}', file=sys.stderr)
 
 
     
@@ -436,24 +438,24 @@ def main(argv):
   create_request = jobs._create_job_request()
 
   if(FLAGS.delete_job):
-    print("Deleting job")
+    print("Deleting job", file=sys.stderr)
     deleted_job = jobs.delete_job(FLAGS.delete_job)
-    print(deleted_job.result)
+    print(deleted_job.result, file=sys.stderr)
 
     exit()
 
     
   if(FLAGS.list_jobs):
-    print("Listing jobs")
+    print("Listing jobs", file=sys.stderr)
     jobs = jobs.list_jobs()
 
     for job in jobs:
-      print(job.name,"\t",job.status.state)
+      print(job.name,"\t",job.status.state, file=sys.stderr)
 
     exit()
 
   if FLAGS.debug:
-    print(config)
+    print(config, file=sys.stderr)
 
     
     # If pubsub queue is required 
@@ -470,9 +472,9 @@ def main(argv):
 
   if FLAGS.create_job:
     # Create the job
-    print(client.create_job(create_request))
+    print(client.create_job(create_request), file=sys.stderr)
   else:
-    print(create_request.job)
+    print(create_request.job, file=sys.stderr)
     
 
 if __name__ == "__main__":

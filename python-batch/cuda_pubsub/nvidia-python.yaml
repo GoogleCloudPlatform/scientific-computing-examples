@@ -21,8 +21,8 @@ task_count: 1 #optional
 parallelism: 1 #optional
 
 job_prefix: 'nvidia-python-'
-task_count: 100 #optional
-parallelism: 20 #optional
+task_count: 12 #optional
+parallelism: 4 #optional
 task_count_per_node: 4 #optional
 
 machine_type: "n1-standard-4"
@@ -42,9 +42,10 @@ container:
        export TOPIC_ID=$BATCH_JOB_ID
        export PID=$(gcloud config get-value project);
        export FIFO_ID=$(python3 /tmp/pull_fifo_id.py --project_id=$PID --job_id=$TOPIC_ID);
-       if [ \"$FIFO_ID\" -eq \"\" ]; then   echo FIFO NOT DEFINED;   exit 0; fi;
+       if [ -z \"$FIFO_ID\" ]; then   echo FIFO NOT DEFINED -- exiting;   exit 0; fi;
        echo Running FIFO_ID:  $FIFO_ID;
-       /tmp/simpleCUFFT_2d_MGPU
+       mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; 
+       /tmp/simpleCUFFT_2d_MGPU >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${FIFO_ID}.txt
       "
 
 labels: 

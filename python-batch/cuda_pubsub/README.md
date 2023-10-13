@@ -32,7 +32,8 @@ In the example YAML file provided here, you can see that the script is used to p
 ## Getting started
 There are a few steps to go through to run this demo. We'll take you through.
 
-##e Step 0, build a CUDA binary
+### Step 0, build a CUDA binary
+
 To make a simple example, you can use the NVIDA cuda-samples library.
 ```
 git clone https://github.com/NVIDIA/cuda-samples.git
@@ -108,16 +109,60 @@ You will have success when you see something like this:
 ```
 latest: digest: sha256:48d85ac65cba4599ab3e2df5ddeabe2521dbc6ab2c2c90eac22e4d1896680513 size: 3895
 ```
-
-
-
-## run the batch job
+## Run the batch job
 A little more work and the job will be ready to run. 
 
-First, update the YAML file to have the correct URI to the docker image:
+Update the `nvidia-python.yaml` config file.
+
+### Create a Cloud Storage Bucket
+It is easiest to get a cloud bucket with the same name as the project you running in:
 ```
-  image_uri: "us-central1-docker.pkg.dev/<my_project>/cuda/pybatch:latest" 
+gcloud storage buckets create gs://$(gcloud config get-value project)
 ```
-where `<my_project>` needs to be updated.
+### Create a Cloud Storage Bucket
+Update the config file volume with the name of the bucket, also the same as your project:
+```
+volumes:
+  - {bucket_name: "<my_project>", gcs_path:  "/mnt/disks/work"}
+```
+
+### Update your project_id and region
+Add correct values to the config file:
+```
+project_id: "project_id"
+region: "us-central1"
+
+```
+### Update Image URI.
+
+First, update the YAML file to have the correct URI to your docker image:
+```
+  image_uri: "<my_region>-docker.pkg.dev/<my_project>/cuda/pybatch:latest" 
+```
+where `<my-region>` `<my_project>` need to be updated.
+
+### Finally Run the job
+The command to run the job is here:
+```
+python3 ../batch.py  --config_file nvidia-python.yaml --create_job --pubsub
+```
+
+### List the jobs
+You can view the jobs status 
+'''
+python3 ../batch.py  --config_file nvidia-python.yaml --create_job --pubsub
+'''
+
+### View jobs in the console
+
+Go to the jobs page, [Console for Batch](https://console.cloud.google.com/batch/jobs), then select the job you just ran. It will have the name `nvidia-python-xxxxxx`.  
+
+
+### View outputs in your Storage bucket
+In this script, output is written to the mounted GCS bucket, which you can [see in the Console], or using the `gsutil` command.
+```
+gsutil ls gs://<my_bucket_name>
+```
+Exploring the bucket you can find your output.
 
 
