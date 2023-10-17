@@ -9,11 +9,15 @@ If you don't have a project, the instructions to create the are here:
 
 https://cloud.google.com/resource-manager/docs/creating-managing-projects
 
+### Enable Notebooks API
+Due to some strange behavior, you may need to manually enable the notebooks apis.
+```
+gcloud services enable notebooks.googleapis.com
+```
 
 ## Basic getting started
 
 ### enable cloud resource manager
-
 
 1. Clone the repo
   > `git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git`
@@ -23,12 +27,11 @@ https://cloud.google.com/resource-manager/docs/creating-managing-projects
   > `terraform init`
 4. Apply the terraform:
   > `terraform apply -var="project=my_project_id"  --auto-approve -var="user_email=my_email@email.com" --auto-approve`
-  where `my_project_id` is the id of your project created and my_email@email.com is the email used to authenticate to Google Cloud.
+  where `my_project_id` is the id of your project created and `my_email@email.com` is the email used to authenticate to Google Cloud.
 5. Activate the local Python environment created by Terraform:
   > `source .fsi/bin/activate`
 6. Run the Python code to start the Batch jobs
-  > `python3 batch.py --config_file batch.yaml --create_job`
-
+  > `python3 ../python-batch/batch.py --config_file batch.yaml --create_job`
 
 You can view the job `Running` in the Google Cloud Console:
   > `https://console.cloud.google.com/batch/jobs`
@@ -49,7 +52,8 @@ When the job is complete it will indicate `Succeeded`. You can then proceed to t
   > Enter `https://github.com/GoogleCloudPlatform/scientific-computing-examples.git`
 
 4. Navigate to the directory with the notebook
-  > `scientific-copmputing -> hpc-monte-carlo`
+  > `scientific-computing -> hpc-monte-carlo`
+
 5. Open the notebook
   > Click on `FSI_MonteCarlo.ipynb`
 

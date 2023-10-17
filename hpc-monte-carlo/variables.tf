@@ -41,5 +41,5 @@ variable "name_suffix" {
 variable "name_prefix" {
   description = "String prepended to most resources created"
   type        = string
-  default = "fsi"
+  default = "myfsi"
 }

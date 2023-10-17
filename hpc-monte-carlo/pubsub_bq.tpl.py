@@ -124,7 +124,8 @@ class PubsubToBiquery:
     data = byte_stream.getvalue()
     byte_stream.flush()
     future = self.publisher_client.publish(self.topic_path, data)
-    print(f"Published message ID: {future.result()}")
+    if(FLAGS.print_raw):
+      print(f"Published message ID: {future.result()}")
 
 
 def main(argv):

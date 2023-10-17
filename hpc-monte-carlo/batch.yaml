@@ -11,23 +11,19 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "gromacs-demo-jrt"
+project_id: "nextflow-2023"
 region: "us-central1"
 
 job_prefix: 'fsi-'
 machine_type: "n2-standard-2"
 volumes:
-  - {bucket_name:  "rosstest_bucket_montecarlo", gcs_path:  "/mnt/disks/fsi"}
+  - {bucket_name:  "myfsi_bucket_montecarlo", gcs_path:  "/mnt/disks/fsi"}
 
 
 container: 
   image_uri: "python"
   entry_point: "/bin/bash"
   commands: ["/mnt/disks/fsi/iteration.sh", "$BATCH_TASK_INDEX"]
-
-network: "rosstest-network"
-subnetwork: "rosstest-network"
-no_external_ip_address: true
 
 task_count: 8 #optional
 parallelism: 4 #optional

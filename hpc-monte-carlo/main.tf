@@ -12,7 +12,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-provider "google" {
+provider "google-beta" {
   region = var.region
   zone   = var.zone
   project = var.project
@@ -20,8 +20,16 @@ provider "google" {
 locals {
   sa_email = "${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
+resource "google_compute_project_metadata" "default" {
+  project = var.project
+  metadata = {
+    bq_table_prefix  = var.name_prefix
+    bq_table_suffix  = var.name_suffix
+  }
+}
 resource "google_compute_network" "vpc_network" {
   name = "${var.name_prefix}-network"
+  project = var.project
 }
 variable "gcp_service_list" {
   description ="The list of apis necessary for the project"
@@ -36,46 +44,39 @@ variable "gcp_service_list" {
 resource "google_project_service" "gcp_services" {
   for_each = toset(var.gcp_service_list)
   project = "${var.project}"
+  disable_dependent_services = true
   service = each.key
 
 }
 
 resource "google_notebooks_instance" "instance" {
-  name = "${var.name_prefix}-notebooks"
-  location = "${var.zone}"
+  name = "notebooks-instance-${var.name_suffix}"
+  depends_on = [google_project_service.vertex_ai_notebooks_api]
+  location = "us-west1-a"
   machine_type = "e2-medium"
-  network = google_compute_network.vpc_network.self_link
-  no_public_ip = true
-  shielded_instance_config  {
-    enable_secure_boot = true
-  }
-  metadata = {
-    proxy-mode = "service_account"
-    terraform  = "true"
-  }
-  container_image {
-    repository = "gcr.io/deeplearning-platform-release/base-cpu"
-    tag = "latest"
+  project = var.project
+  vm_image {
+    project      = "deeplearning-platform-release"
+    image_family = "tf-latest-cpu"
   }
 }
 
-resource "google_project_service" "vertex_ai_notebooks_api" {
-  service = "notebooks.googleapis.com"
-  disable_dependent_services = true
-  project = data.google_project.project.project_id
-  # lifecycle {
-  #  prevent_destroy = true
-  # }
+ resource "google_project_service" "vertex_ai_notebooks_api" {
+   service = "notebooks.googleapis.com"
+   project = data.google_project.project.project_id
+   # lifecycle {
+   #  prevent_destroy = true
+   # }
 }
 
-resource "google_project_service" "bigquery" {
-  service = "bigquery.googleapis.com"
-  disable_dependent_services = true
-  project = data.google_project.project.project_id
-  # lifecycle {
-  #  prevent_destroy = true
-  # }
-}
+ resource "google_project_service" "bigquery" {
+   service = "bigquery.googleapis.com"
+   disable_dependent_services = true
+   project = data.google_project.project.project_id
+   # lifecycle {
+   #  prevent_destroy = true
+   # }
+ }
 
 resource "google_project_iam_member" "data_editor" {
   project = data.google_project.project.project_id
@@ -92,6 +93,7 @@ resource "google_project_iam_member" "metadata_viewer" {
 resource "google_pubsub_topic" "example" {
   name = "${var.name_prefix}_topic_${var.name_suffix}"
   depends_on = [google_pubsub_schema.example]
+  project = var.project
   schema_settings {
     schema = "${data.google_project.project.id}/schemas/${var.name_prefix}_schema_${var.name_suffix}"
     encoding = "BINARY"
@@ -100,6 +102,7 @@ resource "google_pubsub_topic" "example" {
 
 resource "google_pubsub_schema" "example" {
   name = "${var.name_prefix}_schema_${var.name_suffix}"
+  project = var.project
   type = "AVRO"
 
   definition = <<CCE
@@ -134,6 +137,7 @@ CCE
 resource "google_pubsub_subscription" "example" {
   name  = "${var.name_prefix}_subscription_${var.name_suffix}"
   topic = google_pubsub_topic.example.name
+  project = var.project
 
   bigquery_config {
     table = "${google_bigquery_table.pbsb.project}.${google_bigquery_table.pbsb.dataset_id}.${google_bigquery_table.pbsb.table_id}"
@@ -161,12 +165,14 @@ resource "google_project_iam_member" "editor" {
 }
 
 resource "google_bigquery_dataset" "pbsb" {
+  depends_on = [resource.google_project_service.bigquery]
   dataset_id = "${var.name_prefix}_dataset_${var.name_suffix}"
   project = data.google_project.project.project_id
 }
 
 resource "google_bigquery_table" "pbsb" {
   deletion_protection = false
+  project = var.project
   table_id   = "${var.name_prefix}_table_${var.name_suffix}"
   dataset_id = google_bigquery_dataset.pbsb.dataset_id
 
@@ -260,6 +266,7 @@ EOR
 }
 resource "google_storage_bucket" "fsi_bucket" {
   name          = "${var.name_prefix}_bucket_${var.name_suffix}"
+  project = var.project
   location      = "US"
   force_destroy = true
   uniform_bucket_level_access = true

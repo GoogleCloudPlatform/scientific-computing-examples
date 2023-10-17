@@ -30,3 +30,5 @@ override.tf.json
 
 tmp/
 .fsi/
+hpc-monte-carlo/pubsub_bq.py
+hpc-monte-carlo/batch.yaml
