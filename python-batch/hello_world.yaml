@@ -11,31 +11,28 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "project_id"
+project_id: "project-of-mine"
 region: "us-central1"
 
-volumes:
-  - {bucket_name: "demo-jrt", gcs_path:  "/mnt/disks/work"}
+job_prefix: 'hello-'
+machine_type: "n2-standard-2"
 
-job_prefix: 'cuquantum-noise-'
-
-task_count: 100 #optional
-parallelism: 10 #optional
+task_count: 4 #optional
+parallelism: 2 #optional
 task_count_per_node: 2 #optional
-
-machine_type: "n1-standard-2"
-accelerator:
- type: "nvidia-tesla-t4"
- count: 1
-install_gpu_drivers: y
 cpu_milli: 1000 #optional
 memory_mib: 102400 #optional
 
-container: 
-  image_uri: "nvcr.io/nvidia/cuquantum-appliance:22.07-cirq" 
-  entry_point: "/bin/bash"
-  commands: ["-c", "mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; python3 /mnt/disks/work/cuquantum-noise.py >> /mnt/disks/work/dir_${BATCH_JOB_ID}/out_${BATCH_TASK_INDEX}.txt"]
 
 labels: 
-  env: "container"
-  type: "quantum"
+  env: "hello"
+  type: "world"
+
+script_text: | 
+  #!/bin/bash 
+
+  echo "Hello World" ${BATCH_TASK_INDEX}
+  sleep 5
+
+
+ 

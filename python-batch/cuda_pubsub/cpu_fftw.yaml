@@ -11,28 +11,32 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "fluent-demo"
+project_id: "<my_project>"
 region: "us-central1"
 
-job_prefix: 'hello-'
-machine_type: "n2-standard-2"
+job_prefix: 'fftw-'
+machine_type: "c2-standard-4"
 
-task_count: 4 #optional
-parallelism: 2 #optional
+volumes:
+  - {bucket_name: "<my_bucket>", gcs_path:  "/mnt/disks/hpc"}
+
+task_count: 16 #optional
+parallelism: 16 #optional
 task_count_per_node: 2 #optional
-cpu_milli: 1000 #optional
-memory_mib: 102400 #optional
-
 
 labels: 
-  env: "hello"
-  type: "world"
+  env: "hpc"
+  type: "fftw"
 
 script_text: | 
   #!/bin/bash 
+  
+  if test ! -f "WP_time"; then  
+    cp -n /mnt/disks/hpc/WP_time . || echo "File already copied."
+  fi
 
-  echo "Hello World"
-  env
-
+  mkdir  -p /mnt/disks/hpc/${JOB_ID}
+  echo "Starting ./WP_time ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}" > /mnt/disks/hpc/${JOB_ID}/${BATCH_TASK_INDEX}.txt 
+  ./WP_time >> /mnt/disks/hpc/${JOB_ID}/${BATCH_TASK_INDEX}.txt 
 
  
