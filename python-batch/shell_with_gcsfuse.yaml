@@ -11,33 +11,28 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "fluent-hpc-demo1"
+project_id: "project_id"
 region: "us-central1"
 
-job_prefix: 'fluent-2proc-'
-machine_type: "c2-standard-4"
+job_prefix: 'fuse-'
+machine_type: "n2-standard-2"
+volumes: 
+  - {bucket_name:  "<my_bucket>", gcs_path:  "/mnt/disks/local"}
 
-nfs_server: "10.243.163.34"
-nfs_remote_path: "/nfsshare"
-
-bucket_name:  "fluent-hpc-demo1-bucket"
-
-task_count: 16 #optional
-parallelism: 4 #optional
+task_count: 4 #optional
+parallelism: 2 #optional
 task_count_per_node: 2 #optional
+cpu_milli: 1000 #optional
+memory_mib: 102400 #optional
+
 
 labels: 
-  env: "fluent2"
-  type: "fluent2"
+  env: "hello"
+  type: "world"
 
 script_text: | 
-  #!/bin/sh 
-  
-  cp -n /mnt/gcs/WP_time .
+  #!/bin/bash 
 
-  echo "Starting ./WP_time ID: j-${JOB_ID} b-${BATCH_TASK_INDEX}"
-  
-  SIM_TIME=$( ./WP_time | grep simulation)
-
-  echo ${JOB_ID} ${BATCH_TASK_INDEX}  ${SIM_TIME} >> /mnt/gcs/${JOB_ID}.txt 
- 
+  echo "Hello World"
+  ls /mnt/disks/local
+  env

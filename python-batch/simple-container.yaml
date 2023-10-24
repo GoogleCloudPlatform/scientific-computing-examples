@@ -11,28 +11,21 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "project_id"
+project_id: "demo"
 region: "us-central1"
 
-job_prefix: 'hello-'
+job_prefix: 'container-'
 machine_type: "n2-standard-2"
-bucket_name:  "demo-jrt"
-gcs_path:  "/mnt/disks/deepvariant"
+container: 
+  image_uri: "gcr.io/google-containers/busybox"
+  entry_point: "/bin/sh"
+  commands: ["-c", "echo Hello world! This is task ${BATCH_TASK_INDEX}. This job has a total of ${BATCH_TASK_COUNT} tasks."]
 
 task_count: 4 #optional
-parallelism: 2 #optional
+parallelism: 4 #optional
 task_count_per_node: 2 #optional
-cpu_milli: 1000 #optional
-memory_mib: 102400 #optional
-
+install_gpu_drivers: true
 
 labels: 
-  env: "hello"
-  type: "world"
-
-script_text: | 
-  #!/bin/bash 
-
-  echo "Hello World"
-  ls /mnt/disks/deepvariant
-  env
+  env: "pybatch"
+  type: "hello"
