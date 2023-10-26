@@ -111,14 +111,13 @@ class PubSub:
     self.topic = self.publisher.create_topic(request={"name": self.topic_path})
     print(f"Created topic {self.topic_path}\n", file=sys.stderr)
 
-  def create_subscription(self, previous_job_id=None):
+  def create_subscription(self):
     """
     Creates a subscription with name the same as `sub-` + Job.
 
     Subscription will be ordered and have exactly one time delivery.
 
     Args:
-      previous_job_id: if specified, the subscription is connected to a previous pubsub subscription.
 
     Returns:
       None
@@ -127,11 +126,7 @@ class PubSub:
     self.subscriber = pubsub_v1.SubscriberClient()
     self.subscription_id = "sub-" + self.job_id
 
-    if previous_job_id:
-      self.topic_path = self.publisher.topic_path(self.project_id, previous_job_id)
-    else:
-      self.topic_path = self.publisher.topic_path(self.project_id, self.job_id)
-
+    self.topic_path = self.publisher.topic_path(self.project_id, self.job_id)
     self.subscription_path = self.subscriber.subscription_path(self.project_id, self.subscription_id)
 
     with self.subscriber:
@@ -174,7 +169,7 @@ class PubSub:
 
 class Jobs:
 
-  def __init__(self, job_id: str, config) -> None:
+  def __init__(self, job_id: str, config, previous_job_id=None) -> None:
     """
     Class to create all cloud resources for Batch Jobs
 
@@ -197,11 +192,19 @@ class Jobs:
     if FLAGS.project_id:
       self.project_id = FLAGS.project_id
 
+    # TODO: Add more variables to the ENV list.
+    
+    if previous_job_id:
+      self.env_variables = {"TOPIC_ID" : previous_job_id}
+    else:
+      self.env_variables = {"TOPIC_ID" : self.job_id}
+      
+
   def _create_runnable(self) -> batch_v1.Runnable:
 
     self.runnable = batch_v1.Runnable()
     self.runnable.environment = batch_v1.Environment()
-    self.runnable.environment = {"variables":{"JOB_ID": self.job_id}}
+    self.runnable.environment = {"variables": self.env_variables}
 
     if "container" in self.config:
       self.runnable.container = batch_v1.Runnable.Container()
@@ -433,7 +436,8 @@ def main(argv):
   jobid = config["job_prefix"] + uuid.uuid4().hex[:8]
   client = batch_v1.BatchServiceClient()
 
-  jobs = Jobs(jobid, config)
+  jobs = Jobs(jobid, config, previous_job_id=FLAGS.previous_job_id)
+
   # This does not create the job yet
   create_request = jobs._create_job_request()
 
@@ -460,15 +464,11 @@ def main(argv):
     
     # If pubsub queue is required 
   if FLAGS.pubsub and not FLAGS.debug:
-    pubsub = PubSub(jobid, config)
 
-    # If there is a previous queue to read from:
-    if FLAGS.previous_job_id:
-      pubsub.create_subscription(previous_job_id=FLAGS.previous_job_id)
-    else:
-      pubsub.create_topic()
-      pubsub.create_subscription()
-      pubsub.publish_fifo_ids()
+    pubsub = PubSub(jobid, config)
+    pubsub.create_topic()
+    pubsub.create_subscription()
+    pubsub.publish_fifo_ids()
 
   if FLAGS.create_job:
     # Create the job

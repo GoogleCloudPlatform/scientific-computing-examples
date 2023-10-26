@@ -61,7 +61,7 @@ The following need to be run before you can submit a job.
 ### Enable the Cloud Batch API
 Enable the Cloud Batch API:
 ```
-gcloud services enable batch.googleapis.com
+gcloud services enable batch.googleapis.com compute.googleapis.com logging.googleapis.com
 ```
 ### IAM permissions
 If you are running as the `owner` of the project you are running in, you will have sufficient scope to run the Batch API. You can review IAM permissions in the (Cloud Console)[ttps://console.cloud.google.com/iam-admin/iam].
