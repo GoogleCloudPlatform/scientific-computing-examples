@@ -17,8 +17,6 @@ region: "us-central1"
 volumes:
   - {bucket_name: "<my_bucket>", gcs_path:  "/mnt/disks/work"}
 
-task_count: 1 #optional
-parallelism: 1 #optional
 
 job_prefix: 'nvidia-python-'
 task_count: 12 #optional
@@ -39,9 +37,10 @@ container:
   commands: 
     - -c
     - "
-       export TOPIC_ID=$BATCH_JOB_ID
        export PID=$(gcloud config get-value project);
+       echo python3 /tmp/pull_fifo_id.py --project_id=$PID --job_id=$TOPIC_ID;
        export FIFO_ID=$(python3 /tmp/pull_fifo_id.py --project_id=$PID --job_id=$TOPIC_ID);
+       echo Obtained FIFO_ID: --- $FIFO_ID ---;
        if [ -z \"$FIFO_ID\" ]; then   echo FIFO NOT DEFINED -- exiting;   exit 0; fi;
        echo Running FIFO_ID:  $FIFO_ID;
        mkdir -p /mnt/disks/work/dir_${BATCH_JOB_ID}; 
