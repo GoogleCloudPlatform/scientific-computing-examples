@@ -31,9 +31,9 @@ useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
 cd /usr/share
 
-git clone -b v0.55.0 https://github.com/flux-framework/flux-core.git
-git clone -b v0.29.0 https://github.com/flux-framework/flux-sched.git
-git clone -b v0.10.0 https://github.com/flux-framework/flux-security.git
+git clone -b v0.58.0 https://github.com/flux-framework/flux-core.git
+git clone -b v0.32.0 https://github.com/flux-framework/flux-sched.git
+git clone -b v0.11.0 https://github.com/flux-framework/flux-security.git
 
 cd /usr/share/flux-security
 
