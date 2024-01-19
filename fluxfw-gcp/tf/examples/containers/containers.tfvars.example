@@ -38,7 +38,7 @@ compute_node_specs = [
         compact      = false
         instances    = 6
         properties   = []
-        boot_script  = "install-apptainer.sh"
+        boot_script  = null
     },
 ]
 compute_scopes = [ "cloud-platform" ]

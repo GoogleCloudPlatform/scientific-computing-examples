@@ -48,4 +48,4 @@ substitutions:
   _SOURCE_IMAGE_PROJECT_ID: rocky-linux-cloud 
   _SUBNETWORK: default
 tags: ['cloud-builders-community']
-timeout: 10800s
+timeout: 18000s
