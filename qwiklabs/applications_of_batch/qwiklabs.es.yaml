@@ -1,0 +1,48 @@
+# qwiklabs.es.yaml for Spanish localization
+# There is no need to copy everything over from qwiklabs.yaml.
+# Only locale specific attributes need to go in here.
+
+title: Ejemplo de Robust Lab
+description: En serio, el mejor lab que has tomado. Sin excepción.
+
+resources:
+- type: file
+  id: sample-pdf
+  title: Ejemplo de PDF
+  description: Este PDF contiene todos los ejemplos de código para el laboratorio.
+  uri: resources/sample-es.pdf
+- type: video
+  id: intro-video
+  title: ¡Bienvenido a GCP!
+  uri: https://www.youtu.be/7jjoyy7_RCk
+  description: Descripción general de Google Cloud Platform
+
+environment:
+  student_visible_outputs:
+  - label: Abra la consola de GCP
+    reference: primary_project.console_url
+  - label: Proyecto GCP
+    reference: primary_project.project_id
+  - label: Nombre de usuario de GCP
+    reference: primary_user.username
+  - label: Contraseña de GCP
+    reference: primary_user.password
+  - label: InstanceDns
+    reference: primary_project.startup_script.InstanceDns
+  - label: Número de cuenta de AWS
+    reference: the_account.account_number
+  - label: nombre de usuario
+    reference: the_account.username
+  - label: clave
+    reference: the_account.password
+  - label: URL de la consola de AWS
+    reference: the_account.console_url
+
+assessment:
+  steps:
+  - title: Crear un depósito de almacenamiento en la nube
+    locale_id: create_bucket
+    student_messages:
+      success: ¡Gran trabajo! ¡Creaste el cubo!
+      bucket_missing: ¡Uy! No se ha encontrado el cubo.
+      bucket_misconfigured: Hmm. El cubo está allí, pero está mal configurado.
