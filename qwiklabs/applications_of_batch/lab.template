@@ -1,0 +1,171 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AWS Test Bundle'
+Outputs:
+  InstanceId:
+    Value: !Ref 'Ec2Server'
+Parameters:
+  KeyName:
+    Description: Name of an existing EC2 KeyPair
+    Type: String
+  Bucket:
+    Default: aws-training
+    Description: Bucket for staged assets.
+    Type: String
+  Prefix:
+    Default: spl66-intro-iam/
+    Description: Prefix for staged assets.
+    Type: String
+  PublicSubnet1Param:
+    Description: Public Subnet 1
+    Type: String
+    Default: 10.1.11.0/24
+    AllowedValues:
+      - 10.1.11.0/24
+  VPCCIDR:
+    Description: CIDR Block for VPC
+    Type: String
+    Default: 10.1.0.0/16
+    AllowedValues:
+      - 10.1.0.0/16
+  InstanceType:
+    Default: t2.micro
+    Description: EC2 instance type, e.g. m1.small, m1.large, etc.
+    Type: String
+  AmazonLinuxAMIID:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref 'VPCCIDR'
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: Name
+          Value: Lab VPC
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    DependsOn: VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    DependsOn:
+      - VPC
+      - InternetGateway
+    Properties:
+      VpcId: !Ref 'VPC'
+      InternetGatewayId: !Ref 'InternetGateway'
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    DependsOn: AttachGateway
+    Properties:
+      VpcId: !Ref 'VPC'
+      MapPublicIpOnLaunch: 'true'
+      CidrBlock: !Ref 'PublicSubnet1Param'
+      AvailabilityZone: !Select
+        - '0'
+        - !GetAZs ''
+      Tags:
+        - Key: Name
+          Value: Public Subnet 1
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn:
+      - VPC
+      - AttachGateway
+    Properties:
+      VpcId: !Ref 'VPC'
+      Tags:
+        - Key: Name
+          Value: Public
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - PublicRouteTable
+      - AttachGateway
+    Properties:
+      RouteTableId: !Ref 'PublicRouteTable'
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'InternetGateway'
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    DependsOn:
+      - PublicRouteTable
+      - PublicSubnet1
+      - AttachGateway
+    Properties:
+      SubnetId: !Ref 'PublicSubnet1'
+      RouteTableId: !Ref 'PublicRouteTable'
+  Ec2Server:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmazonLinuxAMIID
+      InstanceType: !Ref 'InstanceType'
+      SecurityGroupIds:
+        - !Ref 'Ec2SecurityGroup'
+      SubnetId: !Ref 'PublicSubnet1'
+  Ec2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: VPC Security Group
+      VpcId: !Ref 'VPC'
+      SecurityGroupIngress:
+        - CidrIp: '0.0.0.0/0'
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+  S3Bucket:
+    Type: AWS::S3::Bucket
+  user1:
+    Type: AWS::IAM::User
+    Properties:
+      Path: /spl66/
+      UserName: user-1
+      LoginProfile:
+        Password: lab-password
+  user2:
+    Type: AWS::IAM::User
+    Properties:
+      Path: /spl66/
+      UserName: user-2
+      LoginProfile:
+        Password: lab-password
+  user3:
+    Type: AWS::IAM::User
+    Properties:
+      Path: /spl66/
+      UserName: user-3
+      LoginProfile:
+        Password: lab-password
+  S3support:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: /spl66/
+      GroupName: S3-Support
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+  EC2admin:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: /spl66/
+      GroupName: EC2-Admin
+      Policies:
+        - PolicyName: EC2-Admin-Policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource:
+                  - '*'
+  EC2support:
+    Type: AWS::IAM::Group
+    Properties:
+      Path: /spl66/
+      GroupName: EC2-Support
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
