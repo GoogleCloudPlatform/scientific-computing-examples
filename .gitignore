@@ -29,3 +29,23 @@ override.tf.json
 # example: *tfplan*
 
 tmp/
+fluxfw-gcp/img/flux-compute-builder-startup-script.sh
+fluxfw-gcp/img/flux-image-builder-startup-script.sh
+fluxfw-gcp/img/flux-login-builder-startup-script.sh
+fluxfw-gcp/img/flux-manager-builder-startup-script.sh
+fluxfw-gcp/img/image-builder-enc.key
+fluxfw-gcp/img/image-builder.key
+fluxfw-gcp/tf/examples/allinone/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/basic/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/containers/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/foundation/iam/.default
+fluxfw-gcp/tf/examples/foundation/iam/default/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/foundation/network/.zonal
+fluxfw-gcp/tf/examples/foundation/network/default/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/foundation/network/zonal/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/foundation/storage/.filestore
+fluxfw-gcp/tf/examples/foundation/storage/filestore/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/gpu/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/merlin/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/mpi/.terraform.lock.hcl
+fluxfw-gcp/tf/examples/notebooks/.terraform.lock.hcl
