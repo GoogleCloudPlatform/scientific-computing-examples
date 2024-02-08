@@ -27,6 +27,8 @@ dnf install -y epel-release
 dnf install -y \
 include(packages.txt)dnl
 
+python3.11 -m pip install cffi pyyaml jsonschema sphinx
+
 ifdef(`X86_64', `include(nvidia_downloads.txt)')dnl
 ifdef(`X86_64', `include(install_apptainer.txt)')dnl
 

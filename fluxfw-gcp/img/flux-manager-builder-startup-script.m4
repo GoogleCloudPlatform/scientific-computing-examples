@@ -27,6 +27,8 @@ dnf install -y epel-release
 dnf install -y \
 include(packages.txt)dnl
 
+python3.11 -m pip install cffi pyyaml jsonschema sphinx
+
 useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
 cd /usr/share

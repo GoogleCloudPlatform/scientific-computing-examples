@@ -27,8 +27,7 @@ dnf install -y epel-release
 dnf install -y \
 include(packages.txt)dnl
 
-include(install_apptainer.txt)dnl
-dnf install -y podman
+python3.11 -m pip install cffi pyyaml jsonschema sphinx
 
 useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
@@ -150,5 +149,8 @@ RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target
 FIRST_BOOT_UNIT
+
+include(install_apptainer.txt)dnl
+dnf install -y podman
 
 systemctl enable flux-config-login.service
