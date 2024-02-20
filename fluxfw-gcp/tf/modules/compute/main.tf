@@ -48,13 +48,15 @@ resource "google_compute_resource_policy" "collocated" {
     project = var.project_id
     region  = var.region
     group_placement_policy {
-      vm_count = var.num_instances
+      vm_count    = var.num_instances
       collocation = "COLLOCATED"
     }
 }
 
 module "flux_compute_instance_template" {
-    source               = "github.com/terraform-google-modules/terraform-google-vm/modules/instance_template"
+    source  = "terraform-google-modules/vm/google//modules/instance_template"
+    version = "~> 10.1"
+
     region               = var.region
     project_id           = var.project_id
     name_prefix          = var.name_prefix
@@ -69,7 +71,7 @@ module "flux_compute_instance_template" {
     automatic_restart    = local.automatic_restart
     on_host_maintenance  = local.on_host_maintenance
 
-    metadata             = { 
+    metadata = {
         "boot-script"      : var.boot_script
         "login-node-specs" : var.login_node_specs
         "enable-oslogin"   : "TRUE",
@@ -81,7 +83,9 @@ module "flux_compute_instance_template" {
 }
 
 module "flux_compute_instances" {
-    source              = "github.com/terraform-google-modules/terraform-google-vm/modules/compute_instance"
+    source  = "terraform-google-modules/vm/google//modules/compute_instance"
+    version = "~> 10.1"
+
     region              = var.region
     zone                = data.google_compute_zones.available.names[0]
     hostname            = var.name_prefix

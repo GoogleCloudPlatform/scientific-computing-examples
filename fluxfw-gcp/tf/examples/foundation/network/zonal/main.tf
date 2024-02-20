@@ -13,10 +13,12 @@
 # limitations under the License.
 
 module "network" {
-  source       = "github.com/terraform-google-modules/terraform-google-network"
+  source  = "terraform-google-modules/network/google"
+  version = "~> 9.0"
+
   project_id   = var.project_id
   network_name = var.network_name
-  subnets      = [
+  subnets = [
     {
       subnet_name   = "${var.network_name}-subnet-01"
       subnet_ip     = var.subnet_ip
@@ -26,7 +28,9 @@ module "network" {
 }
 
 module "nat" {
-  source        = "github.com/terraform-google-modules/terraform-google-cloud-nat"
+  source  = "terraform-google-modules/cloud-nat/google"
+  version = "~> 5.0"
+
   project_id    = var.project_id
   region        = var.region
   network       = module.network.network_name
@@ -35,10 +39,12 @@ module "nat" {
 }
 
 module "firewall" {
-  source          = "github.com/terraform-google-modules/terraform-google-network/modules/firewall-rules"
-  project_id      = var.project_id
-  network_name    = module.network.network_name
-  rules           = [
+  source  = "terraform-google-modules/network/google//modules/firewall-rules"
+  version = "~> 9.0"
+
+  project_id   = var.project_id
+  network_name = module.network.network_name
+  rules = [
     {
       name                    = "${var.network_name}-allow-ssh"
       direction               = "INGRESS"
@@ -49,14 +55,14 @@ module "firewall" {
       source_service_accounts = null
       target_tags             = ["flux"]
       target_service_accounts = null
-      allow                   = [
+      allow = [
         {
           protocol = "tcp"
           ports    = ["22"]
         }
       ],
-      deny                    = []
-      log_config              = {
+      deny = []
+      log_config = {
         metadata = "INCLUDE_ALL_METADATA"
       }
     },
@@ -70,7 +76,7 @@ module "firewall" {
       source_service_accounts = null
       target_tags             = ["ssh", "flux"]
       target_service_accounts = null
-      allow                   = [
+      allow = [
         {
           protocol = "icmp"
           ports    = []
@@ -84,8 +90,8 @@ module "firewall" {
           ports    = ["0-65535"]
         }
       ]
-      deny                    = []
-      log_config              = {
+      deny = []
+      log_config = {
         metadata = "INCLUDE_ALL_METADATA"
       }
     }
