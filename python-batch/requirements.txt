@@ -3,7 +3,7 @@ google-cloud==0.34.0
 google-cloud-batch==0.4.0
 googleapis-common-protos==1.56.4
 grpc-google-iam-v1==0.12.4
-grpcio==1.53.0
+grpcio==1.53.2
 grpcio-status==1.49.1
 jsonschema==4.6.0
 PyYaml==6.0
