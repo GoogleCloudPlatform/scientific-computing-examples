@@ -18,7 +18,9 @@ data "google_compute_image" "fluxfw_manager_image" {
 }
 
 module "flux_manager_instance_template" {
-    source               = "github.com/terraform-google-modules/terraform-google-vm/modules/instance_template"
+    source  = "terraform-google-modules/vm/google//modules/instance_template"
+    version = "~> 10.1"
+
     region               = var.region
     project_id           = var.project_id
     name_prefix          = "${var.name_prefix}-manager"
@@ -29,20 +31,22 @@ module "flux_manager_instance_template" {
     disk_size_gb         = 1024
     source_image         = data.google_compute_image.fluxfw_manager_image.self_link
     source_image_project = data.google_compute_image.fluxfw_manager_image.project
-    metadata             = {
-        "enable-oslogin"     : "TRUE",
-        "VmDnsSetting"       : "GlobalDefault"
-        "nfs-mounts"         : jsonencode(var.nfs_mounts)
+    metadata = {
+        "enable-oslogin" : "TRUE",
+        "VmDnsSetting" : "GlobalDefault"
+        "nfs-mounts" : jsonencode(var.nfs_mounts)
         "compute-node-specs" : var.compute_node_specs
-        "login-node-specs"   : var.login_node_specs
+        "login-node-specs" : var.login_node_specs
     }
 }
 
 module "flux_manager_instance" {
-    source              = "github.com/terraform-google-modules/terraform-google-vm/modules/compute_instance"
-    region              = var.region
-    hostname            = "${var.name_prefix}-manager"
-    num_instances       = 1
-    instance_template   = module.flux_manager_instance_template.self_link
-    subnetwork          = var.subnetwork
+    source  = "terraform-google-modules/vm/google//modules/compute_instance"
+    version = "~> 10.1"
+
+    region            = var.region
+    hostname          = "${var.name_prefix}-manager"
+    num_instances     = 1
+    instance_template = module.flux_manager_instance_template.self_link
+    subnetwork        = var.subnetwork
 }

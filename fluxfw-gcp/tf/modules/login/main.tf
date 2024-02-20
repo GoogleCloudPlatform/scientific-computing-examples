@@ -32,7 +32,9 @@ locals {
 }
 
 module "flux_login_instance_template" {
-    source               = "github.com/terraform-google-modules/terraform-google-vm/modules/instance_template"
+    source  = "terraform-google-modules/vm/google//modules/instance_template"
+    version = "~> 10.1"
+
     region               = var.region
     project_id           = var.project_id
     name_prefix          = var.name_prefix
@@ -54,7 +56,9 @@ module "flux_login_instance_template" {
 }
 
 module "flux_login_instances" {
-    source              = "github.com/terraform-google-modules/terraform-google-vm/modules/compute_instance"
+    source  = "terraform-google-modules/vm/google//modules/compute_instance"
+    version = "~> 10.1"
+
     region              = var.region
     zone                = data.google_compute_zones.available.names[0]
     hostname            = var.name_prefix
