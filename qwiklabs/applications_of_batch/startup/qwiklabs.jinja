@@ -1,0 +1,9 @@
+resources:
+- name: good-vm
+  type: vm-type.jinja
+  properties:
+    zone: {{ properties["zone"] }}
+
+outputs:
+- name: InstanceDns
+  value: 35.238.252.133
