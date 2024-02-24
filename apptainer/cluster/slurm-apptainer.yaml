@@ -64,7 +64,7 @@ deployment_groups:
     - apptainer_installation
     settings:
       source_image_project_id: [schedmd-slurm-public]
-      source_image_family: slurm-gcp-5-9-hpc-rocky-linux-8 
+      source_image_family: slurm-gcp-5-10-hpc-rocky-linux-8 
       disk_size: $(vars.disk_size)
       image_family: $(vars.custom_image_family)
       state_timeout: 20m
