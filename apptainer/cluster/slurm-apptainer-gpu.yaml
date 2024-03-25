@@ -30,7 +30,7 @@ vars:
   guest_accelerator_type: nvidia-v100-gpu
   guest_accelerator_count: 1
   instance_image:
-    family: slurm-gcp-5-9-hpc-rocky-linux-8
+    family: slurm-gcp-5-10-hpc-rocky-linux-8
     project: schedmd-slurm-public
   instance_image_custom: true
 
@@ -67,7 +67,7 @@ deployment_groups:
     - apptainer_installation
     settings:
       source_image_project_id: [schedmd-slurm-public]
-      source_image_family: slurm-gcp-5-9-hpc-rocky-linux-8 
+      source_image_family: slurm-gcp-5-10-hpc-rocky-linux-8 
       disk_size: $(vars.disk_size)
       image_family: $(vars.custom_image_family)
       state_timeout: 20m
