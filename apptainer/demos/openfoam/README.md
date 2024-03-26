@@ -7,7 +7,7 @@ the `motorbike` model. To make the demonstration more interesting you will use [
 result of the simulation. The visualization will be served from a compute node with an attached GPU
 in the HPC system you deploy.
 
-The demonstration will leverage a number of techniques illustrated in various Apptainer [examples](../../examples/).
+The demonstration will leverage a number of techniques illustrated in various Apptainer [examples](../../examples/) and is based on work done at [CIQ](https://ciq.com/blog/integrating-site-specific-mpi-with-an-openfoam-official-apptainer-image-on-slurm-managed-hpc-environments/) and [ESI](https://ciq.com/blog/openfoam-supports-apptainer-v1-2-0-template-definition-file-feature/).
 In particular you will build an [Open MPI](https://www.open-mpi.org/) container configured for PMI2 and use that in combination with the
 standard [OpenFOAM container](https://develop.openfoam.com/packaging/containers/-/blob/main/docker/openfoam-run_rocky-template.def?ref_type=heads) 
 to create a custom PMI2 enabled OpenFOAM container you will use to run the parallel
