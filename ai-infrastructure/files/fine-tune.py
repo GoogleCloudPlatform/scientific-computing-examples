@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingA
 from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training
 import torch
 
-# /gcs-mount will mount the GCS bucket created earlier
+# Local path to model. Needs to be downloaded from Hugging Face
+
 model_path = "./llama2-7b"
 finetuned_model_path = "./llama2-7b-american-stories"
-
 tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
 model = AutoModelForCausalLM.from_pretrained(
             model_path, torch_dtype=torch.float16, device_map="auto", trust_remote_code=True)
+
+# Get Dataset
 
 dataset = load_dataset("dell-research-harvard/AmericanStories",
     "subset_years",
@@ -35,7 +37,6 @@ dataset = concatenate_datasets(dataset.values())
 if tokenizer.pad_token is None:
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     model.resize_token_embeddings(len(tokenizer))
-
 data = dataset.map(lambda x: tokenizer(
     x["article"], padding='max_length', truncation=True))
 
@@ -46,13 +47,12 @@ lora_config = LoraConfig(
  bias="none",
  task_type="CAUSAL_LM"
 )
-
 model = prepare_model_for_kbit_training(model)
 
 # add LoRA adaptor
+
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
-
 training_args = TrainingArguments(
         per_device_train_batch_size=1,
         gradient_accumulation_steps=4,
@@ -72,16 +72,17 @@ trainer = Trainer(
     data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
 )
 model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
-
 trainer.train()
 
 # Merge the fine tuned layer with the base model and save it
 # you can remove the line below if you only want to store the LoRA layer
-model = model.merge_and_unload()
 
+model = model.merge_and_unload()
 model.save_pretrained(finetuned_model_path)
 tokenizer.save_pretrained(finetuned_model_path)
+
 # Beginning of story in the dataset
+
 prompt = """
 In the late action between Generals
 
@@ -96,4 +97,5 @@ gen_tokens = model.generate(
     temperature=0.8,
     max_length=100,
 )
+print("Output from test prompt\n")
 print(tokenizer.batch_decode(gen_tokens)[0])
