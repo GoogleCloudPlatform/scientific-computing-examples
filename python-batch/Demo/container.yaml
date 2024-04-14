@@ -1,0 +1,38 @@
+#  Copyright 2023 Google LLC
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+project_id: "openfoam-jrt"
+region: "us-central1"
+
+volumes:
+  - {bucket_name: "sb_batch", gcs_path:  "/mnt/disks/work"}
+
+job_prefix: 'sb-batch-'
+
+task_count: 100 #optional
+parallelism: 100 #optional
+task_count_per_node: 2 #optional
+
+machine_type: "n1-standard-2"
+cpu_milli: 1000 #optional
+memory_mib: 10240 #optional
+boot_disk_mib: 10240
+
+container: 
+  image_uri: "python:latest" 
+  entry_point: "/bin/bash"
+  commands: ["-c", "pip install absl-py google-cloud-storage; python3 /mnt/disks/work/list_files.py"]
+
+labels: 
+  env: "demo"
+  type: "sbbatch"
