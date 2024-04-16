@@ -172,7 +172,7 @@ export REPOSITORY_URL=oras://#LOCATION#/#PROJECT_NAME#/#REPOSITORY_NAME#
 Apptainer needs to authenticate to your repository before it can push or pull images. Use this command to authenticate
 
 ```bash
-apptainer remote login \
+apptainer repository login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
 ${REPOSITORY_URL}
