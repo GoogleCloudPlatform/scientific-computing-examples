@@ -36,7 +36,6 @@ To generate a cost estimate based on your projected usage, use the [pricing calc
 
 
 
-* The **first step** of this tutorial is to request access to the [Hugging Face model for Llama 2](https://huggingface.co/meta-llama/Llama-2-7b). Once Hugging Face has granted access to the Llama 2 model, you can use your "User Access Token" to download the pre-trained Llama 2 model, which forms the basis for the fine tuning we will run.
 * Set up [Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment). During the setup ensure you enable all the required APIs, and permissions, and grant credentials to Terraform. Also ensure you clone and build the Cloud HPC Toolkit repository in your local environment.
 * Review the [best practices](https://cloud.google.com/hpc-toolkit/docs/tutorials/best-practices).
 * **Ensure you have [sufficient quota](https://cloud.google.com/docs/quotas/view-manage) to run**. Verify at the Cloud Console by clicking the link
@@ -86,7 +85,7 @@ From the Cloud Shell (or local shell), complete the following steps:
 
 4. Execute  
 
- 	ghpc create hpc-slurm-llama2.yaml --vars project_id=<PROJECT-ID. -w --vars bucket_model=llama2
+ 	ghpc create hpc-slurm-llama2.yaml --vars project_id=&lt;PROJECT-ID. -w --vars bucket_model=llama2
 
 
 
@@ -115,32 +114,30 @@ gcloud compute instances list | grep slurm
 To run the Llama 2 fine tuning on your cluster, you must login to the Slurm _login _node. This is done by clicking on the `SSH` button using the Google Cloud Console.
 
 
-
 1. Connect to the Console at https://console.cloud.google.com/compute/instances
 2. Click on `SSH` next to the `login` node
 
 Download the llama2-7b models from Hugging Face
 
-On the Slurm login node, you can download the Hugging Face models to your local directory on the cluster.
+On the Slurm login node, you can download the Hugging Face models to your local directory on the cluster. 
 
 
 
-1. Activate the Conda environment for Llama 2, already installed on cluster
+1. Accept the EULA for Llama 2
 
-    conda activate llama2
-
-1. Set the environment variable for your Hugging Face Token, found on the Hugging Face hub, https://huggingface.co/settings/tokens
-
-    set HUGGING_FACE_HUB_TOKEN=XXXXXXXX
+    https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/llama2
 
 
-    Where XXXXXXX is your token.
+![eula](images/image2.png "llama2 EULA")
 
-1. Download the models using the Python script provided for you in the Google Cloud Storage bucket
 
-	 python3 /data_bucket/download_llama2_hf.py
+    Click "I HAVE READ AND ACCEPT THE LICENSE FOR LLAMA 2".
 
-	This will take up to 5 minutes.
+2. Download the model with `gsutil`. In your home directory on the login node run the command.
+
+gsutil -m cp -r gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
+
+The result will be a directory in your home directory.
 
 
 ### Run the Slurm `sbatch` command to submit your job
@@ -185,8 +182,7 @@ https://console.cloud.google.com/monitoring/dashboards
 
 Select the dashboard with the name **"GPU: hpc-slurm-llama2". **This dashboard has GPU Utilization like the following.
 
-
-![alt_text](images/image1.png "image_tooltip")
+![gpu_usage](images/image1.png "GPU Usage")
 
 
 
@@ -265,28 +261,15 @@ To delete the project:
 4. In the dialog, type the project ID, and then click <strong>Shut down</strong> to delete the project.
 
 
-<!-- 
-Request access:
+## Location
 
-
-https://huggingface.co/meta-llama/Llama-2-7b
-
+Run jobs or workloads using Slurm
 
 
 
-ghpc create ml-cluster.yaml --vars project_id=openfoam-jrt -w --vars bucket_model=llama2-jrt --vars region=us-central1 --vars zone=us-central1-c ; ghpc deploy llama2-hpc --auto-approve
-
-gcloud compute scp *.yml *.py schemd-image-test:~
-
-
-
-
- /opt/conda/bin/conda init
- source ~/.bashrc
-
- conda activate llama2
-
- export HUGGING_FACE_HUB_TOKEN=XXXXXXXXX
-
-  python3 /data_bucket/download_llama2_hf.py  -->
-
+* Best practices for running HPC workloads with Slurm
+* ???
+    * Run Ansys Fluent workloads
+    * Run Simcenter STAR CCM+ workloads
+* ML inference
+    * Run Llama 2 Fine Tuning on Slurm

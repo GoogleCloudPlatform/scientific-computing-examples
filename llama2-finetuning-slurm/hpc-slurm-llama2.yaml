@@ -110,6 +110,7 @@ deployment_groups:
     use: [network1]
     settings:
       local_mount: /home
+      size_gb: 256
 
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
