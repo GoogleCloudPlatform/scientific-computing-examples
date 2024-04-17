@@ -20,7 +20,7 @@ import torch
 
 # Local path to model. Needs to be downloaded from Hugging Face
 
-model_path = "./llama2-7b"
+model_path = "./llama2-7b-hf"
 finetuned_model_path = "./llama2-7b-american-stories"
 tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=True)
 model = AutoModelForCausalLM.from_pretrained(

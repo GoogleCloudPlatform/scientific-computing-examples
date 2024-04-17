@@ -18,7 +18,7 @@ blueprint_name: hpc-slurm-llama
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: hpc-slurm-llama2
+  deployment_name: hpc-slurm-llama2-v7
   region: us-east1
   zone: us-east1-b
   zone_list: [us-east1-d, us-east1-b, us-east1-c]
@@ -106,11 +106,11 @@ deployment_groups:
 
   ## Filesystems
   - id: homefs
-    source: modules/file-system/filestore
+    source: community/modules/file-system/nfs-server
     use: [network1]
     settings:
-      local_mount: /home
-      size_gb: 256
+      local_mounts: [/home]
+      disk_size: 256
 
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
