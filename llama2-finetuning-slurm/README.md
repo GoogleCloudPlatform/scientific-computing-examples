@@ -260,16 +260,3 @@ To delete the project:
 3. In the project list, select the project that you want to delete, and then click <strong>Delete</strong>.
 4. In the dialog, type the project ID, and then click <strong>Shut down</strong> to delete the project.
 
-
-## Location
-
-Run jobs or workloads using Slurm
-
-
-
-* Best practices for running HPC workloads with Slurm
-* ???
-    * Run Ansys Fluent workloads
-    * Run Simcenter STAR CCM+ workloads
-* ML inference
-    * Run Llama 2 Fine Tuning on Slurm
