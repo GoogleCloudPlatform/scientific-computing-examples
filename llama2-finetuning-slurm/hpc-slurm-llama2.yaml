@@ -18,7 +18,7 @@ blueprint_name: hpc-slurm-llama
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: hpc-slurm-llama2-v7
+  deployment_name: hpc-slurm-llama2-v8
   region: us-east1
   zone: us-east1-b
   zone_list: [us-east1-d, us-east1-b, us-east1-c]
@@ -200,6 +200,7 @@ deployment_groups:
             - pip:
               - bitsandbytes
               - nvidia-cudnn-cu12
+              - dataclasses
               - nvidia-nccl-cu12
               - trl
               - torch
@@ -243,6 +244,34 @@ deployment_groups:
 - group: cluster
   modules:
 
+  - id: n1t4_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network1]
+    settings:
+      zones: $(vars.zone_list)
+      node_count_dynamic_max: 1
+      bandwidth_tier: gvnic_enabled
+      disk_size_gb: $(vars.disk_size_gb)
+      disable_public_ips: false
+      enable_placement: false
+      enable_smt: true
+      machine_type: n1-standard-4
+      guest_accelerator:
+      - type: nvidia-tesla-t4-vws
+        count: 1
+
+      on_host_maintenance: TERMINATE
+      instance_image:
+        family: $(vars.new_image_family)
+        project: $(vars.project_id)
+  - id: n1t4_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [n1t4_nodeset]
+    settings:
+      partition_name: n1t4
+      is_default: true
+
+
   - id: n2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network1]
@@ -260,10 +289,54 @@ deployment_groups:
         project: $(vars.project_id)
   - id: n2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
-    use: [n2_nodeset, homefs, data_bucket]
+    use: [n2_nodeset]
     settings:
       partition_name: n2
       is_default: true
+
+  - id: a2gpu1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network1]
+    settings:
+      zones: [us-east1-d, us-east1-b, us-east1-c]
+      node_count_dynamic_max: 1
+      bandwidth_tier: gvnic_enabled
+      disk_size_gb: $(vars.disk_size_gb)
+      disable_public_ips: false
+      enable_smt: true
+      machine_type: a2-highgpu-1g
+      on_host_maintenance: TERMINATE
+      instance_image:
+        family: $(vars.new_image_family)
+        project: $(vars.project_id)
+  - id: a2gpu1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [a2gpu1_nodeset]
+    settings:
+      partition_name: a2gpu1
+      is_default: false
+
+  - id: a2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network1]
+    settings:
+      zones: [us-east1-d, us-east1-b, us-east1-c]
+      node_count_dynamic_max: 1
+      bandwidth_tier: gvnic_enabled
+      disk_size_gb: $(vars.disk_size_gb)
+      disable_public_ips: false
+      enable_smt: true
+      machine_type: a2-highgpu-4g
+      on_host_maintenance: TERMINATE
+      instance_image:
+        family: $(vars.new_image_family)
+        project: $(vars.project_id)
+  - id: a2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [a2_nodeset]
+    settings:
+      partition_name: a2gpu4
+      is_default: false
 
   - id: g2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
@@ -282,9 +355,9 @@ deployment_groups:
         project: $(vars.project_id)
   - id: g2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
-    use: [g2_nodeset, homefs, data_bucket]
+    use: [g2_nodeset]
     settings:
-      partition_name: g2
+      partition_name: g2gpu8
       is_default: false
 
   - id: slurm_login
@@ -303,8 +376,11 @@ deployment_groups:
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
     use:
     - network1
-    - g2_partition
+    - n1t4_partition
     - n2_partition
+    - g2_partition
+    - a2_partition
+    - a2gpu1_partition
     - slurm_login
     - homefs
     - data_bucket

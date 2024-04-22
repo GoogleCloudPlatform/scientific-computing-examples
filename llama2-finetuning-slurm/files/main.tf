@@ -34,16 +34,6 @@ resource "google_storage_bucket_object" "fine_tune" {
   content = data.local_file.fine_tune_file.content
 }
 
-## download models python file
-data "local_file" "download_llama2" {
-  filename = "${path.module}/download_llama2_hf.py"
-}
-resource "google_storage_bucket_object" "download_llama2_hf" {
-  name = "download_llama2_hf.py"
-  bucket  = local.bucket
-  content = data.local_file.download_llama2.content
-}
-
 # Slurm batch file
 
 data "local_file" "slurm_batch" {
