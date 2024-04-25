@@ -27,13 +27,15 @@ dnf install -y epel-release
 dnf install -y \
 include(packages.txt)dnl
 
+python3.11 -m pip install cffi pyyaml jsonschema sphinx
+
 useradd -M -r -s /bin/false -c "flux-framework identity" flux
 
 cd /usr/share
 
-git clone -b v0.51.0 https://github.com/flux-framework/flux-core.git
-git clone -b v0.27.0 https://github.com/flux-framework/flux-sched.git
-git clone -b v0.9.0 https://github.com/flux-framework/flux-security.git
+git clone -b v0.61.1 https://github.com/flux-framework/flux-core.git
+git clone -b v0.33.1 https://github.com/flux-framework/flux-sched.git
+git clone -b v0.11.0 https://github.com/flux-framework/flux-security.git
 
 cd /usr/share/flux-security
 
