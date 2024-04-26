@@ -46,6 +46,11 @@ To generate a cost estimate based on your projected usage, use the [pricing calc
 
         	nvidia_l4_gpus
 
+> Using the command line, you can find the same information.
+```
+gcloud compute regions describe us-central1 --format="table(quotas:format='table(metric,limit,usage)')" | grep ^NVIDIA_L4_GPUS
+```
+
 * If you don't have a quota for at least 8 L4 GPUs, you must request at least 8. This is done by:
     * Selecting the quota on the list and clicking "Edit Quota".
     * Details are here: ​​https://cloud.google.com/docs/quotas/view-manage
@@ -81,13 +86,11 @@ From the Cloud Shell (or local shell), complete the following steps:
 
 3. Change to the AI Infrastructure directory
 
-    cd ai-infrastructure
+  cd llam2-finetuning-slurm
 
 4. Execute  
 
- 	ghpc create hpc-slurm-llama2.yaml --vars project_id=&lt;PROJECT-ID. -w --vars bucket_model=llama2
-
-
+ 	ghpc create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
 
 5. Use the ``ghpc deploy`` command to begin automatic deployment of your cluster:
 
@@ -99,15 +102,11 @@ From the Cloud Shell (or local shell), complete the following steps:
 Apply complete! Resources: 39 added, 0 changed, 0 destroyed.
 
 
-
 8. To view the created VMs, run the `gcloud compute instances list` command:
 
 gcloud compute instances list | grep slurm
 
-
-
 9. You are now ready to submit jobs to your HPC cluster.
-
 
 ### Connect to the Slurm HPC cluster
 
@@ -116,6 +115,12 @@ To run the Llama 2 fine tuning on your cluster, you must login to the Slurm _log
 
 1. Connect to the Console at https://console.cloud.google.com/compute/instances
 2. Click on `SSH` next to the `login` node
+
+Or you can connect from the command line.
+
+```
+gcloud compute ssh $(gcloud compute instances list --filter "name ~ login" --format "value(name)") --tunnel-through-iap --zone us-east1-b
+```
 
 Download the llama2-7b models from Hugging Face
 
@@ -135,7 +140,7 @@ On the Slurm login node, you can download the Hugging Face models to your local 
 
 2. Download the model with `gsutil`. In your home directory on the login node run the command.
 
-gsutil -m cp -r gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
+  gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
 
 The result will be a directory in your home directory.
 
@@ -143,8 +148,6 @@ The result will be a directory in your home directory.
 ### Run the Slurm `sbatch` command to submit your job
 
 From the Slurm login node, you can now submit the job to the cluster, assuming you completed the following:
-
-
 
 * Ensured you have quota
 * Downloaded the models to the local drive on the cluster
@@ -259,4 +262,3 @@ To delete the project:
 [Go to Manage resources](https://console.cloud.google.com/iam-admin/projects)
 3. In the project list, select the project that you want to delete, and then click <strong>Delete</strong>.
 4. In the dialog, type the project ID, and then click <strong>Shut down</strong> to delete the project.
-
