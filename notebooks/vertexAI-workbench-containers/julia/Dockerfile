@@ -10,14 +10,13 @@ RUN curl -fsSL https://install.julialang.org > julia.sh && \
 RUN /root/.juliaup/bin/juliaup add 1.9 && \
      /root/.juliaup/bin/juliaup default 1.9
      
-# taking effect properly on the .local folder in the jovyan home dir.
-RUN /root/.juliaup/bin/julia -e 'import Pkg; Pkg.update()' 
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("IJulia")'
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Lux")' 
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("ModelingToolkit")'  
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Optimization")' 
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("OptimizationOptimisers")'
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("NeuralPDE")' 
-RUN /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Plots")'
+ RUN /root/.juliaup/bin/julia -e 'import Pkg; Pkg.update()'  && \
+ /root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("IJulia")' && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Lux")'  && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("ModelingToolkit")'   && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Optimization")'  && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("OptimizationOptimisers")' && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("NeuralPDE")'  && \
+/root/.juliaup/bin/julia -e 'using Pkg; Pkg.add("Plots")'
 
 EXPOSE 8080
