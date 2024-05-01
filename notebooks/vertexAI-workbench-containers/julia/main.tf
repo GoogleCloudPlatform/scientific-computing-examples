@@ -19,6 +19,7 @@ locals {
   repo_url = "${google_artifact_registry_repository.my-repo.location}-docker.pkg.dev"
   repo_path = "${local.repo_url}/${data.google_project.project.name}/${google_artifact_registry_repository.my-repo.name}"
   suffix         = random_id.resource_name_suffix.hex 
+  image_name     = "${local.repo_path}/vertex-julia:${local.suffix}"
 }
 
 resource "random_id" "resource_name_suffix" {
@@ -35,32 +36,33 @@ resource "google_artifact_registry_repository" "my-repo" {
   }
 }
 
-resource "docker_image" "vertex_julia" {
-  provider = docker
-  name     = "${local.repo_path}/vertex-julia:${local.suffix}"
-  build {
-    context   = path.cwd
+# resource "docker_image" "vertex_julia" {
+#   provider = docker
+#   name     = "${local.repo_path}/vertex-julia:${local.suffix}"
+#   build {
+#     context   = path.cwd
+#   }
+# }
+
+resource "null_resource" "build_and_push_image" {
+  provisioner "local-exec" {
+    command = <<-EOT
+    cd ${path.cwd}
+    gcloud builds submit --timeout=3h  --tag ${local.image_name} .
+    EOT
   }
 }
-
- resource "null_resource" "build_and_push_image" {
-   provisioner "local-exec" {
-     command = <<-EOT
-     cd ${path.cwd}
-     gcloud builds submit --tag ${docker_image.vertex_julia.name} .
-     gcloud auth configure-docker us-central1-docker.pkg.dev
-     docker push ${docker_image.vertex_julia.name}
-     EOT
-   }
- }
+     #gcloud auth configure-docker us-central1-docker.pkg.dev
+     #docker push ${docker_image.vertex_julia.name}
 
 resource "google_workbench_instance" "instance" {
   name = "workbench-instance"
-  location = "us-west1-a"
+  location = "us-central1-a"
 
   gce_setup {
+    machine_type = "n1-standard-16" 
     container_image {
-      repository = docker_image.vertex_julia.name
+      repository = local.image_name
     }
   }
 }
@@ -69,10 +71,6 @@ output "repo_name" {
   value = local.repo_path
 }
 
-output "repo_url" {
-  value = docker_image.vertex_julia.name
-
-}
 data "google_project" "project" {
 }
 
