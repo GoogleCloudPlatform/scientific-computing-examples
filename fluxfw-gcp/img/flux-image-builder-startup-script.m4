@@ -29,11 +29,13 @@ ifdef(`X86_64', `include(x86_64_packages.txt)', `include(arm64_packages.txt)')dn
 
 ifdef(`X86_64', `include(nvidia_downloads.txt)')dnl
 
+python3.11 -m pip install cffi pyyaml jsonschema sphinx
+
 cd /usr/share
 
-git clone -b v0.55.0 https://github.com/flux-framework/flux-core.git
-git clone -b v0.29.0 https://github.com/flux-framework/flux-sched.git
-git clone -b v0.10.0 https://github.com/flux-framework/flux-security.git
+git clone -b v0.61.2 https://github.com/flux-framework/flux-core.git
+git clone -b v0.33.1 https://github.com/flux-framework/flux-sched.git
+git clone -b v0.11.0 https://github.com/flux-framework/flux-security.git
 
 cd /usr/share/flux-security
 

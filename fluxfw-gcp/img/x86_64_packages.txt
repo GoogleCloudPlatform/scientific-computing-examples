@@ -1,3 +1,4 @@
+    cmake \
     munge \
     munge-devel \
     hwloc \
@@ -23,11 +24,13 @@
     python3-jsonschema \
     python3-sphinx \
     python3-docutils \
+    python3.11 \
+    python3.11-devel \
+    python3.11-pip \
     aspell \
     aspell-en \
     valgrind-devel \
     mpich-devel \
-    ansible \
     apptainer \
     gcsfuse \
     jq
