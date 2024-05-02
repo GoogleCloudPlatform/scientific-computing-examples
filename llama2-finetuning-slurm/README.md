@@ -39,13 +39,13 @@ To generate a cost estimate based on your projected usage, use the [pricing calc
 * Set up [Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment). During the setup ensure you enable all the required APIs, and permissions, and grant credentials to Terraform. Also ensure you clone and build the Cloud HPC Toolkit repository in your local environment.
 * Review the [best practices](https://cloud.google.com/hpc-toolkit/docs/tutorials/best-practices).
 * **Ensure you have [sufficient quota](https://cloud.google.com/docs/quotas/view-manage) to run**. Verify at the Cloud Console by clicking the link
-
-        https://console.cloud.google.com/iam-admin/quotas
-
+```
+https://console.cloud.google.com/iam-admin/quotas
+```
 * Search for:
-
-        	nvidia_l4_gpus
-
+```
+nvidia_l4_gpus
+```
 > Using the command line, you can find the same information.
 ```
 gcloud compute regions describe us-central1 --format="table(quotas:format='table(metric,limit,usage)')" | grep -C 2 NVIDIA_L4_GPUS
@@ -79,23 +79,21 @@ From the Cloud Shell (or local shell), complete the following steps:
 
 1. Setup the  [Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment).
 2. Clone the Github repository.
-
-           git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
-
-
-
-3. Change to the AI Infrastructure directory
-
-  cd llam2-finetuning-slurm
-
+```
+git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
+```
+3. Change to the AI Infrastructure directory.
+```
+cd llam2-finetuning-slurm
+```
 4. Execute  
-
- 	ghpc create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
-
+```
+ghpc create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
+```
 5. Use the ``ghpc deploy`` command to begin automatic deployment of your cluster:
-
-    ghpc deploy hpc-slurm-llama2 --auto-approve
-
+```
+ghpc deploy hpc-slurm-llama2 --auto-approve
+```
 6. This process can take over 30 minutes.
 7. If the run is successful, the output is similar to the following:
 
@@ -103,15 +101,14 @@ Apply complete! Resources: 39 added, 0 changed, 0 destroyed.
 
 
 8. To view the created VMs, run the `gcloud compute instances list` command:
-
+```
 gcloud compute instances list | grep slurm
-
+```
 9. You are now ready to submit jobs to your HPC cluster.
 
 ### Connect to the Slurm HPC cluster
 
 To run the Llama 2 fine tuning on your cluster, you must login to the Slurm _login _node. This is done by clicking on the `SSH` button using the Google Cloud Console.
-
 
 1. Connect to the Console at https://console.cloud.google.com/compute/instances
 2. Click on `SSH` next to the `login` node
@@ -126,8 +123,6 @@ Download the llama2-7b models from Hugging Face
 
 On the Slurm login node, you can download the Hugging Face models to your local directory on the cluster. 
 
-
-
 1. Accept the EULA for Llama 2
 
     https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/llama2
@@ -139,9 +134,9 @@ On the Slurm login node, you can download the Hugging Face models to your local 
     Click "I HAVE READ AND ACCEPT THE LICENSE FOR LLAMA 2".
 
 2. Download the model with `gsutil`. In your home directory on the login node run the command.
-
-  gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
-
+```
+gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
+```
 The result will be a directory in your home directory.
 
 
@@ -153,19 +148,17 @@ From the Slurm login node, you can now submit the job to the cluster, assuming y
 * Downloaded the models to the local drive on the cluster
 
 The Slurm batch script is provided on the Google Cloud Storage bucket and is run using the `sbatch` command.
-
-	sbatch /data_bucket/fine-tune-slurm.sh
-
-You can validate the job is in queue with the `squeue` command.
-
-	squeue
-
-The output will look something like the following.
-
-
 ```
-             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
-                 3        g2 llama2-f drj_gcp_  R       3:23      1 hpcslurmll-g2node-0
+sbatch /data_bucket/fine-tune-slurm.sh
+```
+You can validate the job is in queue with the `squeue` command.
+```
+squeue
+```
+The output will look something like the following.
+```
+JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+    3        g2 llama2-f drj_gcp_  R       3:23      1 hpcslurmll-g2node-0
 ```
 
 
@@ -192,12 +185,10 @@ Select the dashboard with the name **"GPU: hpc-slurm-llama2". **This dashboard h
 ### View completed job
 
 Once the job has completed, the activity will no longer be visible in the `squeue` Slurm output. You will have an output file in your home directory, `slurm-N.out`, where "N" is the job number as seen in the `squeue` output.  You can view the last 20 lines of the output file with the `tail` command:
-
+```
 tail -20 slurm-N.out
-
+```
 Where "N" is the value seen in the `squeue` output for JOBID.  The output will be something similar to the following.
-
-
 ```
 $ tail -20 slurm-3.out 
 {'loss': 3.2061, 'grad_norm': 1.1988024711608887, 'learning_rate': 1.360544217687075e-06, 'epoch': 0.99}
@@ -208,7 +199,6 @@ $ tail -20 slurm-3.out
 {'train_runtime': 1326.2408, 'train_samples_per_second': 1.781, 'train_steps_per_second': 0.445, 'train_loss': 3.733814854136968, 'epoch': 1.0}
 Output from test prompt
 
-<s> 
 In the late action between Generals
 
 Brown and Riall, it appears our men fought
@@ -220,26 +210,18 @@ with great loss. The enemy, to whom it
 was so difficult to get within the reach of our
 guns, suffered severely in their
 ```
-
-
 The output from the test prompt indicates output relevant to the fine tuning of the Llama 2 model.
-
 
 ### Clean up
 
 To avoid incurring charges to your Google Cloud account for the resources used in this tutorial, either delete the project containing the resources, or keep the project and delete the individual resources.
 
-
 #### Destroy the HPC cluster
 
 To delete the HPC cluster, run the following command:
-
-
 ```
 ghpc deploy hpc-slurm-llama2 --auto-approve
 ```
-
-
 When complete you will see output similar to:
 
 Destroy complete! Resources: xx destroyed.
@@ -252,8 +234,6 @@ Destroy complete! Resources: xx destroyed.
 The easiest way to eliminate billing is to delete the project you created for the tutorial.
 
 To delete the project:
-
-
 
 1. **Caution**: Deleting a project has the following effects:
     * **Everything in the project is deleted.** If you used an existing project for the tasks in this document, when you delete it, you also delete any other work you've done in the project.
