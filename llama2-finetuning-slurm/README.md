@@ -48,7 +48,7 @@ To generate a cost estimate based on your projected usage, use the [pricing calc
 
 > Using the command line, you can find the same information.
 ```
-gcloud compute regions describe us-central1 --format="table(quotas:format='table(metric,limit,usage)')" | grep ^NVIDIA_L4_GPUS
+gcloud compute regions describe us-central1 --format="table(quotas:format='table(metric,limit,usage)')" | grep -C 2 NVIDIA_L4_GPUS
 ```
 
 * If you don't have a quota for at least 8 L4 GPUs, you must request at least 8. This is done by:
