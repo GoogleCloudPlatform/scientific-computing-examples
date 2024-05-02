@@ -60,11 +60,15 @@ gcloud compute ssh \
 Set up access to the Artifact Registry repository
 
 ```bash
-export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
+export REGISTRY_AUTHORITY=#ARTIFACT REGISTRY DOMAIN e.g. oras://us-docker.pkg.dev
 ```
 
 ```bash
-apptainer remote login \
+export REPOSITORY_URL=$REGISTRY_AUTHORITY/#ARTIFACT REGISTRY REPOSITORY e.g. myproject/sifs
+```
+
+```bash
+apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
 ${REPOSITORY_URL}
@@ -73,7 +77,7 @@ ${REPOSITORY_URL}
 The command
 
 ```bash
-srun -N1 apptainer run oras://us-docker.pkg.dev/wkh-as-vpc-fluxfw/sifs/vscode:latest code tunnel
+srun -N1 apptainer run $REPOSITORY_URL vscode:latest code tunnel
 ```
 
 allocates a compute node then downloads the `vscode` container and uses it to execute the command `code tunnel` which sets up the remote side of the VS Code tunnel. You should see output similar to

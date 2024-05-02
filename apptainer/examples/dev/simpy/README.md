@@ -163,20 +163,24 @@ EOF
 Set up access to the Artifact Registry repository
 
 ```bash
-export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
+export REGISTRY_AUTHORITY=#ARTIFACT REGISTRY DOMAIN e.g. oras://us-docker.pkg.dev
 ```
 
 ```bash
-apptainer remote login \
+export REPOSITORY_URL=$REGISTRY_AUTHORITY/#ARTIFACT REGISTRY REPOSITORY URL e.g. myproject/sifs
+```
+
+```bash
+apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_AUTHORITY}
 ```
 
 Then run the simulation on a compute node
 
 ```bash
-srun -N1 apptainer run $REPOSITORY_URL/simpy:1.0 python3 bank_revenge.py
+srun -N1 apptainer run $REPOSITORY_URL/simpy:latest python3 bank_revenge.py
 ```
 
 You should see output that looks like
