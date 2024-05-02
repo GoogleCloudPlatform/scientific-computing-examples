@@ -84,7 +84,7 @@ git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.g
 ```
 3. Change to the AI Infrastructure directory.
 ```
-cd scientific-computing-examples/llam2-finetuning-slurm
+cd scientific-computing-examples/llama2-finetuning-slurm
 ```
 4. Execute  
 ```
