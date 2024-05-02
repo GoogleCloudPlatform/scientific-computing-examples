@@ -71,7 +71,7 @@ export REPOSITORY_URL=$REGISTRY_AUTHORITY/#ARTIFACT REGISTRY REPOSITORY e.g. myp
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_AUTHORITY}
 ```
 
 The command
