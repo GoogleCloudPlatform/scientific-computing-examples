@@ -129,20 +129,24 @@ gcloud compute ssh \
 Set up access to the Artifact Registry repository
 
 ```bash
-export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
+export REGISTRY_AUTHORITY=#ARTIFACT REGISTRY DOMAIN e.g. oras://us-docker.pkg.dev
 ```
 
 ```bash
-apptainer remote login \
+export REPOSITORY_URL=$REGISTRY_AUTHORITY/#ARTIFACT REGISTRY REPOSITORY e.g. myproject/sifs
+```
+
+```bash
+apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_AUTHORITY}
 ```
 
 Download the `mpich-helloworld` container
 
 ```bash
-apptainer pull oras://#LOCATION#/#PROJECT_ID#/#REPOSITORY#/mpich-helloworld:latest
+apptainer pull $REPOSITORY_URL
 INFO:    Downloading oras image
 414.0b / 414.0b [=============================================================================================================================] 100 %0s
 127.9MiB / 127.9MiB [============================================================================================================] 100 % 199.8 MiB/s 0s
