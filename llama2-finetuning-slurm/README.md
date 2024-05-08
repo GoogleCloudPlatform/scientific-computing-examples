@@ -140,7 +140,7 @@ On the Slurm login node, you can download the Hugging Face models to your local 
 
     Click "I HAVE READ AND ACCEPT THE LICENSE FOR LLAMA 2".
 
-2. Download the model with `gsutil`. In your home directory on the login node run the command.
+2. Download the model with `gcloud`. In your home directory on the login node run the command.
 ```
 gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2/llama2-7b-hf/ .
 ```
