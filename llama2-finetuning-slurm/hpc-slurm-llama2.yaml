@@ -32,6 +32,8 @@ vars:
 
 deployment_groups:
 - group: enable_apis
+  modules:
+
   - id: enable_apis
     source: community/modules/project/service-enablement
     settings:
