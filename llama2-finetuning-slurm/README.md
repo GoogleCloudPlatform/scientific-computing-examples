@@ -126,7 +126,7 @@ You will probably see a login message indicating Slurm is still being configured
 ```
 The configuration process will finish shortly.
 
-Download the llama2-7b models from Hugging Face
+#### Download the llama2-7b models from Hugging Face
 
 On the Slurm login node, you can download the Hugging Face models to your local directory on the cluster. 
 
