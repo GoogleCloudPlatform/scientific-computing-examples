@@ -118,6 +118,13 @@ Or you can connect from the command line.
 ```
 gcloud compute ssh $(gcloud compute instances list --filter "name ~ login" --format "value(name)") --tunnel-through-iap --zone us-east1-b
 ```
+You may need to respond to SSH related prompts.
+
+You will probably see a login message indicating Slurm is still being configured.
+```
+*** Slurm is currently being configured in the background. ***
+```
+The configuration process will finish shortly.
 
 Download the llama2-7b models from Hugging Face
 
