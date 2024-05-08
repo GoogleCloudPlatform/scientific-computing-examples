@@ -31,6 +31,16 @@ vars:
 # https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
 
 deployment_groups:
+- group: enable_apis
+  - id: enable_apis
+    source: community/modules/project/service-enablement
+    settings:
+      gcp_service_list: [
+        "cloudresourcemanager.googleapis.com",
+        "stackdriver.googleapis.com",
+        "logging.googleapis.com",
+        "compute.googleapis.com"
+      ]
 - group: setup
   modules:
 
