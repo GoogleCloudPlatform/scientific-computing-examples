@@ -1,0 +1,73 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+blueprint_name: julia-workbench
+
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: julia-wb-v0
+  region: us-east1
+
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: image
+  modules:
+
+  ## Create Docker repository
+  - id: registry
+    source: ./artifact-registry
+
+  - id: container
+    source: ./container
+    use: [registry]
+    settings:
+      image_name: julia-workbench
+      dockerfile_contents: |
+        FROM gcr.io/deeplearning-platform-release/base-gpu.py310 
+
+        SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+        WORKDIR /tmp
+
+        RUN mkdir /opt/julia && \
+            cd /opt/julia && \
+            wget https://julialang-s3.julialang.org/bin/linux/x64/1.9/julia-1.9.4-linux-x86_64.tar.gz && \
+            tar zxvf julia-1.9.4-linux-x86_64.tar.gz && \
+            ln -s /opt/julia/julia-1.9.4/bin/julia /usr/local/bin/julia
+
+        # See https://github.com/JuliaCI/julia-buildkite/blob/70bde73f6cb17d4381b62236fc2d96b1c7acbba7/utilities/build_envs.sh#L54
+        # for an explanation of these options
+        ENV JULIA_CPU_TARGET="generic;sandybridge,-xsaveopt,clone_all;haswell,-rdrnd,base(1)" 
+             
+        #RUN /root/.juliaup/bin/juliaup add 1.9 && \
+        #     /root/.juliaup/bin/juliaup default 1.9
+             
+        RUN julia -e 'import Pkg; Pkg.update()'  && \
+            julia -e 'using Pkg; Pkg.add(["IJulia", "Lux", "ModelingToolkit", "Optimization", "OptimizationOptimisers", "NeuralPDE", "Plots"])' &&\
+            julia -e 'using Pkg; Pkg.precompile'
+
+        EXPOSE 8080
+
+  
+- group: notebook
+  modules:
+
+  - id: vertex_ai_workbench
+    source: ./workbench
+    use: [container]
