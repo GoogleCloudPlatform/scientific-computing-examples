@@ -45,20 +45,22 @@ check_args() {
     usage
     die 'need args'
   fi
+
+  if [ ! -z "$remaining_args" ]; then
+    usage
+    die 'unknown extra args'
+  fi
 }
 
 check_dependencies() {
-  # 
-  # gcloud
-  # docker
-  #
-  if [ -z "$project" ] || \
-     [ -z "$zone" ] || \
-     [ -z "$image_name" ] || \
-     [ -z "$workbench_name" ]; then
+  if ! $(which -s gcloud) || ! $(which -s docker); then
     usage
-    die 'need dependencies installed'
+    die 'need dependencies "gcloud" and "docker" installed'
   fi
+}
+
+check_services() {
+  log "check services"
 }
 
 enable_service() {
@@ -75,7 +77,7 @@ create_repository() {
   local zone="${1:-us-central1-c}"
   local repository_name="tutorial"
 
-  echo gcloud artifacts repositories create ${respository_name} \
+  log gcloud artifacts repositories create ${respository_name} \
     --location=${zone} \
     --repository-format="DOCKER"
 
@@ -105,7 +107,7 @@ create_workbench() {
   local workbench_name=$4
 
 
-  echo gcloud notebooks instances create ${workbench_name} \
+  log gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
     --container-repository=${container_repository} \
     --container-tag=${image_url}
