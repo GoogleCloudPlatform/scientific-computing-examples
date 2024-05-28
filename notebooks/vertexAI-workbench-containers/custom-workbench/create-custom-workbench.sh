@@ -46,7 +46,7 @@ check_args() {
     die 'need args!'
   fi
 
-  if [ ! -z "$remaining_args" ]; then
+  if [ -n "$remaining_args" ]; then
     usage
     die 'unknown extra args!'
   fi
@@ -56,7 +56,7 @@ check_dependencies() {
   local missing_dep=""
   $(which -s gcloud) || missing_dep="${missing_dep} gcloud"
   $(which -s docker) || missing_dep="${missing_dep} docker"
-  if [ ! -z "$missing_dep" ]; then
+  if [ -n "$missing_dep" ]; then
     usage
     die "missing dependencies!  Please install: $missing_dep"
   fi
