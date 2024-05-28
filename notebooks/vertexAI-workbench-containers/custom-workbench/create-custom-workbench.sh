@@ -109,7 +109,6 @@ create_workbench() {
   local image_url=$3
   local workbench_name=$4
 
-
   log gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
     --container-repository=${container_repository} \
@@ -137,7 +136,6 @@ create_workbench() {
 }
 
 main() {
-
   while getopts ':p:z:i:' OPT; do
     case $OPT in
       p) project_opt=$OPTARG ;;
@@ -167,6 +165,5 @@ main() {
   fi
 
   create_workbench ${project} ${zone} ${image_name} ${workbench_name}
-
 }
 main $@
