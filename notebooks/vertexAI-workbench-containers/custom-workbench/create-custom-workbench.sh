@@ -32,7 +32,7 @@ usage() {
     where
       -p project (defaults to GOOGLE_CLOUD_PROJECT env var)
       -z zone (defaults to CLOUDSDK_COMPUTE_ZONE env var)
-      -i image_name, workbench image name (defaults to gcr.io/deeplearning-platform-release/base-gpu.py310)
+      -i image_name, workbench image name (defaults to '${default_image_url}')
       workbench_name is the name of the notebook instance to deploy
   """
 }
@@ -147,7 +147,7 @@ main() {
   done
   project=${project_opt:-$GOOGLE_CLOUD_PROJECT} # opt overrides env default
   zone=${zone_opt:-$CLOUDSDK_COMPUTE_ZONE} # opt overrides env default
-  local default_image_url="gcr.io/deeplearning-platform-release/base-gpu.py310"
+  default_image_url="gcr.io/deeplearning-platform-release/base-gpu.py310"
   image_name=${image_name_opt:-$default_image_url}
 
   shift $(($OPTIND - 1))
@@ -160,9 +160,11 @@ main() {
   check_dependencies
   check_services # might be the easiest way to handle this...
 
-  build_image ${image_name}
-  create_repository "custom-workbench-images"
-  push_image_to_repository ${image_name} "custom-workbench-images"
+  if [ "$image_name" != "$default_image_url" ]; then
+    build_image ${image_name}
+    create_repository "custom-workbench-images"
+    push_image_to_repository ${image_name} "custom-workbench-images"
+  fi
 
   create_workbench ${project} ${zone} ${image_name} ${workbench_name}
 
