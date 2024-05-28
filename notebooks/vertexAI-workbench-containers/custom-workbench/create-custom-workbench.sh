@@ -28,11 +28,11 @@ die() {
 
 usage() {
   echo """
-  usage: $0 [-p <project>] -z <zone> -i <image_name> <workbench_name>
+  usage: $0 [-p <project>] [-z <zone>] [-i <image_name>] <workbench_name>
     where
       -p project (defaults to GOOGLE_CLOUD_PROJECT env var)
       -z zone (defaults to CLOUDSDK_COMPUTE_ZONE env var)
-      -i image_name, workbench image name
+      -i image_name, workbench image name (defaults to gcr.io/deeplearning-platform-release/base-gpu.py310)
       workbench_name is the name of the notebook instance to deploy
   """
 }
@@ -62,18 +62,20 @@ check_dependencies() {
 }
 
 enable_service() {
+  log "enable services"
 }
 
 build_image() {
   #local region="${zone%%-[a-f]}"
-
+  
+  log "build image"
 }
 
 create_repository() {
   local zone="${1:-us-central1-c}"
   local repository_name="tutorial"
 
-  gcloud artifacts repositories create ${respository_name} \
+  echo gcloud artifacts repositories create ${respository_name} \
     --location=${zone} \
     --repository-format="DOCKER"
 
@@ -93,16 +95,17 @@ create_repository() {
 
 push_image_to_repository() {
   #local region="${zone%%-[a-f]}"
+  log "push image to repository"
 }
 
 create_workbench() {
   local project=$1
   local zone=$2
-  local image_name=$3
+  local image_url=$3
   local workbench_name=$4
 
-  local image_url="/projects/${project}/zones/${zone}/images/${image_name}"  # ??
-  gcloud notebooks instances create ${workbench_name} \
+
+  echo gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
     --container-repository=${container_repository} \
     --container-tag=${image_url}
@@ -139,12 +142,13 @@ main() {
   done
   project=${project_opt:-$GOOGLE_CLOUD_PROJECT} # opt overrides env default
   zone=${zone_opt:-$CLOUDSDK_COMPUTE_ZONE} # opt overrides env default
-  image_name=${image_name_opt}
+  local default_image_url="gcr.io/deeplearning-platform-release/base-gpu.py310"
+  image_name=${image_name_opt:-$default_image_url}
 
   shift $(($OPTIND - 1))
   workbench_name=$1
 
-  shift
+  shift || : # TODO double-check this... I think this works
   remaining_args=$@
 
   check_args
