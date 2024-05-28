@@ -65,6 +65,8 @@ enable_service() {
 }
 
 build_image() {
+  #local region="${zone%%-[a-f]}"
+
 }
 
 create_repository() {
@@ -90,14 +92,16 @@ create_repository() {
 }
 
 push_image_to_repository() {
+  #local region="${zone%%-[a-f]}"
 }
 
 create_workbench() {
-  local zone=$1
-  local image_name=$2
-  local workbench_name=$3
+  local project=$1
+  local zone=$2
+  local image_name=$3
+  local workbench_name=$4
 
-  local image_url="${image_name}"
+  local image_url="/projects/${project}/zones/${zone}/images/${image_name}"  # ??
   gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
     --container-repository=${container_repository} \
@@ -138,11 +142,6 @@ main() {
   image_name=${image_name_opt}
 
   shift $(($OPTIND - 1))
-  provider_slash_layer=$1
-  provider="${provider_slash_layer%%/*}"
-  layer="${provider_slash_layer##*/}"
-
-  shift
   workbench_name=$1
 
   shift
@@ -152,13 +151,11 @@ main() {
   check_dependencies
   check_services # might be the easiest way to handle this...
 
-  region="${zone%%-[a-f]}"
-
   build_image ${image_name}
   create_repository "custom-workbench-images"
   push_image_to_repository ${image_name} "custom-workbench-images"
 
-  create_workbench ${zone} ${image_name} ${workbench_name}
+  create_workbench ${project} ${zone} ${image_name} ${workbench_name}
 
 }
 main $@
