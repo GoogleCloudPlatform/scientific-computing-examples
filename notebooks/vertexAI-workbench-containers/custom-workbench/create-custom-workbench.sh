@@ -43,19 +43,22 @@ check_args() {
      [ -z "$image_name" ] || \
      [ -z "$workbench_name" ]; then
     usage
-    die 'need args'
+    die 'need args!'
   fi
 
   if [ ! -z "$remaining_args" ]; then
     usage
-    die 'unknown extra args'
+    die 'unknown extra args!'
   fi
 }
 
 check_dependencies() {
-  if ! $(which -s gcloud) || ! $(which -s docker); then
+  local missing_dep=""
+  $(which -s gcloud) || missing_dep="${missing_dep} gcloud"
+  $(which -s docker) || missing_dep="${missing_dep} docker"
+  if [ ! -z "$missing_dep" ]; then
     usage
-    die 'need dependencies "gcloud" and "docker" installed'
+    die "missing dependencies!  Please install: $missing_dep"
   fi
 }
 
