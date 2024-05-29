@@ -84,7 +84,7 @@ gcloud artifacts repositories describe \
 ```
 
 
-### Create a custom workbench image
+### Create a custom workbench image locally using docker
 
 Example `Dockerfile` to create a custom workbench image:
 
@@ -102,9 +102,11 @@ Build your image locally with
 docker build -t mycustomimage:latest .
 ```
 
-Note that the `FROM` image is unfortunately _huge_!  You might be better off
-using Cloud Build to build and push your image to your image repo without
+Note that the upstream `FROM` image is unfortunately huge.  You might be better
+off using Cloud Build to build and push your image to your image repo without
 having to download anything to your actual laptop.
+
+
 
 
 ### Push your new image to make it available for use
@@ -123,12 +125,33 @@ and push it up to the repo
 ```bash
 docker push us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest
 ```
-This took a few minutes from a test instance.
+This took almost ten minutes from a test instance.
 
-
+References:
 - [Push and pull images  |  Artifact Registry documentation  |  Google Cloud](https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling)
 
-Alternatively, do all of this with Cloud Build:
+
+### Alternatively - Create a custom workbench image using Cloud Build
+
+Alternatively, do all of this with Cloud Build.
+
+We'll still use the same `Dockerfile`, but now we'll add a cloud build config
+file `cloudbuild.yml` that looks like
+```yaml
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest', '.' ]
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'push', 'us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest' ]
+images: [ 'us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest' ]
+
+```
+and kick off a build in the cloud with
+```
+gcloud builds submit --config CONFIG_FILE_PATH SOURCE_DIRECTORY
+```
+
+References:
 - [Quickstart: Build and push a Docker image with Cloud Build  |  Cloud Build Documentation  |  Google Cloud](https://cloud.google.com/build/docs/build-push-docker-image)
 - [Build container images  |  Cloud Build Documentation  |  Google Cloud](https://cloud.google.com/build/docs/building/build-containers)
 
