@@ -54,8 +54,8 @@ check_args() {
 
 check_dependencies() {
   local missing_dep=""
-  $(which -s gcloud) || missing_dep="${missing_dep} gcloud"
-  $(which -s docker) || missing_dep="${missing_dep} docker"
+  $(which gcloud > /dev/null 2>&1) || missing_dep="${missing_dep} gcloud"
+  $(which docker > /dev/null 2>&1) || missing_dep="${missing_dep} docker"
   if [ -n "$missing_dep" ]; then
     usage
     die "missing dependencies!  Please install: $missing_dep"
