@@ -18,7 +18,7 @@ LOCATION="us-central1-c"
 REPOSITORY="us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo"
 IMAGE="mycustomimage:latest"
 
-# upstream
+# For non-customized "vanilla" workbenches:
 #REPOSITORY="gcr.io/deeplearning-platform-release"
 #IMAGE="base-gpu.py310"
 
@@ -39,13 +39,25 @@ IMAGE="mycustomimage:latest"
 #                        --shielded-secure-boot | --shielded-vtpm | --subnet |
 #                        --subnet-region | --tags | --vm-image-family |
 #                        --vm-image-name | --vm-image-project
-
-    #--network="tutorial" \
-    #--subnet="tutorial" \
-
+#
 gcloud notebooks instances create \
   --location="${LOCATION}" \
   --container-repository="${REPOSITORY}" \
   --container-tag="${IMAGE}" \
   --no-public-ip \
   "mycustomworkbench-0"
+
+# Even though this only has internal IP addresses, you can still open the
+# notebook interface from `Vertex AI -> Workbenches` in the Google Cloud Console
+# web page. It transparently uses Identity Aware Proxy (IAP) to connect.  Note
+# this might be blocked via org-level policies.
+#
+# You can also ssh directly to the instance:
+#   gcloud compute ssh mycustomworkbench-0
+# Note this access can also be limited using org-level policies.
+#
+# Delete this workbench instance using the Cloud Console or `gcloud` commands similar to:
+#   gcloud notebooks instances list
+# and
+#   gcloud notebooks instances delete mycustomworkbench-0 --location us-central1-c
+#
