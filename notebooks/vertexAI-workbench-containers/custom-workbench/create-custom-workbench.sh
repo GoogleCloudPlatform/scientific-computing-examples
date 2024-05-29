@@ -32,7 +32,7 @@ usage() {
     where
       -p project (defaults to GOOGLE_CLOUD_PROJECT env var)
       -z zone (defaults to CLOUDSDK_COMPUTE_ZONE env var)
-      -i image_name, workbench image name (defaults to '${default_image_url}')
+      -i image_name, workbench image name (defaults to '${default_image_tag}')
       workbench_name is the name of the notebook instance to deploy
   """
 }
@@ -106,13 +106,13 @@ push_image_to_repository() {
 create_workbench() {
   local project=$1
   local zone=$2
-  local image_url=$3
+  local image_name=$3
   local workbench_name=$4
 
-  log gcloud notebooks instances create ${workbench_name} \
+    #--container-repository=${container_repository} \
+  gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
-    --container-repository=${container_repository} \
-    --container-tag=${image_url}
+    --container-tag=${image_name}
   # Usage: gcloud notebooks instances create (INSTANCE : --location=LOCATION) [optional flags]
   # optional flags may be  --accelerator-core-count | --accelerator-type |
   #                        --async | --boot-disk-size | --boot-disk-type |
@@ -136,6 +136,9 @@ create_workbench() {
 }
 
 main() {
+  #default_image_tag="gcr.io/deeplearning-platform-release/base-gpu.py310"
+  default_image_tag="base-gpu.py310"
+
   while getopts ':p:z:i:' OPT; do
     case $OPT in
       p) project_opt=$OPTARG ;;
@@ -145,8 +148,7 @@ main() {
   done
   project=${project_opt:-$GOOGLE_CLOUD_PROJECT} # opt overrides env default
   zone=${zone_opt:-$CLOUDSDK_COMPUTE_ZONE} # opt overrides env default
-  default_image_url="gcr.io/deeplearning-platform-release/base-gpu.py310"
-  image_name=${image_name_opt:-$default_image_url}
+  image_name=${image_name_opt:-$default_image_tag}
 
   shift $(($OPTIND - 1))
   workbench_name=$1
@@ -158,7 +160,8 @@ main() {
   check_dependencies
   check_services # might be the easiest way to handle this...
 
-  if [ "$image_name" != "$default_image_url" ]; then
+  if [ "$image_name" != "$default_image_tag" ] \\
+     && [ "$image_name" != "$default_image_tag:latest" ]; then
     build_image ${image_name}
     create_repository "custom-workbench-images"
     push_image_to_repository ${image_name} "custom-workbench-images"
