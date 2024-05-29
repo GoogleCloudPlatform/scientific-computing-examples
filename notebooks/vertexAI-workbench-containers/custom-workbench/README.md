@@ -100,6 +100,11 @@ having to download anything to your actual laptop.
 
 Push it up to `mycustomimagerepo`...
 
+- [Push and pull images  |  Artifact Registry documentation  |  Google Cloud](https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling)
+
+Alternatively, do all of this with Cloud Build:
+- [Quickstart: Build and push a Docker image with Cloud Build  |  Cloud Build Documentation  |  Google Cloud](https://cloud.google.com/build/docs/build-push-docker-image)
+- [Build container images  |  Cloud Build Documentation  |  Google Cloud](https://cloud.google.com/build/docs/building/build-containers)
 
 
 ### Create a _custom_  workbench instance
