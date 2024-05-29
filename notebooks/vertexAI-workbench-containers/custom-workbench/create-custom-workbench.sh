@@ -111,7 +111,7 @@ create_workbench() {
 
   local container_repository="gcr.io/deeplearning-platform-release"
 
-  gcloud notebooks instances create 
+  gcloud notebooks instances create \
     --location=${zone} \
     --container-repository=${container_repository} \
     --container-tag=${image_name} \
