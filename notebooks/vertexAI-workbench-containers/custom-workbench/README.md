@@ -72,6 +72,17 @@ gcloud artifacts repositories create \
   "mycustomimagerepo"
 ```
 
+The resulting registry URL should take the form:
+`<region>-<format>.pkg.dev/<project>/<repo_name>`.
+E.g., `us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo`.
+
+or you can look it up using
+```bash
+gcloud artifacts repositories describe \
+  --location=${REGION} \
+  mycustomimagerepo
+```
+
 
 ### Create a custom workbench image
 
@@ -100,6 +111,21 @@ having to download anything to your actual laptop.
 
 Push it up to `mycustomimagerepo`...
 
+Register the repo with docker
+```bash
+gcloud auth configure-docker us-central1-docker.pkg.dev
+```
+Tag the image you built with the full registry path
+```bash
+docker tag mycustomimage:latest us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest
+```
+and push it up to the repo
+```bash
+docker push us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest
+```
+This took a few minutes from a test instance.
+
+
 - [Push and pull images  |  Artifact Registry documentation  |  Google Cloud](https://cloud.google.com/artifact-registry/docs/docker/pushing-and-pulling)
 
 Alternatively, do all of this with Cloud Build:
@@ -107,13 +133,13 @@ Alternatively, do all of this with Cloud Build:
 - [Build container images  |  Cloud Build Documentation  |  Google Cloud](https://cloud.google.com/build/docs/building/build-containers)
 
 
-### Create a _custom_  workbench instance
+### Create a _custom_ workbench instance
 
 Example command to create workbench instance:
 
 ```bash
 LOCATION="us-central1-c"
-REPOSITORY="gcr.io/mycustomimagerepo"
+REPOSITORY="us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo"
 IMAGE="mycustomimage:latest"
 
 
