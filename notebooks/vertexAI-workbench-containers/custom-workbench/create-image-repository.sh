@@ -30,5 +30,5 @@ REGION="us-central1"
 #
 gcloud artifacts repositories create \
   --location=${REGION} \
-  --repository-format="docker"
+  --repository-format="docker" \
   mycustomimagerepo
