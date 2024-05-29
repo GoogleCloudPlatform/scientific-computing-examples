@@ -160,7 +160,7 @@ main() {
   check_dependencies
   check_services # might be the easiest way to handle this...
 
-  if [ "$image_name" != "$default_image_tag" ] \\
+  if [ "$image_name" != "$default_image_tag" ] \
      && [ "$image_name" != "$default_image_tag:latest" ]; then
     build_image ${image_name}
     create_repository "custom-workbench-images"
