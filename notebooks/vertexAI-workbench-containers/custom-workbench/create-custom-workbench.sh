@@ -114,7 +114,10 @@ create_workbench() {
   gcloud notebooks instances create ${workbench_name} \
     --location=${zone} \
     --container-repository=${container_repository} \
-    --container-tag=${image_name}
+    --container-tag=${image_name} \
+    --network="tutorial" \
+    --subnet="tutorial" \
+    --no-public-ip
   # Usage: gcloud notebooks instances create (INSTANCE : --location=LOCATION) [optional flags]
   # optional flags may be  --accelerator-core-count | --accelerator-type |
   #                        --async | --boot-disk-size | --boot-disk-type |
@@ -132,6 +135,37 @@ create_workbench() {
   #                        --shielded-secure-boot | --shielded-vtpm | --subnet |
   #                        --subnet-region | --tags | --vm-image-family |
   #                        --vm-image-name | --vm-image-project
+
+  # gcloud notebooks instances create (INSTANCE : --location=LOCATION)
+  #   [--async] [--instance-owners=INSTANCE_OWNERS]
+  #   [--labels=[KEY=VALUE,...]]
+  #   [--machine-type=MACHINE_TYPE; default="n1-standard-1"]
+  #   [--metadata=[KEY=VALUE,...]]
+  #   [--post-startup-script=POST_STARTUP_SCRIPT]
+  #   [--service-account=SERVICE_ACCOUNT]
+  #   [--no-shielded-integrity-monitoring] [--shielded-secure-boot]
+  #   [--no-shielded-vtpm] [--tags=[TAGS,...]]
+  #   [--accelerator-core-count=ACCELERATOR_CORE_COUNT
+  #     --accelerator-type=ACCELERATOR_TYPE]
+  #   [--boot-disk-size=BOOT_DISK_SIZE --boot-disk-type=BOOT_DISK_TYPE]
+  #   [[--container-repository=CONTAINER_REPOSITORY
+  #     : --container-tag=CONTAINER_TAG] | [--environment=ENVIRONMENT
+  #     : --environment-location=ENVIRONMENT_LOCATION]
+  #     | --vm-image-project=VM_IMAGE_PROJECT;
+  #     default="deeplearning-platform-release"
+  #     --vm-image-family=VM_IMAGE_FAMILY; default="common-cpu"
+  #     | --vm-image-name=VM_IMAGE_NAME]
+  #   [--custom-gpu-driver-path=CUSTOM_GPU_DRIVER_PATH --install-gpu-driver]
+  #   [--data-disk-size=DATA_DISK_SIZE
+  #     --data-disk-type=DATA_DISK_TYPE --no-remove-data-disk]
+  #   [--disk-encryption=DISK_ENCRYPTION [--kms-key=KMS_KEY
+  #     : --kms-keyring=KMS_KEYRING
+  #     --kms-location=KMS_LOCATION --kms-project=KMS_PROJECT]]
+  #   [--network=NETWORK --no-proxy-access --no-public-ip [--subnet=SUBNET
+  #     : --subnet-region=SUBNET_REGION]]
+  #   [--reservation=RESERVATION --reservation-affinity=RESERVATION_AFFINITY;
+  #     default="TYPE_UNSPECIFIED"] [GCLOUD_WIDE_FLAG ...]
+
 
 
 
