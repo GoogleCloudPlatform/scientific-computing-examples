@@ -32,3 +32,17 @@ gcloud artifacts repositories create \
   --location=${REGION} \
   --repository-format="docker" \
   mycustomimagerepo
+
+# The Registry URL should take the form: "<region>-<format>.pkg.dev/<project>/<repo_name>"
+# e.g., "us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo"
+#
+# or you can look it up using
+#   gcloud artifacts repositories describe \
+#     --location=${REGION} \
+#     mycustomimagerepo
+
+# Use this as the registry namespace tag for the images you build in order to push them up to the repo:
+#   gcloud auth configure-docker us-central1-docker.pkg.dev
+#   docker tag mycustomimage:latest us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest
+#   docker push us-central1-docker.pkg.dev/mycoolprojectname/mycustomimagerepo/mycustomimage:latest
+
