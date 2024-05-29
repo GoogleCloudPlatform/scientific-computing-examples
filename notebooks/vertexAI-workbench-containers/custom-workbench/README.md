@@ -98,6 +98,7 @@ having to download anything to your actual laptop.
 
 ### Push your new image to make it available for use
 
+Push it up to `mycustomimagerepo`...
 
 
 
@@ -107,8 +108,8 @@ Example command to create workbench instance:
 
 ```bash
 LOCATION="us-central1-c"
-REPOSITORY="gcr.io/deeplearning-platform-release" # add your own repo here
-IMAGE="base-gpu.py310:latest" # add your custom image tag here
+REPOSITORY="gcr.io/mycustomimagerepo"
+IMAGE="mycustomimage:latest"
 
 
 gcloud notebooks instances create \
