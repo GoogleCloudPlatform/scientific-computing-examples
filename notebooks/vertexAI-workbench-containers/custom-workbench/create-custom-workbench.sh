@@ -111,14 +111,15 @@ create_workbench() {
 
   local container_repository="gcr.io/deeplearning-platform-release"
 
+    #--network="tutorial" \
+    #--subnet="tutorial" \
+
   gcloud notebooks instances create \
-    --location=${zone} \
-    --container-repository=${container_repository} \
-    --container-tag=${image_name} \
-    --network="tutorial" \
-    --subnet="tutorial" \
+    --location="${zone}" \
+    --container-repository="${container_repository}" \
+    --container-tag="${image_name}" \
     --no-public-ip \
-    ${workbench_name}
+    "${workbench_name}"
   # Usage: gcloud notebooks instances create (INSTANCE : --location=LOCATION) [optional flags]
   # optional flags may be  --accelerator-core-count | --accelerator-type |
   #                        --async | --boot-disk-size | --boot-disk-type |
