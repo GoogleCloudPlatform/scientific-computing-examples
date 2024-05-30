@@ -80,9 +80,17 @@ create_repository() {
   local zone="${1:-us-central1-c}"
   local repository_name="tutorial"
 
-  log gcloud artifacts repositories create ${respository_name} \
-    --location=${zone} \
-    --repository-format="DOCKER"
+  local region="${zone%%-[a-f]}"
+
+  # gcloud artifacts repositories list \
+  #   --location=${region} \
+  #   --repository-format="docker" | grep ${respository_name} 
+  # ugh... need to do this stuff in a real programming language
+  
+  gcloud artifacts repositories create \
+    --location=${region} \
+    --repository-format="docker" \
+    ${respository_name}
 
   #  gcloud artifacts repositories create (REPOSITORY : --location=LOCATION) --repository-format=REPOSITORY_FORMAT [optional flags]
   #  optional flags may be  --allow-snapshot-overwrites | --async | --description |
