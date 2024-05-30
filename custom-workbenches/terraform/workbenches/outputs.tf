@@ -13,17 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-variable "zone" {
-  type    = string
-  default = "us-central1-c"
-}
-
-variable "network" {
-  type = string
-  default = "tutorial"
-}
-
-variable "subnet" {
-  type = string
-  default = "tutorial"
+output "jupyterlab_urls" {
+  description = "Links to access JupyterLab"
+  #value = [ for workbench in google_workbench_instance.workbench[*] : map("workbench", workbench.name, "link", workbench.proxy_uri) ]
+  # value = {
+  #   for workbench in google_workbench_instance.workbench[*] : workbench => map(
+  #     "workbench", workbench.name,
+  #     "link", workbench.proxy_uri
+  #   )
+  # }
+  value = google_workbench_instance.workbench[*].proxy_uri
 }

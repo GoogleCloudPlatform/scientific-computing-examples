@@ -18,23 +18,6 @@ locals {
   default_instance_type = "n2-standard-4"
 }
 
-data "terraform_remote_state" "network" {
-  backend = "gcs"
-  config = {
-    bucket = var.state_bucket
-    prefix = "terraform/network/state"
-  }
-}
-
-# resource "google_storage_bucket_object" "startup_script" {
-#   name  = "terraform/workbenches/provision.sh"
-#   content = templatefile("provision.sh.tmpl", {
-#     home_ip = data.terraform_remote_state.storage.outputs.storage-node-ip-address,
-#     tools_ip = data.terraform_remote_state.storage.outputs.storage-node-ip-address,
-#   })
-#   bucket = var.state_bucket
-# }
-
 data "google_compute_default_service_account" "default" {}
 
 resource "google_workbench_instance" "workbench" {
@@ -55,6 +38,10 @@ resource "google_workbench_instance" "workbench" {
       family  = "tf-latest-cpu"
       # family = "tf-latest-gpu"
     }
+    # container_image {
+    #   repository = ""
+    #   tag  = "latest"
+    # }
 
     boot_disk {
       disk_size_gb = 310
@@ -67,8 +54,8 @@ resource "google_workbench_instance" "workbench" {
     }
 
     network_interfaces {
-      network  = data.terraform_remote_state.network.outputs.network_id
-      subnet   = data.terraform_remote_state.network.outputs.subnet_id
+      network  = var.network
+      subnet   = var.subnet
       nic_type = "GVNIC"
     }
     disable_public_ip = true
