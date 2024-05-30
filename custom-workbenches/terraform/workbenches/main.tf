@@ -19,6 +19,11 @@ locals {
 }
 
 data "google_compute_default_service_account" "default" {}
+data "google_compute_network" "tutorial" { name = var.network }
+data "google_compute_subnetwork" "tutorial" {
+  name = var.subnet
+  region = join("-", slice(split("-", var.zone), 0, 2))
+}
 
 resource "google_workbench_instance" "workbench" {
   count    = local.workbench_count
@@ -33,15 +38,15 @@ resource "google_workbench_instance" "workbench" {
     #   core_count   = 1
     # }
 
-    vm_image {
-      project = "deeplearning-platform-release"
-      family  = "tf-latest-cpu"
-      # family = "tf-latest-gpu"
-    }
-    # container_image {
-    #   repository = ""
-    #   tag  = "latest"
+    # vm_image {
+    #   project = "deeplearning-platform-release"
+    #   family  = "tf-latest-cpu"
+    #   # family = "tf-latest-gpu"
     # }
+    container_image {
+      repository = "gcr.io/deeplearning-platform-release/base-gpu.py310"
+      tag  = "latest"
+    }
 
     boot_disk {
       disk_size_gb = 310
@@ -54,8 +59,8 @@ resource "google_workbench_instance" "workbench" {
     }
 
     network_interfaces {
-      network  = var.network
-      subnet   = var.subnet
+      network  = data.google_compute_network.tutorial.id
+      subnet   = data.google_compute_subnetwork.tutorial.id
       nic_type = "GVNIC"
     }
     disable_public_ip = true
