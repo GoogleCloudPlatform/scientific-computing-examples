@@ -181,6 +181,9 @@ and wait for the resources to be created.  This typically takes a few minutes.
 ## Open JupyterLab
 
 Open the [Cloud Console Vertex AI Workbenches View](https://console.cloud.google.com/)
+
+![Cloud Console Vertex AI Workbenches View](media/cloud-console-vertexai-workbenches-view.png)
+
 and click on the `Open JupyterLab` link for the `workbench-0`  workbench instance.
 
 Alternatively, you can just grab the Proxy URI from
