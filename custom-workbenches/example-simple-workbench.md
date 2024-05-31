@@ -1,4 +1,4 @@
-# Creating Custom VertexAI Workbench Instances for Scientific Machine Learning
+# Creating VertexAI Workbench Instances for Scientific Machine Learning
 
 Here are some example template snippets used to manage Vertex AI Workbench
 instances in Google Cloud.  This includes examples of how spin them up and
