@@ -22,8 +22,8 @@ to run simulation workloads on accelerated hardware.
 
 ![Typical compute cluster on GCP Architecture](media/typical-compute-cluster-architecture.png)
 
-(Add a couple of pretty pictures here showing how to use the notebook as a 
-base of operations)
+TODO Add a couple of pretty pictures here showing how to use the notebook as a 
+base of operations
 
 ![standalone compute cluster on GCP Architecture](media/standalone-compute-cluster-architecture.png)
 
