@@ -70,6 +70,8 @@ cloudkms.googleapis.com
 containerregistry.googleapis.com
 iam.googleapis.com
 iap.googleapis.com
+
+TODO fix this mess
     
 Next, make sure the project you just created is selected in the top of the
 Cloud Console.
@@ -101,6 +103,7 @@ cd custom-workbenches
 
 All example commands below are relative to this particular example directory.
 
+
 ## Tools
 
 We use [Terraform](terraform.io) for these examples and the latest version is
@@ -121,18 +124,12 @@ terraform plan
 terraform apply
 ```
 
-This creates a Service Account and optionally a CMEK. We'll need those in later
-steps.
+Next create a dedicated `tutorial` network for our workbenches.
 
-
-## Create a tutorial network
-
-TODO combine setup + network into a single step
-
-Create a `tutorial` network dedicated for the workbenches.  We're not using the
-the `default` network for the project because it's best practice to only use
-internal IP addresses, and creating a dedicated network keeps all the NAT
-gateway and firewall rules for that in one place that's easy to manage.
+We're not simply using the `default` network for the project because it's best
+practice to only ever use internal IP addresses, and creating a dedicated
+`tutorial` network keeps all the NAT gateway and firewall rules in one place
+that's easier to manage than adding bits and pieces to the `default` network.
 
 ```bash
 cd terraform/network
@@ -209,18 +206,19 @@ From the `workbenches` sub-directory, run
 
 ```sh
 terraform destroy
-cd ../storage
-terraform destroy
-cd ../network
-terraform destroy
 ```
 
 ...and then optionally,
 ```sh
+cd ../network
+terraform destroy
 cd ../setup
 terraform destroy
 ```
 to clean up the rest.
+
+Hint, keep those around for the next tutorial.
+
 
 ## What's next
 
