@@ -114,8 +114,21 @@ already installed in your GCP Cloudshell.
 
 TODO combine setup + network into a single step
 
-Create a Service Account and a Customer-Managed Encryption Keys (CMEK) to use
-when we create all of the compute resources used in this project:
+We'll use a Google Cloud Storage bucket as a backend to store the Terraform
+state for the resources created in this set of tutorials.
+
+Create a GCS bucket
+```bash
+gcloud storage buckets create gs://<yourcoolbucketname>
+```
+and then
+```bash
+cp terraform/backend.conf.example terraform/backend.conf
+```
+and edit the `terraform/backend.conf` file to add the name of your bucket.
+
+Create a Service Account and some IAM resources to use when we create all of
+the compute resources used in this project:
 
 ```bash
 cd terraform/setup
@@ -167,7 +180,31 @@ and wait for the resources to be created.  This typically takes a few minutes.
 
 ## Open JupyterLab
 
-TODO
+Open the [Cloud Console Vertex AI Workbenches View](https://console.cloud.google.com/)
+and click on the `Open JupyterLab` link for the `workbench-0`  workbench instance.
+
+Alternatively, you can just grab the Proxy URI from
+
+```bash
+gcloud workbenches describe <workbench-name> --location <zone>
+```
+
+(E.g., `gcloud workbenches describe workbench-0 --location us-central1-c`)
+and open that in a new browser tab.
+
+
+## Customize JupyterLab
+
+Dark mode!  :-)
+
+Keep in mind that any customizations you make will survive stopping and
+starting the workbench instance, but will be blown away when you destroy the
+workbench instance.
+
+If you want to persist changes beyond the life of a single workbench instance,
+you'll need to
+[create your own workbench image](example-build-custom-workbench.md)
+to use for your workbench instances.
 
 
 ## Cleaning up
