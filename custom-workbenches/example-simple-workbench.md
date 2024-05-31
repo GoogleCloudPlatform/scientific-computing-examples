@@ -196,6 +196,18 @@ gcloud workbenches describe <workbench-name> --location <zone>
 and open that in a new browser tab.
 
 
+## Use JupyterLab to manage other Google Cloud resources
+
+Note you can open a terminal pane in JupiterLab and use various tools
+to manage Google Cloud infrastructure.
+
+TODO:
+- `gcloud` to manage Vertex AI Pipelines
+- kubeflow python APIs
+- Use the `hpc toolkit` to spin up a slurm cluster
+- Any `docker`-based tooling
+
+
 ## Customize JupyterLab
 
 Dark mode!  :-)
