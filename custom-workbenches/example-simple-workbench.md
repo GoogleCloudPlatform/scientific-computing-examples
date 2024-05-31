@@ -109,28 +109,34 @@ already installed in your GCP Cloudshell.
 
 ## Create some preliminary resources
 
+TODO combine setup + network into a single step
+
 Create a Service Account and a Customer-Managed Encryption Keys (CMEK) to use
 when we create all of the compute resources used in this project:
 
 ```bash
 cd terraform/setup
-terraform init
+terraform init -backend-config ../backend.conf
 terraform plan
 terraform apply
 ```
 
-The output of this command will display links for the Service Account and CMEK.
-We'll need those in later steps.
+This creates a Service Account and optionally a CMEK. We'll need those in later
+steps.
 
 
 ## Create a tutorial network
 
-Create a `tutorial` network dedicated to the compute cluster instead of using
-the `default` network for the project we created.
+TODO combine setup + network into a single step
+
+Create a `tutorial` network dedicated for the workbenches.  We're not using the
+the `default` network for the project because it's best practice to only use
+internal IP addresses, and creating a dedicated network keeps all the NAT
+gateway and firewall rules for that in one place that's easy to manage.
 
 ```bash
 cd terraform/network
-terraform init
+terraform init -backend-config ../backend.conf
 terraform plan
 terraform apply
 ```
@@ -140,136 +146,30 @@ command will display the names of the network and subnetwork created for the
 tutorial.
 
 
-## Create some storage volumes
+## Create a Workbench instance
 
-NFS volumes are common in compute cluster scenarios.  Here we create them just
-as an example as well as potentially providing convenience for infrastructure
-development and testing.  E.g., shared home directories on compute nodes.
+Create...
 
-In this part of the example we'll need to use outputs from the `setup` steps 
-to specific terraform variables in a `tfvars` file.
-
-Change to the storage server example directory
+Change to the workbenches example directory
 
 ```bash
-cd ../storage
+cd terraform/workbenches
 ```
 
-Copy over the template variables
+and spin up a workbench using the default python image
 
 ```bash
-cp storage.tfvars.example storage.tfvars
+terraform init -backend-config ../backend.conf
+terraform plan
+terraform apply
 ```
 
-Edit `storage.tfvars` to set some missing variables.
-
-You need to edit several fields:
+and wait for the resources to be created.  This typically takes a few minutes.
 
 
-### Edit the CMEK used to encrypt disks and storage
+## Open JupyterLab
 
-Uncomment
-```terraform
-# cmek_self_link = "projects/<project>/locations/global/keyRings/tutorial-keyring/cryptoKeys/tutorial-cmek"
-```
-and set this variable to the value output from the setup step above.
-
-
-### Edit Service Account used for the various compute node types
-
-Uncomment the following variables throughout the file
-```terraform
-# compute_node_service_account = "default"
-```
-and set the value of each to the value output from the setup step above.
-
-Note the output IP addresses reported from the `apply`.
-
-You could now use those terraform outputs to set terraform variables in the
-next steps just like we did in this step.  However, we'll take a bit of
-a shortcut in the next step and access outputs directly from the terraform
-state for previous steps.
-
-
-## Create a cluster of compute nodes
-
-Create an example static cluster of compute nodes.
-
-Change to the compute cluster example directory
-
-```bash
-cd terraform/compute-partition
-```
-
-Copy over the template variables
-
-```bash
-cp compute.tfvars.example compute.tfvars
-```
-
-Edit `compute.tfvars` to set some missing variables.
-
-You need to edit several fields:
-
-
-### Edit the CMEK used to encrypt disks and storage
-
-Uncomment
-```terraform
-# cmek_self_link = "projects/<project>/locations/global/keyRings/tutorial-keyring/cryptoKeys/tutorial-cmek"
-```
-and set this variable to the value output from the setup step above.
-
-
-### Edit Service Account used for the various compute node types
-
-Uncomment the following variables throughout the file
-```terraform
-# controller_service_account = "default"
-# login_node_service_account = "default"
-# compute_node_service_account = "default"
-```
-and set the value of each to the value output from the setup step above.
-
-
-### Spin up the compute nodes
-
-Next spin up the cluster.
-Still within the `compute-partition` example directory above, run
-
-```bash
-terraform init
-terraform plan -var-file compute.tfvars
-terraform apply -var-file compute.tfvars
-```
-
-and wait for the resources to be created.  This should only take a minute or two.
-
-
-
-
-## Run a compute-intensive job
-
-Once the cluster is up, you are ready to associate the compute nodes
-to a scheduler and run jobs.
-
-Since the cluster has no access to the outside world, the easiest way to
-transfer files around is to use a login node. Without a "local" login node, it
-might be easiest to transfer files to/from any compute node is to use Google
-Cloud Storage (GCS).
-
-Create a bucket in the Cloud Console, add files you need to that bucket, and
-then copy them directly from any node in the cluster.
-
-From a node, download any files from GCS using something like
-
-```sh
-gsutil ls gs://
-gsutil ls gs://<my-cool-bucket-name>/
-gsutil cp gs://<my-cool-bucket-name>/<some-filename> .
-```
-
-You can then extract and kick off jobs from there.
+TODO
 
 
 ## Cleaning up
@@ -324,12 +224,5 @@ to clean up the rest.
 
 ## What's next
 
-There are so many exciting directions to take to learn more about what you've
-done here!
-
-Learn about what's new in
-- [Cloud](https://cloud.google.com/)
-- [Vertex AI with Gemini](https://cloud.google.com/vertex-ai/docs/start/introduction-unified-platform)
-- [High Performance Computing (HPC) on GCP](https://cloud.google.com/solutions/hpc?hl=en)
-- Scientific Machine Learning on Google Cloud
+See the custom workbenches [README](README.md) for more examples.
 
