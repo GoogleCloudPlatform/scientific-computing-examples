@@ -264,7 +264,7 @@ deployment_groups:
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
-      disable_public_ips: false
+      enable_public_ips: true
       enable_placement: false
       enable_smt: true
       machine_type: n1-standard-4
@@ -292,7 +292,7 @@ deployment_groups:
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
-      disable_public_ips: false
+      enable_public_ips: true
       enable_smt: true
       machine_type: n2-standard-4
       on_host_maintenance: TERMINATE
@@ -314,7 +314,7 @@ deployment_groups:
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
-      disable_public_ips: false
+      enable_public_ips: true
       enable_smt: true
       machine_type: a2-highgpu-1g
       on_host_maintenance: TERMINATE
@@ -336,7 +336,7 @@ deployment_groups:
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
-      disable_public_ips: false
+      enable_public_ips: true
       enable_smt: true
       machine_type: a2-highgpu-4g
       on_host_maintenance: TERMINATE
@@ -358,7 +358,7 @@ deployment_groups:
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
-      disable_public_ips: false
+      enable_public_ips: true
       enable_smt: true
       machine_type: g2-standard-96
       on_host_maintenance: TERMINATE
@@ -378,7 +378,7 @@ deployment_groups:
     settings:
       name_prefix: login
       machine_type: n2-standard-4
-      disable_login_public_ips: false
+      enable_login_public_ips: true
       instance_image: 
         family: $(vars.new_image_family)
         project: $(vars.project_id)
@@ -397,7 +397,7 @@ deployment_groups:
     - homefs
     - data_bucket
     settings:
-      disable_controller_public_ips: false
+      enable_controller_public_ips: true
       login_startup_script: $(script.startup_script)
       login_startup_scripts_timeout: 21600
       instance_image: 
