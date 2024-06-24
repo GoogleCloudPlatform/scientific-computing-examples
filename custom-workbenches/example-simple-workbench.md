@@ -217,7 +217,9 @@ starting the workbench instance, but will be blown away when you destroy the
 workbench instance.
 
 If you want to persist changes beyond the life of a single workbench instance,
-you'll need to
+you'll need to either 
+[create a custom post-install script](example-custom-post-install.md)
+to customize workbench instances as they spin up, or 
 [create your own workbench image](example-build-custom-workbench.md)
 to use for your workbench instances.
 
