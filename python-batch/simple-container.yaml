@@ -1,4 +1,5 @@
-#  Copyright 2023 Google LLC
+#
+#Copyright 2023 Google LLC
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -11,15 +12,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-project_id: "demo"
+project_id: "openfoam-jrt"
 region: "us-central1"
 
 job_prefix: 'container-'
 machine_type: "n2-standard-2"
 container: 
-  image_uri: "gcr.io/google-containers/busybox"
-  entry_point: "/bin/sh"
-  commands: ["-c", "echo Hello world! This is task ${BATCH_TASK_INDEX}. This job has a total of ${BATCH_TASK_COUNT} tasks."]
+  image_uri: "us-east1-docker.pkg.dev/openfoam-jrt/auto-created-repository/otb"
+  entry_point: "/bin/bash"
+  commands: ["-c", "source /root/OTB_install/otbenv.profile"]
 
 task_count: 4 #optional
 parallelism: 4 #optional

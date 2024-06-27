@@ -18,15 +18,16 @@ blueprint_name: julia-workbench
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: julia-wb-only
+  deployment_name: julia-wb-v3
   region: us-east1
-  workbench_instance_name: fuzzywuzzy
+
 
 validators: # skipping validators because enablement of services is done as part of blueprint
 - validator: test_project_exists
   skip: true
 - validator: test_apis_enabled
   skip: true
+
 
 # Documentation for each of the modules used below can be found at
 # https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
@@ -39,6 +40,7 @@ deployment_groups:
     source: community/modules/project/service-enablement
     settings:
       gcp_service_list: [
+        "cloudbuild.googleapis.com",
         "cloudresourcemanager.googleapis.com",
         "stackdriver.googleapis.com",
         "logging.googleapis.com",
@@ -50,7 +52,7 @@ deployment_groups:
   modules:
 
   - id: vertex_ai_workbench
-    source: ./workbench
+    source: ./workbench-machine-image
     settings:
-      my_container_image_xyz: gcr.io/deeplearning-platform-release/base-gpu.py310  
-      workbench_instance_name: var.workbench_instance_name
+      image_family: workbench-images-jrt
+      image_project: $(vars.project_id)
