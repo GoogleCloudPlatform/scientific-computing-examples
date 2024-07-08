@@ -13,14 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-output "tutorial-service-account-id" {
-  value = google_service_account.tutorial_service_account.id
-}
+# output "tutorial-service-account-id" {
+#   value = google_service_account.tutorial_service_account.id
+# }
 
-output "tutorial-service-account-email" {
-  value = google_service_account.tutorial_service_account.email
-}
+# output "tutorial-service-account-email" {
+#   value = google_service_account.tutorial_service_account.email
+# }
 
 # output "tutorial-cmek-id" {
 #   value = google_kms_crypto_key.tutorial_cmek.id
 # }
+
+output "network_id" {
+  value = google_compute_network.tutorial.id
+}
+
+output "subnet_id" {
+  value = google_compute_subnetwork.tutorial.id
+}

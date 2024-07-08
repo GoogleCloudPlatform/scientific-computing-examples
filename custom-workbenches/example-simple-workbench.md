@@ -128,16 +128,10 @@ cp terraform/backend.conf.example terraform/backend.conf
 and edit the `terraform/backend.conf` file to add the name of your bucket.
 
 Create a Service Account and some IAM resources to use when we create all of
-the compute resources used in this project:
+the compute resources used in this project.
 
-```bash
-cd terraform/setup
-terraform init -backend-config ../backend.conf
-terraform plan
-terraform apply
-```
-
-Next create a dedicated `tutorial` network for our workbenches.
+The following step will also create a dedicated `tutorial` network for our
+workbenches.
 
 We're not simply using the `default` network for the project because it's best
 practice to only ever use internal IP addresses, and creating a dedicated
@@ -145,7 +139,7 @@ practice to only ever use internal IP addresses, and creating a dedicated
 that's easier to manage than adding bits and pieces to the `default` network.
 
 ```bash
-cd terraform/network
+cd terraform/setup
 terraform init -backend-config ../backend.conf
 terraform plan
 terraform apply
@@ -167,7 +161,7 @@ Change to the workbenches example directory
 cd terraform/workbenches
 ```
 
-and spin up a workbench using the default python image
+and spin up a workbench using the default settings
 
 ```bash
 terraform init -backend-config ../backend.conf
