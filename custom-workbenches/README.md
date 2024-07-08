@@ -8,7 +8,6 @@ to customize them to your needs.
 
 Here are some tutorials showing how to:
 - [Create and use Vertex AI Workbenches](example-simple-workbench.md)
-- [Create a custom post-install script to customize instances you spin up](example-custom-post-install.md)
 - [Build your own custom images for Vertex AI Workbenches](example-build-custom-workbench.md)
 
 
