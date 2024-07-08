@@ -15,9 +15,9 @@
 
 locals {
   workbench_count       = 1
-  default_instance_type = "n2-standard-4"
 }
 
+data "google_project" "project" {}
 data "google_compute_default_service_account" "default" {}
 data "google_compute_network" "tutorial" { name = var.network }
 data "google_compute_subnetwork" "tutorial" {
@@ -31,20 +31,15 @@ resource "google_workbench_instance" "workbench" {
   location = var.zone
 
   gce_setup {
-    machine_type = local.default_instance_type
+    machine_type = "n1-standard-4"
+    accelerator_configs {
+      type         = "NVIDIA_TESLA_T4"
+      core_count   = 1
+    }
 
-    # accelerator_configs {
-    #   type         = "NVIDIA_TESLA_T4"
-    #   core_count   = 1
-    # }
-
-    # vm_image {
-    #   project = "deeplearning-platform-release"
-    #   family  = "tf-latest-cpu"
-    #   # family = "tf-latest-gpu"
-    # }
     container_image {
-      repository = "gcr.io/deeplearning-platform-release/base-gpu.py310"
+      #repository = "gcr.io/${data.google_project.project.name}/tutorial/mycustomimage"
+      repository = "gcr.io/deeplearning-platform-release/workbench-container"
       tag  = "latest"
     }
 
@@ -53,10 +48,10 @@ resource "google_workbench_instance" "workbench" {
       disk_type    = "PD_SSD"
     }
 
-    data_disks {
-      disk_size_gb = 330
-      disk_type    = "PD_SSD"
-    }
+    # data_disks {
+    #   disk_size_gb = 330
+    #   disk_type    = "PD_SSD"
+    # }
 
     network_interfaces {
       network  = data.google_compute_network.tutorial.id
@@ -64,36 +59,22 @@ resource "google_workbench_instance" "workbench" {
       nic_type = "GVNIC"
     }
     disable_public_ip = true
-    # enable_ip_forwarding = true
 
     metadata = {
       terraform = "true"
-      #enable-oslogin = "TRUE"
+
+      # for container-based instances, if `notebook-disable-root` is set to
+      # TRUE, then the notebook uses `jupyter` as the default user
+      #
+      # for vm-based instances, notebooks already use `jupyter` as the default user.
+      # If `notebook-disable-root` is set to TRUE, then the `jupyter` user can
+      # passwordless sudo
+      notebook-disable-root = "TRUE"
+      
     }
-
-    tags = ["abc", "def"]
-
-    #post_startup_script = "gs://bucket/path/script"
-    # so maybe
-    #post_startup_script = google_storage_bucket_object.startup_script.media_link
-    # or
-    #post_startup_script = google_storage_bucket_object.startup_script.output_name
-    # or
-    #post_startup_script = "gs://${var.state_bucket}/${google_storage_bucket_object.startup_script.output_name}"
 
     service_accounts {
       email = data.google_compute_default_service_account.default.email
     }
   }
-
-  disable_proxy_access = false
-
-  # instance_owners  = [ "my@service-account.com"]
-
-  labels = {
-    k = "val"
-  }
-
-  desired_state = "ACTIVE"
-
 }
