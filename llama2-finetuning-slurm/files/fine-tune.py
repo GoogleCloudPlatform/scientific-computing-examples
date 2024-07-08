@@ -29,7 +29,7 @@ model = AutoModelForCausalLM.from_pretrained(
 # Get Dataset
 
 dataset = load_dataset("dell-research-harvard/AmericanStories",
-    "subset_years",
+    "subset_years", trust_remote_code=True,
     year_list=["1809", "1810", "1811", "1812", "1813", "1814", "1815"]
 )
 dataset = concatenate_datasets(dataset.values())
