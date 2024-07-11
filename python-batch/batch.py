@@ -55,7 +55,7 @@ flags.DEFINE_boolean("debug", False, "If true, print debug info.")
 flags.mark_flag_as_required("config_file")
 
 class PubSub:
-  def __init__(self, job_id: str, config) -> None:
+  def __init__(self, job_id: str, config, previous_job_id=None) -> None:
       """Class to create Pub/Sub related cloud resources.
 
       Used to create a topic and a subscription. 
@@ -82,13 +82,11 @@ class PubSub:
       if FLAGS.project_id:
         self.project_id = FLAGS.project_id
 
-      publisher_options = pubsub_v1.types.PublisherOptions(enable_message_ordering=True)
-
       """
       Sending messages to the same region ensures they are received in order
       even when multiple publishers are used.
       """
-
+      publisher_options = pubsub_v1.types.PublisherOptions(enable_message_ordering=True)
       client_options = {"api_endpoint": f'{self.config["region"]}-pubsub.googleapis.com:443'}
       self.publisher = pubsub_v1.PublisherClient(
           publisher_options=publisher_options, client_options=client_options
@@ -167,9 +165,9 @@ class PubSub:
 
     
 
-class Jobs:
+class CloudBatchJobs:
 
-  def __init__(self, job_id: str, config, previous_job_id=None) -> None:
+  def __init__(self, job_id: str, config, env_vars) -> None:
     """
     Class to create all cloud resources for Batch Jobs
 
@@ -182,6 +180,7 @@ class Jobs:
     """
     self.config = config
     self.job_id = job_id
+    self.env_vars = env_vars
     
     #set  "project_id"  based on config, env, or argv in that order.
   
@@ -192,19 +191,13 @@ class Jobs:
     if FLAGS.project_id:
       self.project_id = FLAGS.project_id
 
-    # TODO: Add more variables to the ENV list.
-    
-    if previous_job_id:
-      self.env_variables = {"TOPIC_ID" : previous_job_id}
-    else:
-      self.env_variables = {"TOPIC_ID" : self.job_id}
-      
+    self.client = batch_v1.BatchServiceClient()
 
   def _create_runnable(self) -> batch_v1.Runnable:
 
     self.runnable = batch_v1.Runnable()
     self.runnable.environment = batch_v1.Environment()
-    self.runnable.environment = {"variables": self.env_variables}
+    self.runnable.environment.variables = self.env_vars
 
     if "container" in self.config:
       self.runnable.container = batch_v1.Runnable.Container()
@@ -346,7 +339,7 @@ class Jobs:
 
       return(self.group)
 
-  def create_job(self):
+  def _create_job_request(self):
       """Creates job after configuration is completed. 
       """
 
@@ -361,7 +354,7 @@ class Jobs:
       self.job.logs_policy.destination = batch_v1.LogsPolicy.Destination.CLOUD_LOGGING
       return(self.job)
     
-  def _create_job_request(self) -> batch_v1.Job:
+  def create_job_request(self) -> batch_v1.Job:
 
       # Define what will be done as part of the job.
 
@@ -370,7 +363,7 @@ class Jobs:
       self.task.runnables = [self.runnable]
       self._create_taskgroup()
       self._create_allocation_policy()
-      self.create_job()
+      self._create_job_request()
 
       create_request = batch_v1.CreateJobRequest()
       create_request.job = self.job
@@ -382,7 +375,7 @@ class Jobs:
       return(create_request)
   # [END batch_create_job_with_template]
 
-  def delete_job(self, delete_job) -> Operation:
+  def delete_job(self, job_to_delete) -> Operation:
       """
       Triggers the deletion of a Job.
 
@@ -395,7 +388,7 @@ class Jobs:
       """
       client = batch_v1.BatchServiceClient()
 
-      return client.delete_job(name=f"projects/{self.project_id}/locations/{self.config['region']}/jobs/{delete_job}")
+      return client.delete_job(name=f"projects/{self.project_id}/locations/{self.config['region']}/jobs/{job_to_delete}")
 
   def list_jobs(self) -> Iterable[batch_v1.Job]:
       """
@@ -430,51 +423,59 @@ def main(argv):
   :type argv: _type_
   """
 
+  # Read in config file. 
   config = parse_yaml_file(FLAGS.config_file)
 
+  # Create unique job ID, required for Batch and k8s Jobs
+  job_id = config["job_prefix"] + uuid.uuid4().hex[:8]
 
-  jobid = config["job_prefix"] + uuid.uuid4().hex[:8]
-  client = batch_v1.BatchServiceClient()
+  # "previous_job_id": Used for Pubsub. TOPIC is created from JobID, a restart can provide an existing Job
+  # Id for existing pubsub queue
+  # TODO: support more env_vars
 
-  jobs = Jobs(jobid, config, previous_job_id=FLAGS.previous_job_id)
+  env_vars = {}
+  if FLAGS.previous_job_id:
+    env_vars = dict(env_vars, TOPIC_ID = FLAGS.previous_job_id)
+  else:
+    env_vars = dict(env_vars, TOPIC_ID = job_id)
 
-  # This does not create the job yet
-  create_request = jobs._create_job_request()
+  # Create jobs object
+  jobs = CloudBatchJobs(job_id, config, env_vars)
 
-  if(FLAGS.delete_job):
-    print("Deleting job", file=sys.stderr)
-    deleted_job = jobs.delete_job(FLAGS.delete_job)
-    print(deleted_job.result, file=sys.stderr)
 
-    exit()
-
-    
-  if(FLAGS.list_jobs):
-    print("Listing jobs", file=sys.stderr)
-    jobs = jobs.list_jobs()
-
-    for job in jobs:
-      print(job.name,"\t",job.status.state, file=sys.stderr)
-
-    exit()
-
-  if FLAGS.debug:
-    print(config, file=sys.stderr)
-
-    
-    # If pubsub queue is required 
+  # If pubsub queue is required 
   if FLAGS.pubsub and not FLAGS.debug:
 
-    pubsub = PubSub(jobid, config)
+    pubsub = PubSub(job_id, config, previous_job_id=FLAGS.previous_job_id)
     pubsub.create_topic()
     pubsub.create_subscription()
     pubsub.publish_fifo_ids()
 
+  # Delete job. JobID must be passed.
+  if(FLAGS.delete_job):
+    print("Deleting job", file=sys.stderr)
+    deleted_job = jobs.delete_job(FLAGS.delete_job)
+    print(deleted_job.result, file=sys.stderr)
+    exit()
+
+  # Prints list of jobs, in queue, running or complteted.
+  if(FLAGS.list_jobs):
+    print("Listing jobs", file=sys.stderr)
+    job_list = jobs.list_jobs()
+
+    for job in job_list:
+      print(job.name,"\t",job.status.state, file=sys.stderr)
+    exit()
+
+  if FLAGS.debug:
+    print(config, file=sys.stderr)
+    
   if FLAGS.create_job:
     # Create the job
-    print(client.create_job(create_request), file=sys.stderr)
+    print(jobs.client.create_job(jobs.create_job_request()), file=sys.stderr)
   else:
-    print(create_request.job, file=sys.stderr)
+    print(jobs.create_job_request().job, file=sys.stderr)
+
     
 
 if __name__ == "__main__":
