@@ -467,6 +467,7 @@ def main(argv):
       print(job.name,"\t",job.status.state, file=sys.stderr)
     exit()
 
+  # Prints 
   if FLAGS.debug:
     print(config, file=sys.stderr)
     
@@ -475,8 +476,6 @@ def main(argv):
     print(jobs.client.create_job(jobs.create_job_request()), file=sys.stderr)
   else:
     print(jobs.create_job_request().job, file=sys.stderr)
-
-    
 
 if __name__ == "__main__":
     """ This is executed when run from the command line """
