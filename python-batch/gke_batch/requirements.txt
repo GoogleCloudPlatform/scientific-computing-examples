@@ -1,0 +1,6 @@
+absl_py==1.4.0
+dynaconf==3.2.5
+kubernetes==30.1.0
+protobuf==5.27.2
+PyYAML==6.0
+PyYAML==6.0.1
