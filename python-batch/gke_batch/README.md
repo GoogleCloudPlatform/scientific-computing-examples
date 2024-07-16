@@ -93,7 +93,7 @@ Getting setting completions
 ## Create a GCS Bucket 
 Create a bucket with your own name. Replace `MY_NEW_BUCKET_TESTING` with your own name.
 ```
-gcloud storage buckets create gs:/MY_NEW_BUCKET_TESTING
+gcloud storage buckets create gs:/MY_NEW_BUCKET_TESTING  --uniform-bucket-level-access
 ```
 
 ### Copy python script to bucket
@@ -120,9 +120,11 @@ volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io
 
 To allow the GKE cluster access to the GCS bucket, a policy binding must be established.
 
+You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values.
+
 ```
 gcloud projects add-iam-policy-binding MY_PROJECT_ID \
-    --member "principal://iam.googleapis.com/projects/238942996803/locations/global/workloadIdentityPools/MY_PROJECT_ID.svc.id.goog/subject/ns/default/sa/default" \
+    --member "principal://iam.googleapis.com/projects/MY_PROJECT_NUMBER/locations/global/workloadIdentityPools/MY_PROJECT_ID.svc.id.goog/subject/ns/default/sa/default" \
     --role "roles/storage.objectUser"
 ```
 
@@ -154,5 +156,33 @@ Name: args-job-0dcc3de5 Succeeded?: True
 
 The logic of determining success is WIP. Trying to get it looking better.
 
+
+## Create job with "args.txt" as input
+
+To submit multiple jobs, with the same container and all other settings 
+unchanged, you can run with an `--args_file` option.
+
+The args_file (`args.toml`) looks like:
+```
+[default]
+args = [
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_01write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_02write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_03write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_04write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_05write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_06write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+...
+```
+### Run the job
+```
+python batch.py --args_file args.toml
+```
+This will start 48 jobs, each as an indexed job. There will be output on GCS. To view this:
+```
+gsutil ls gs:/MY_NEW_BUCKET_TESTING/
+```
+
+These are the files created by the job.
 
 
