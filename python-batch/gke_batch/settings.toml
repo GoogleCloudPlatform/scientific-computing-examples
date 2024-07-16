@@ -1,0 +1,32 @@
+[default]
+#  
+project_id = "MY_PROJECT_ID"
+platform = "gke-autopilot"
+job_prefix = "args-job-"
+
+# Namespace and Service account
+service_account_name="default"
+namespace="default"
+
+# set container and command
+container = {image_uri="python"}
+command=["/bin/sh", "-c", "python /data/python_write.py > /data/python_write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"]
+
+# Limits and config for job
+limits={cpu="1000m", memory="30Mi"}
+pod_annotations={"gke-gcsfuse/volumes"="true"}
+node_selector={"cloud.google.com/compute-class"="Balanced"}
+
+# Mounts, only GCS at this point
+volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io"}
+volume_mount = {mount_path="/data"}
+
+# Job Indexed or not.
+parallelism=10
+completion_mode = "Indexed"
+# completion_mode = "NonIndexed"
+completions=100
+
+# Suspend, must be true for `kueue`
+suspend=false
+dynaconf_merge = true
