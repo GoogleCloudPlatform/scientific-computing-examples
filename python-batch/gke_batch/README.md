@@ -33,9 +33,7 @@ git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.g
 ```
 Checkout the branch
 ```
-cd scientific-computing-examples/python-batch
-git checkout gke-batch-refarch
-cd gke-batch
+cd scientific-computing-examples/python-batch/gke-batch
 ```
 
 ## Run pip install
