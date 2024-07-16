@@ -137,6 +137,7 @@ You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
     --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
+    --role "roles/storage.objectUser"
 ```
 
 ## Run a job
