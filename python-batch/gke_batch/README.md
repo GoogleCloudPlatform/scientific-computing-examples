@@ -1,5 +1,22 @@
 # Running batch jobs on GKE
 
+## Getting started
+For ease of use, we set some environment variables.
+```
+export CLUSTER_NAME=<Choose Your Cluster Name>
+export MY_REGION=<Choose Your Region>
+export MY_PROJECT_ID=<Choose Your Project ID>
+export MY_NEW_BUCKET_TESTING=<Choose Your Bucket Name>
+```
+To define `PROJECT_NUMBER` use:
+```
+gcloud config set project $MY_PROJECT_ID
+export PROJECT_NUMBER=`gcloud projects list \
+--filter="$(gcloud config get-value project)" \
+--format="value(PROJECT_NUMBER)"`
+```
+
+
 ## Create an Autopilot cluster
 Run instructions here:
 
@@ -7,12 +24,10 @@ https://cloud.google.com/kubernetes-engine/docs/how-to/creating-an-autopilot-clu
 
 Create cluster. This takes several minutes.
 
-Replace `CLUSTER_NAME`, `MY_REGION` and `MY_PROJECT_ID` with your own values.
-
 ```
-gcloud container clusters create-auto CLUSTER_NAME \
-    --location=MY_REGION \
-    --project=MY_PROJECT_ID
+gcloud container clusters create-auto $CLUSTER_NAME \
+    --location=$MY_REGION \
+    --project=$MY_PROJECT_ID
 ```
 
 When this completes, connect to the cluster
@@ -21,9 +36,9 @@ When this completes, connect to the cluster
 
 Connect to cluster: https://cloud.google.com/kubernetes-engine/docs/how-to/creating-an-autopilot-cluster#connecting_to_the_cluster
 ```
-gcloud container clusters get-credentials CLUSTER_NAME \
-    --location=MY_REGION \
-    --project=MY_PROJECT_ID
+gcloud container clusters get-credentials $CLUSTER_NAME \
+    --location=$MY_REGION \
+    --project=$MY_PROJECT_ID
 ```
 ## Clone repo, while you're waiting for the cluster to build
 Clone the repo:
@@ -89,14 +104,13 @@ Getting setting completions
 ```
 
 ## Create a GCS Bucket 
-Create a bucket with your own name. Replace `MY_NEW_BUCKET_TESTING` with your own name.
 ```
-gcloud storage buckets create gs:/MY_NEW_BUCKET_TESTING  --uniform-bucket-level-access
+gcloud storage buckets create gs://${MY_NEW_BUCKET_TESTING}  --uniform-bucket-level-access
 ```
 
 ### Copy python script to bucket
 ```
-gsutil cp python_write.py gs:/MY_NEW_BUCKET_TESTING/batch.py
+gsutil cp python_write.py gs://${MY_NEW_BUCKET_TESTING}/python_write.py
 ```
 
 ## Update the settings.toml 
@@ -121,8 +135,8 @@ To allow the GKE cluster access to the GCS bucket, a policy binding must be esta
 You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values.
 
 ```
-gcloud projects add-iam-policy-binding MY_PROJECT_ID \
-    --member "principal://iam.googleapis.com/projects/MY_PROJECT_NUMBER/locations/global/workloadIdentityPools/MY_PROJECT_ID.svc.id.goog/subject/ns/default/sa/default" \
+gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
+    --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
     --role "roles/storage.objectUser"
 ```
 
@@ -178,7 +192,7 @@ python batch.py --args_file args.toml
 ```
 This will start 48 jobs, each as an indexed job. There will be output on GCS. To view this:
 ```
-gsutil ls gs:/MY_NEW_BUCKET_TESTING/
+gsutil ls gs://${MY_NEW_BUCKET_TESTING}/
 ```
 
 These are the files created by the job.
