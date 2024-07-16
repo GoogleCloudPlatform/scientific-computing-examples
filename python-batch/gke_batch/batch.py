@@ -30,8 +30,6 @@ from absl import app
 from absl import flags
 from dynaconf import settings
 from google.api_core.operation import Operation
-from google.cloud import batch_v1
-from google.cloud import pubsub_v1
 from kubernetes.client import Configuration
 from kubernetes.client.rest import ApiException
 from pprint import pprint
@@ -53,13 +51,13 @@ flags.DEFINE_boolean("debug", False, "If true, print debug info.")
 flags.DEFINE_string("args_file", None, "TOML/YAML file with list of container commands")
 
 def get_setting(setting, settings):
-  print(f"Getting setting {setting}", file=sys.stderr)
+  if FLAGS.debug:
+    print(f"Getting setting {setting}", file=sys.stderr)
   if setting in settings:
     return(settings[setting])
   else:
     print(f"Setting {setting} not found in settings file. Exiting.", file=sys.stderr)
     exit()
-    return(None)
 
 class KubernetesBatchJobs:
   def __init__(self) -> None:

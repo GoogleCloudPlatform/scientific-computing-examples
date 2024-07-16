@@ -1,6 +1,6 @@
 [default]
 #  
-project_id = "openfoam-jrt"
+project_id = "MY_PROJECT_ID"
 platform = "gke-autopilot"
 job_prefix = "args-job-"
 
@@ -18,7 +18,7 @@ pod_annotations={"gke-gcsfuse/volumes"="true"}
 node_selector={"cloud.google.com/compute-class"="Balanced"}
 
 # Mounts, only GCS at this point
-volume = {bucketName="jrt_testingtesting", driver="gcsfuse.csi.storage.gke.io"}
+volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io"}
 volume_mount = {mount_path="/data"}
 
 # Job Indexed or not.
