@@ -16,7 +16,6 @@ export PROJECT_NUMBER=`gcloud projects list \
 --format="value(PROJECT_NUMBER)"`
 ```
 
-
 ## Create an Autopilot cluster
 Run instructions here:
 
@@ -111,6 +110,7 @@ gcloud storage buckets create gs://${MY_NEW_BUCKET_TESTING}  --uniform-bucket-le
 ### Copy python script to bucket
 ```
 gsutil cp python_write.py gs://${MY_NEW_BUCKET_TESTING}/python_write.py
+
 ```
 
 ## Update the settings.toml 
@@ -137,7 +137,6 @@ You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
     --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
-    --role "roles/storage.objectUser"
 ```
 
 ## Run a job

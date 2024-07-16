@@ -129,12 +129,13 @@ class KubernetesBatchJobs:
    # Create Volumes
     
     volume_settings = get_setting("volume", settings)
-    volume_attributes = {"bucketName": volume_settings["bucketName"]}
-    volume_source = kubernetes.client.V1CSIVolumeSource(
+
+    volume_attributes1 = {"bucketName": volume_settings["bucketName"]}
+    volume_source1 = kubernetes.client.V1CSIVolumeSource(
       driver=volume_settings["driver"],
-      volume_attributes=volume_attributes
+      volume_attributes=volume_attributes1
       )
-    volume1 = kubernetes.client.V1Volume(name="gcs-fuse-csi-ephemeral", csi=volume_source)
+    volume1 = kubernetes.client.V1Volume(name="gcs-fuse-csi-ephemeral", csi=volume_source1)
     volumes = [volume1]
     return(volumes)
 
