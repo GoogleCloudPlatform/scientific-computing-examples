@@ -71,7 +71,7 @@ class KubernetesBatchJobs:
         self.kube_config = Configuration()
         self.kube_config.assert_hostname = False
     Configuration.set_default(self.kube_config)
-    self.core_v1 = kubernetes.client.BatchV1Api(kubernetes.client.ApiClient(self.kube_config))
+    self.batch_v1 = kubernetes.client.BatchV1Api(kubernetes.client.ApiClient(self.kube_config))
 
     self.project_id = get_setting(setting="project_id",settings=settings)
 
@@ -202,16 +202,17 @@ class KubernetesBatchJobs:
   def create_job(self, create_request):
   # Create the job in the cluster
     namespace = get_setting("namespace", settings)
-    api_response = self.core_v1.create_namespaced_job(
+    api_response = self.batch_v1.create_namespaced_job(
         namespace=namespace,
         body=create_request,
     )
-    print(f"Job {self.job_id} created. status='{api_response.status}'" )
+    print(f"Job {self.job_id} created. Timestamp='{api_response.metadata.creation_timestamp}'" )
+
 
   def delete_job(self, job_id):
     namespace = get_setting("namespace", settings)
     try:
-      api_response = self.core_v1.delete_namespaced_job(job_id, namespace)
+      api_response = self.batch_v1.delete_namespaced_job(job_id, namespace)
       print(api_response,file=sys.stderr)
     except ApiException as e:
       print("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % e)
@@ -220,10 +221,12 @@ class KubernetesBatchJobs:
   def list_jobs(self):
     namespace = get_setting("namespace", settings)
     try:
-      api_response = self.core_v1.list_namespaced_job(namespace)
+      api_response = self.batch_v1.list_namespaced_job(namespace)
       for item in api_response.items:
-        print(f"Name: {item.metadata.labels['app']}\tSucceeded?: {item.status.failed is None}", file=sys.stderr)
-        # pprint(item)
+        succeeded = item.status.succeeded
+        failed = item.status.failed
+        completed = item.status.completed_indexes
+        print(f"Name: {item.metadata.labels['app']}\tSucceeded: {succeeded}\tFailed: {failed}\tCompleted Index: {completed}", file=sys.stderr)
     except ApiException as e:
       print("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % e)
 
