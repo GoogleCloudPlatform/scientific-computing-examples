@@ -45,9 +45,8 @@ Clone the repo:
 ```
 git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
 ```
-Checkout the branch
 ```
-cd scientific-computing-examples/python-batch/gke_batch/
+cd scientific-computing-examples/python-batch/gke_batch
 ```
 
 ## Run pip install
@@ -134,8 +133,8 @@ To allow the GKE cluster access to the GCS bucket, a policy binding must be esta
 
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
-    --member "principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
-    --role "roles/storage.objectUser"
+    --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
+        --role "roles/storage.objectUser"
 ```
 
 ## Run a job
