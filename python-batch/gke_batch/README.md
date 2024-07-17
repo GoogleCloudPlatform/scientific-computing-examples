@@ -131,8 +131,6 @@ volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io
 
 To allow the GKE cluster access to the GCS bucket, a policy binding must be established.
 
-You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values.
-
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
     --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
