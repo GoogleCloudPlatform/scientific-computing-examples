@@ -34,6 +34,8 @@ from kubernetes.client import Configuration
 from kubernetes.client.rest import ApiException
 from pprint import pprint
 
+from tabulate import tabulate
+from termcolor import colored
 from typing import Iterable
 from yaml.loader import SafeLoader
 
@@ -227,13 +229,24 @@ class KubernetesBatchJobs:
     namespace = get_setting("namespace", settings)
     try:
       api_response = self.batch_v1.list_namespaced_job(namespace)
-      for item in api_response.items:
-        succeeded = item.status.succeeded
-        failed = item.status.failed
-        completed = item.status.completed_indexes
-        print(f"Name: {item.metadata.labels['job-name']}\tSucceeded: {succeeded}\tFailed: {failed}\tCompleted Index: {completed}", file=sys.stderr)
     except ApiException as e:
       print("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % e)
+    headers = ["Job Name", "Succeeded", "Failed", "Completed Index"]
+    rows = []
+    for item in api_response.items:
+      succeeded = item.status.succeeded
+      failed = item.status.failed
+      completed = item.status.completed_indexes
+      rows.append(
+        [
+          colored(item.metadata.labels['job-name'], 'blue'),
+          colored(succeeded, 'green'),
+          colored(failed, 'red'),
+          colored(completed, 'yellow'),
+        ]
+      )
+
+    print(tabulate(rows, headers, tablefmt="grid"))
 
 def main(argv):
   """
