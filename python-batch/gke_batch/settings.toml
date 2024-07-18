@@ -2,7 +2,7 @@
 #  
 project_id = "MY_PROJECT_ID"
 platform = "gke-autopilot"
-job_prefix = "args-job-"
+job_prefix = "args-job"
 
 # Namespace and Service account
 service_account_name="default"

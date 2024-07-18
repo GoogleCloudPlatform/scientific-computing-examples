@@ -62,7 +62,7 @@ def get_setting(setting, settings):
 class KubernetesBatchJobs:
   def __init__(self) -> None:
 
-    self.job_name = get_setting("job_name",settings)
+    self.job_prefix = get_setting("job_prefix",settings)
 
     kubernetes.config.load_kube_config()
     try:
@@ -104,16 +104,16 @@ class KubernetesBatchJobs:
 
     # Create Job ObjectMetadata
     jobspec_metadata=kubernetes.client.V1ObjectMeta(
-      name=self.job_name,
-      labels={"app": self.job_name})
+      generate_name=self.job_prefix,
+    )
     # Create a V1Job object
-    job = kubernetes.client.V1Job(
+    job_request = kubernetes.client.V1Job(
       api_version="batch/v1",
       kind="Job",
       spec=job_spec,
       metadata=jobspec_metadata,
     )
-    return(job)
+    return(job_request)
 
   def _create_volume_mounts(self):
     # Create Volume Mounts
@@ -150,15 +150,20 @@ class KubernetesBatchJobs:
 
     env1 = kubernetes.client.V1EnvVar(
       name = "JOB_NAME",
-      value = self.job_name
+      value_from=kubernetes.client.V1EnvVarSource(
+        field_ref=kubernetes.client.V1ObjectFieldSelector(
+          field_path="metadata.name"
+        )
+      )
     )
 
     # Get Job Limits
     limits = get_setting("limits", settings)
 
     # Create container
+    
     container = kubernetes.client.V1Container(
-      name=f"{self.job_name}-container",
+      name=self.job_prefix,
       image=image,
       command=command,
       resources=kubernetes.client.V1ResourceRequirements(
@@ -178,8 +183,7 @@ class KubernetesBatchJobs:
     pod_annotations = get_setting("pod_annotations", settings)
 
     podspec_metadata=kubernetes.client.V1ObjectMeta(
-      name=self.job_name, 
-      labels={"app": self.job_name}, 
+      name=self.job_prefix, 
       annotations=pod_annotations
       )
     pod_spec=kubernetes.client.V1PodSpec(
@@ -206,7 +210,8 @@ class KubernetesBatchJobs:
         namespace=namespace,
         body=create_request,
     )
-    print(f"Job {self.job_name} created. Timestamp='{api_response.metadata.creation_timestamp}'" )
+    #print(api_response.metadata.labels["job-name"],file=sys.stderr)
+    print(f"Job {api_response.metadata.labels['job-name']} created. Timestamp='{api_response.metadata.creation_timestamp}'" )
 
 
   def delete_job(self, job_name):
@@ -226,18 +231,15 @@ class KubernetesBatchJobs:
         succeeded = item.status.succeeded
         failed = item.status.failed
         completed = item.status.completed_indexes
-        print(f"Name: {item.metadata.labels['app']}\tSucceeded: {succeeded}\tFailed: {failed}\tCompleted Index: {completed}", file=sys.stderr)
+        print(f"Name: {item.metadata.labels['job-name']}\tSucceeded: {succeeded}\tFailed: {failed}\tCompleted Index: {completed}", file=sys.stderr)
     except ApiException as e:
       print("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % e)
 
 def main(argv):
   """
   """
-
-  # Create unique job ID, required for Batch and k8s Jobs
-  job_name = get_setting("job_prefix", settings) + uuid.uuid4().hex[:8]
-  settings.job_name = job_name
   jobs = None
+
   if get_setting("platform", settings) == "gke-autopilot":
     jobs = KubernetesBatchJobs()
   else:
@@ -261,11 +263,9 @@ def main(argv):
     pass
 
   if FLAGS.args_file:
-    settings.load_file(path="args.toml")  # list or `;/,` separated allowed
+    settings.load_file(path=FLAGS.args_file)  # list or `;/,` separated allowed
     for arg in settings.ARGS: 
       print(f"This is the arg: {arg}")
-      job_name = get_setting("job_prefix", settings) + uuid.uuid4().hex[:8]
-      settings["job_name"] = job_name
       settings.command = arg
       jobs = KubernetesBatchJobs()
       print(jobs.create_job(jobs.create_job_request()), file=sys.stderr)
