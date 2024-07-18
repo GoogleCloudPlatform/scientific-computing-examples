@@ -18,7 +18,7 @@ pod_annotations={"gke-gcsfuse/volumes"="true"}
 node_selector={"cloud.google.com/compute-class"="Balanced"}
 
 # Mounts, only GCS at this point
-volume = {bucketName="jrt_gke_test", driver="gcsfuse.csi.storage.gke.io"}
+volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io"}
 volume_mount = {mount_path="/data"}
 
 # Job Indexed or not.
