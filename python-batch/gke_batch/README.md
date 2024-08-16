@@ -133,7 +133,7 @@ To allow the GKE cluster access to the GCS bucket, a policy binding must be esta
 
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
-    --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
+    --member "principal://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
         --role "roles/storage.objectUser"
 ```
 
