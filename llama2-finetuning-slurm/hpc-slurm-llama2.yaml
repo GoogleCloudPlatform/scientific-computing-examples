@@ -17,7 +17,7 @@
 blueprint_name: hpc-slurm-llama
 
 vars:
-  project_id:  ## Set GCP Project ID Here ##
+  project_id:  ai-infra-jrt-0
   deployment_name: hpc-slurm-llama2
   region: us-east1
   zone: us-east1-b
@@ -122,7 +122,7 @@ deployment_groups:
     use: [network1]
     settings:
       local_mounts: [/home]
-      disk_size: 256
+      disk_size: 2560
 
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
@@ -153,20 +153,11 @@ deployment_groups:
           # - have NVIDIA Drivers v530 pre-installed
           # - have CUDA Toolkit 12.1 pre-installed.
 
-          set -x
           set -e -o pipefail
-         
-          tee /etc/yum.repos.d/google-fast-socket.repo << EOM
-          [google-fast-socket]
-          name=Fast Socket Transport for NCCL
-          baseurl=https://packages.cloud.google.com/yum/repos/google-fast-socket
-          enabled=1
-          gpgcheck=0
-          repo_gpgcheck=0
-          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-                https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-          EOM
-          yum -y install google-fast-socket
+
+          echo "deb https://packages.cloud.google.com/apt google-fast-socket main" > /etc/apt/sources.list.d/google-fast-socket.list
+          apt-get update --allow-releaseinfo-change
+          apt-get install --assume-yes google-fast-socket
 
           CONDA_BASE=/opt/conda
 
@@ -176,11 +167,8 @@ deployment_groups:
 
           DL_DIR=\$(mktemp -d)
           cd $DL_DIR
-
-          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          bash miniconda.sh -b -u -p ${CONDA_BASE}
-          ${CONDA_BASE}/bin/conda init bash
-
+          curl -O https://repo.anaconda.com/miniconda/Miniconda3-py310_23.3.1-0-Linux-x86_64.sh
+          HOME=$DL_DIR bash Miniconda3-py310_23.3.1-0-Linux-x86_64.sh -b -p $CONDA_BASE
           cd -
           rm -rf $DL_DIR
           unset DL_DIR
@@ -228,14 +216,12 @@ deployment_groups:
     source: modules/scripts/startup-script
     settings:
       runners:
-      # remove lustre client temporary to avoid startup failure due to known
-      # issue.
       - type: shell
         destination: remove_lustre_client.sh
         content: |
           #!/bin/bash
-          rm /etc/yum.repos.d/lustre-client.repo
-
+          source $CONDA_BASE/bin/activate base
+          conda init --system
 - group: packer
   modules:
   - id: custom-image
@@ -246,7 +232,7 @@ deployment_groups:
     - packer_script
     settings:
       source_image_project_id: [schedmd-slurm-public]
-      source_image_family: slurm-gcp-6-1-hpc-centos-7
+      source_image_family: slurm-gcp-6-6-debian-11
       disk_size: $(vars.disk_size_gb)
       image_family: $(vars.new_image_family)
       machine_type: c2-standard-8 # building this image does not require a GPU-enabled VM
