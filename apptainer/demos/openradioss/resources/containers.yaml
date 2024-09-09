@@ -1,0 +1,79 @@
+# In this directory, run the following command to build these containers.
+# $ gcloud builds submit . --config=containers.yaml
+
+steps:
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'paraview.sif'
+  - 'paraview.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'paraview.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/paraview:${_VERSION}'
+- name: 'gcr.io/cloud-builders/git'
+  args: ['clone', 'https://github.com/OpenRadioss/OpenRadioss.git']
+- name: 'bash'
+  script: |
+    cp -r OpenRadioss/Apptainer/* .
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'openradioss.sif'
+  - 'openradioss.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'openradioss.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/openradioss:${_VERSION}'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'ompi4-pmix.sif'
+  - 'ompi4-pmix.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'ompi4-pmix.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/ompi4-pmix:${_VERSION}'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args: 
+  - 'build'
+  - '--fakeroot'
+  - '--build-arg' 
+  - 'LOCATION=${_LOCATION}'
+  - '--build-arg'
+  - 'PROJECT_ID=$PROJECT_ID'
+  - '--build-arg'
+  - 'REPO=${_REPOSITORY}'
+  - '--build-arg'
+  - 'OMPI4_PMIX_VERSION=${_VERSION}'
+  - '--build-arg'
+  - 'OPENRADIOSS_VERSION=${_VERSION}'
+  - 'openradioss-pmix.sif'
+  - 'openradioss-pmix.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'openradioss-pmix.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/openradioss-pmix:${_VERSION}'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'vortex-radioss.sif'
+  - 'vortex-radioss.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'vortex-radioss.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/vortex-radioss:${_VERSION}'
+timeout: 7200s
+substitutions:
+  _LOCATION: us-docker.pkg.dev
+  _REPOSITORY: sifs
+  _VERSION: latest

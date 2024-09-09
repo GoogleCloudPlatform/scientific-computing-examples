@@ -1,0 +1,21 @@
+Bootstrap: oras
+From: {{ LOCATION }}/{{ PROJECT_ID }}/{{ REPO }}/ompi4-pmix:{{ OMPI4_PMIX_VERSION }}
+Stage: mpi
+
+Bootstrap: oras
+From: {{ LOCATION }}/{{ PROJECT_ID }}/{{ REPO }}/openradioss:{{ OPENRADIOSS_VERSION }}
+Stage: runtime
+
+%files from mpi
+    /opt/openmpi /opt/openmpi4-pmix
+
+%post
+    rm -rf /opt/openmpi
+    mv /opt/openmpi4-pmix /opt/openmpi
+
+%post
+    dnf install -y epel-release
+    crb enable
+    dnf -y install hwloc slurm numactl
+    dnf --enablerepo=devel install -y librdmacm
+    dnf -y clean all
