@@ -17,11 +17,12 @@
 blueprint_name: hpc-slurm-llama
 
 vars:
-  project_id:  ai-infra-jrt-0
+  project_id:  ## Set GCP Project ID Here ##
+  bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: us-east1
-  zone: us-east1-b
-  zone_list: [us-east1-d, us-east1-b, us-east1-c]
+  region: us-east4
+  zone: us-east4-a
+  zone_list: [us-east4-a, us-east4-b, us-east4-c]
   new_image_family: llama2-slurm-v6
   instance_image_custom: true
   disk_size_gb: 200
@@ -40,6 +41,7 @@ deployment_groups:
       gcp_service_list: [
         "cloudresourcemanager.googleapis.com",
         "stackdriver.googleapis.com",
+        "iam.googleapis.com",
         "logging.googleapis.com",
         "compute.googleapis.com"
       ]
@@ -123,6 +125,9 @@ deployment_groups:
     settings:
       local_mounts: [/home]
       disk_size: 2560
+      instance_image:  
+        project: "cloud-hpc-image-public"
+        family:  "hpc-rocky-linux-8"
 
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
@@ -155,9 +160,6 @@ deployment_groups:
 
           set -e -o pipefail
 
-          echo "deb https://packages.cloud.google.com/apt google-fast-socket main" > /etc/apt/sources.list.d/google-fast-socket.list
-          apt-get update --allow-releaseinfo-change
-          apt-get install --assume-yes google-fast-socket
 
           CONDA_BASE=/opt/conda
 
@@ -217,9 +219,10 @@ deployment_groups:
     settings:
       runners:
       - type: shell
-        destination: remove_lustre_client.sh
+        destination: startup-script.sh
         content: |
           #!/bin/bash
+          CONDA_BASE=/opt/conda
           source $CONDA_BASE/bin/activate base
           conda init --system
 - group: packer
@@ -253,10 +256,10 @@ deployment_groups:
       enable_public_ips: true
       enable_placement: false
       enable_smt: true
-      machine_type: n1-standard-4
+      machine_type: n1-standard-96
       guest_accelerator:
-      - type: nvidia-tesla-t4-vws
-        count: 1
+      - type: nvidia-tesla-t4
+        count: 4
 
       on_host_maintenance: TERMINATE
       instance_image:
@@ -268,6 +271,7 @@ deployment_groups:
     settings:
       partition_name: n1t4
       is_default: true
+      exclusive: false
 
 
   - id: n2_nodeset
@@ -296,7 +300,7 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network1]
     settings:
-      zones: [us-east1-d, us-east1-b, us-east1-c]
+      zones: $(vars.zone_list)
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
@@ -318,7 +322,7 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network1]
     settings:
-      zones: [us-east1-d, us-east1-b, us-east1-c]
+      zones: $(vars.zone_list)
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
@@ -340,7 +344,7 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network1]
     settings:
-      zones: [us-east1-d, us-east1-b, us-east1-c]
+      zones: $(vars.zone_list)
       node_count_dynamic_max: 1
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
