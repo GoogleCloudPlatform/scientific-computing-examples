@@ -212,9 +212,9 @@ class KubernetesBatchJobs:
         namespace=namespace,
         body=create_request,
     )
+
     #print(api_response.metadata.labels["job-name"],file=sys.stderr)
     print(f"Job {api_response.metadata.labels['job-name']} created. Timestamp='{api_response.metadata.creation_timestamp}'" )
-
 
   def delete_job(self, job_name):
     namespace = get_setting("namespace", settings)
@@ -228,7 +228,13 @@ class KubernetesBatchJobs:
   def list_jobs(self):
     namespace = get_setting("namespace", settings)
     try:
-      api_response = self.batch_v1.list_namespaced_job(namespace)
+      api_response = self.core_v1.list_namespaced_job(namespace)
+      for item in api_response.items:
+        succeeded = item.status.succeeded
+        failed = item.status.failed
+        completed = item.status.completed_indexes
+        print(f"Name: {item.metadata.labels['app']}\tSucceeded: {succeeded}\tFailed: {failed}\tCompleted Index: {completed}", file=sys.stderr)
+        # pprint(item)
     except ApiException as e:
       print("Exception when calling BatchV1Api->list_namespaced_job: %s\n" % e)
     headers = ["Job Name", "Succeeded", "Failed", "Completed Index"]
