@@ -3,3 +3,5 @@ dynaconf
 kubernetes
 protobuf
 PyYAML
+tabulate
+termcolor

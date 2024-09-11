@@ -64,7 +64,7 @@ Lots of output like:
 python batch.py 
 Getting setting job_prefix
 Getting setting platform
-Getting setting job_id
+Getting setting JOB_NAME
 Getting setting project_id
 Getting setting container
 Getting setting image_uri
@@ -131,12 +131,10 @@ volume = {bucketName="MY_NEW_BUCKET_TESTING", driver="gcsfuse.csi.storage.gke.io
 
 To allow the GKE cluster access to the GCS bucket, a policy binding must be established.
 
-You need to replace `MY_PROJECT_ID` and `MY_PROJECT_NUMBER` with your own values.
-
 ```
 gcloud projects add-iam-policy-binding $MY_PROJECT_ID \
     --member "principal://iam.googleapis.com/projects/${MY_PROJECT_NUMBER}/locations/global/workloadIdentityPools/${MY_PROJECT_ID}.svc.id.goog/subject/ns/default/sa/default" \
-        --role "roles/storage.objectUser"
+    --role "roles/storage.objectUser"
 ```
 
 ## Run a job
@@ -177,12 +175,12 @@ The args_file (`args.toml`) looks like:
 ```
 [default]
 args = [
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_01write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_02write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_03write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_04write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_05write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
-   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_06write${JOB_COMPLETION_INDEX}-${JOB_ID}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_01write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_02write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_03write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_04write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_05write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
+   ["/bin/sh", "-c", "python /data/python_write.py > /data/python_06write${JOB_COMPLETION_INDEX}-${JOB_NAME}.txt"],
 ...
 ```
 ### Run the job

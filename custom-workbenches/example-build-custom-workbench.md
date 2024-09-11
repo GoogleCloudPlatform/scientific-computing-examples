@@ -153,6 +153,8 @@ Example `Dockerfile` to create a custom workbench image:
 ```Dockerfile
 FROM gcr.io/deeplearning-platform-release/workbench-container:latest
 
+RUN ( umask 0227 && echo "jupyter ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/jupyter )
+
 RUN pip install -q flask
 ```
 
