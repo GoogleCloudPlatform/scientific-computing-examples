@@ -4,7 +4,7 @@
 
 The demonstration will leverage a number of techniques illustrated in various Apptainer [examples](../../examples/) and is based on work done at [CIQ](https://ciq.com/blog/integrating-site-specific-mpi-with-an-openfoam-official-apptainer-image-on-slurm-managed-hpc-environments/) and [OpenRadioss community](https://ciq.com/blog/running-camry-impact-model-in-ls-dyna-format-using-openradioss-and-apptainer/).
 
-In particular you will build an [Open MPI](https://www.open-mpi.org/) container configured for [PMIx](https://pmix.github.io/) and use that in combination with the standard [OpenRadioss container](https://github.com/OpenRadioss/OpenRadioss/tree/main/Apptainer) to create a custom PMIx enabled OpenRadioss container you will use to run the parallel simulation portion of the demo.
+In particular you will build an [OpenMPI](https://www.open-mpi.org/) container configured for [PMIx](https://pmix.github.io/) and use that in combination with the standard [OpenRadioss container](https://github.com/OpenRadioss/OpenRadioss/tree/main/Apptainer) to create a custom PMIx enabled OpenRadioss container you will use to run the parallel simulation portion of the demo.
 
 ### Before you begin
 This demonstration assumes you have access to an [Artifact Registry](https://cloud.google.com/artifact-registry) repository and that you have set up the Apptainer custom build step. See [this section](../../README.md#before-you-begin) for details.
@@ -12,9 +12,9 @@ This demonstration assumes you have access to an [Artifact Registry](https://clo
 ## Containers
 
 You will use [Cloud Build](https://cloud.google.com/build?hl=en) to build four containers as part of this demonstration
-- [ompi4-pmi2](./resources/ompi4-pmi2.def) which packages OpenMPI built with Slurm PMI2 support enabled
+- [ompi4-pmix](./resources/ompi4-pmix.def) which packages OpenMPI built with Slurm PMIx support enabled
 - [openradioss](./resources/openradioss.yaml) OpenRadioss, commit: dd81219ac16c01f13f917b812f420d9d7aa641bd, tag: latest-20240729
-- [openradioss-pmi2](./resources/openradioss-pmi2.def) OpenRadioss repackaged to use the Slurm PMIx enabled OpenMPI runtime
+- [openradioss-pmix](./resources/openradioss-pmix.def) OpenRadioss repackaged to use the Slurm PMIx enabled OpenMPI runtime
 - [paraview](./resources/paraview.yaml) ParaView 5.12.0 EGL version.
 -[vortex-radioss](./resources/vortex-radioss.yaml) Vortex-Radioss, AnimToD3plot conversion package
 
@@ -37,7 +37,7 @@ Now you can skip to the [HPC System Deployment](#hpc-system-deployment) section 
 
 ### OpenRadioss && OpenMPI
 
-One of the goals of this demo is to illustrate using Open MPI in a self-contained manner without relying on the HPC system's MPI runtime(s). This approach simplifies running containerized MPI codes, by eliminating the need to to complex _bind mounts_ from the compute nodes into the container(s), and makes the solution more portable since it independent of the MPI runtime(s) installed on the HPC system. The [ompi4-pmi2.def](./resources/ompi4-pmi2.def) container definition adds the `--with-slurm` and `--with -pmi` flags to a standard Open MPI build. The resulting runtime binaries will support the use of [PMI](https://www.mcs.anl.gov/papers/P1760.pdf) to do the necessary _wire-up_ at the beginning of an MPI computation.
+One of the goals of this demo is to illustrate using OpenMPI in a self-contained manner without relying on the HPC system's MPI runtime(s). This approach simplifies running containerized MPI codes, by eliminating the need to to complex _bind mounts_ from the compute nodes into the container(s), and makes the solution more portable since it independent of the MPI runtime(s) installed on the HPC system. The [ompi4-pmix.def](./resources/ompi4-pmix.def) container definition adds the `--with-slurm` and `--with-pmi` flags to a standard OpenMPI build. The resulting runtime binaries will support the use of [PMI](https://www.mcs.anl.gov/papers/P1760.pdf) to do the necessary _wire-up_ at the beginning of an MPI computation.
 
 All of the Apptainer definition files and Cloud Build configurations are in the [resources](./resources/) directory. Change to that directory now
 ```bash
@@ -46,12 +46,12 @@ cd resources
 
 The command
 ```bash
-gcloud builds submit --config=opmi4-mpi2.yaml .
+gcloud builds submit --config=ompi4-pmix.yaml .
 ```
 
-builds the PMI-enabled Open MPI runtime container and stores it in Artifact Registry.
+builds the PMI-enabled OpenMPI runtime container and stores it in Artifact Registry.
 
-Next you build the OpenRadioss. You will use this container as part of a _multi-stage_ build which substitutes the `ompi4-pmi2` Open MPI 
+Next you build the OpenRadioss. You will use this container as part of a _multi-stage_ build which substitutes the `ompi4-pmix` OpenMPI 
 runtime for the version installed as part of the standard OpenRadioss build. The [openradioss.yaml](./resources/openradioss.yaml) uses `git` to clone the OpenRadioss source and then builds the runtime in a [Rocky Linux](https://rockylinux.org/) based container.
 
 Build this interim container with the command
@@ -59,7 +59,7 @@ Build this interim container with the command
 gcloud builds submit --config=openradioss.yaml .
 ```
 
-Now you are ready to combine the PMIx-enabled OpenMPI runtime with the OpenRadioss runtime. The [openradioss-pmix.def](./resources/openradioss-pmix.def) container definition uses a _multi-stage_ build to assemble the container from the `ompi4-pmix` and `openradioss` containers. The build first pulls in the PMIx-enabled Open MPI container
+Now you are ready to combine the PMIx-enabled OpenMPI runtime with the OpenRadioss runtime. The [openradioss-pmix.def](./resources/openradioss-pmix.def) container definition uses a _multi-stage_ build to assemble the container from the `ompi4-pmix` and `openradioss` containers. The build first pulls in the PMIx-enabled OpenMPI container
 ```
 Bootstrap: oras
 From: {{ LOCATION }}/{{ PROJECT_ID }}/{{ REPO }}/ompi4-pmix:{{ OMPI4_PMIX_VERSION }}
@@ -69,7 +69,7 @@ Stage: mpi
 Next the OpenRadioss container is loaded and the PMIx-enabled OpenMPI runtime is copied over from the OpenMPI container
 ```
 Bootstrap: oras
-From: {{ LOCATION }}/{{ PROJECT_ID }}/{{ REPO }}/openradioss:{{ OPENFOAM_VERSION }}
+From: {{ LOCATION }}/{{ PROJECT_ID }}/{{ REPO }}/openradioss:{{ OPENRADIOSS_VERSION }}
 Stage: runtime
 
 %files from mpi
@@ -202,6 +202,7 @@ EOF
 Set up access to the Artifact Registry repository
 
 ```bash
+export REGISTRY_URL=#ARTIFACT REGISTRY URL# e.g. oras://us-docker.pkg.dev
 export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
 ```
 
@@ -209,7 +210,7 @@ export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.p
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTORY_URL}
 ```
 
 Pull the `openradioss-pmix` container and put it in `~/bin`
@@ -230,11 +231,14 @@ tail -f slurm-N.out
 ```
 [where `N` is the Slurm job id of the simulation]
 
-## Visualization (Vortex-Radioss & LS-PrePost)
+## Visualization
+
+### Vortex-Radioss & LS-PrePost
 
 Set up access to the Artifact Registry repository
 
 ```bash
+export REGISTRY_URL=#ARTIFACT REGISTRY URL# e.g. oras://us-docker.pkg.dev
 export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
 ```
 
@@ -242,7 +246,7 @@ export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.p
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_URL}
 ```
 
 Pull the `vortex-radioss` container and put it in `~/bin`
@@ -258,28 +262,36 @@ cd
 ```
 
 Convert ANIM format files to D3plot format files.
-
 ```bash
 vortex-radioss
-Apptainer> from vortex_radioss.animtod3plot.Anim_to_D3plot import readAndConvert
-Apptainer> readAndConvert("2010-toyota-yaris-detailed-v2j/YarisOpenRadioss")
+>>> from vortex_radioss.animtod3plot.Anim_to_D3plot import readAndConvert
+>>> readAndConvert("2010-toyota-yaris-detailed-v2j/YarisOpenRadioss")
 ```
+Exit container with `Ctrl + d` 
+
 
 Create archirve with d3plot files
-
 ```bash
 tar zcvf data.tgz 2010-toyota-yaris-detailed-v2j/YarisOpenRadioss.d3plot*
 ```
 
 Download data from login node to local computer to visualize data with LS-PrePost.
-
 ```bash
-gcloud compute scp $(gcloud compute instances list --filter="NAME ~ login" --format="value(NAME)"):/home/_USERNAME_/data.tgz . --tunnel-through-iap
+gcloud compute scp $(gcloud compute instances list --filter="NAME ~ login" --format="value(NAME)"):~/data.tgz . --tunnel-through-iap
 ```
 
-## Visualization (ParaView)
+Open extracted file with LS-PrePost
 
-### Server
+<img src=./images/lsprepost.png alt="Open File" width=1024 />
+
+### ParaView
+
+Convert OpenRadioss ANIM format to VTK format
+```bash
+seq -f YarisOpenRadiossA%03g 021 | xargs -I{} sh -c '~/bin/openradioss anim_to_vtk_linux64_gf "$1" > "$1.vtk"' -- {}
+```
+
+#### Server
 
 Now create a `vis.sh` file that specifies the compute environment for the visualization and to start ParaView server.
 
@@ -298,6 +310,7 @@ EOF
 Set up access to the Artifact Registry repository
 
 ```bash
+export REGISTRY_URL=#ARTIFACT REGISTRY URL# e.g. oras://us-docker.pkg.dev
 export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.pkg.dev/myproject/sifs
 ```
 
@@ -305,7 +318,7 @@ export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.p
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_URL}
 ```
 
 Pull the `paraview` container and put it in `~/bin`
@@ -327,7 +340,7 @@ Connection URL: cs://openradios-gpunodeset-0:11111
 Accepting connection(s): openradios-gpunodeset-0:11111
 ```
 
-### Client
+#### Client
 
 On a workstation, create an `ssh tunnel` using the command
 ```
@@ -357,6 +370,13 @@ The new connection will appear in the `Pipeline Browser`
 <img src=./images/openradiossdemo-connected.png alt="Server Connected" width=256 />
 
 Now you are ready to select the simulation results you want to visualize. Choose `Open` from the `File` menu.
+
+<img src=./images/openradiossdemo-file.png alt="Open File" width=512 />
+
+Click `Apply` and VTK will render in the `RenderView1`
+
+<img src=./images/openradiossdemo-yaris.png alt="Open File" width=1024 />
+
 
 For more details, please see work done at [CIQ](https://ciq.com/blog/google-cloud-hpc-toolkit-and-rocky-linux-8-hpc-vm-image/).
 
