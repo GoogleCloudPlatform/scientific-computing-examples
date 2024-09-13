@@ -214,9 +214,10 @@ deployment_groups:
           source $CONDA_BASE/bin/activate base
           conda env create -n llama2 --file /tmp/llama2_env.yml
 
-  - id: script
+  - id: startup_script
     source: modules/scripts/startup-script
     settings:
+      install_cloud_ops_agent: false
       runners:
       - type: shell
         destination: startup-script.sh
@@ -225,6 +226,21 @@ deployment_groups:
           CONDA_BASE=/opt/conda
           source $CONDA_BASE/bin/activate base
           conda init --system
+
+          # UnInstall Stackdriver Agent
+
+          sudo systemctl stop stackdriver-agent.service
+          sudo systemctl disable stackdriver-agent.service
+          curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
+          sudo dpkg --configure -a
+          sudo bash add-monitoring-agent-repo.sh --uninstall
+          sudo bash add-monitoring-agent-repo.sh --remove-repo
+
+          # Install ops-agent
+
+          curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+          sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+          sudo service google-cloud-ops-agent start
 - group: packer
   modules:
   - id: custom-image
@@ -356,7 +372,7 @@ deployment_groups:
         family: $(vars.new_image_family)
         project: $(vars.project_id)
   - id: g2_partition
-    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    source: community/modules/compute/schedmd-slurm-gcp-v7-partition
     use: [g2_nodeset]
     settings:
       partition_name: g2gpu8
@@ -388,7 +404,11 @@ deployment_groups:
     - data_bucket
     settings:
       enable_controller_public_ips: true
-      login_startup_script: $(script.startup_script)
+      compute_startup_script: $(startup_script.startup_script)
+      compute_startup_scripts_timeout: 21600
+      controller_startup_script: $(startup_script.startup_script)
+      controller_startup_scripts_timeout: 21600
+      login_startup_script: $(startup_script.startup_script)
       login_startup_scripts_timeout: 21600
       instance_image: 
         family: $(vars.new_image_family)
