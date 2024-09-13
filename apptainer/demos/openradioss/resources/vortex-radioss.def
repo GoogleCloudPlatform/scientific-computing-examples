@@ -1,0 +1,12 @@
+Bootstrap: docker
+From: rockylinux/rockylinux:9
+
+%post
+dnf install -y git python3-pip
+pip install wheel
+cd /opt
+git clone https://github.com/Vortex-CAE/Vortex-Radioss.git
+pip install ./Vortex-Radioss
+
+%runscript
+python3 "$@"

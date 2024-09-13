@@ -1,0 +1,19 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit . --config=ompi4-pmix.yaml
+
+steps:
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'ompi4-pmix.sif'
+  - 'ompi4-pmix.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'ompi4-pmix.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/ompi4-pmix:${_VERSION}'
+substitutions:
+  _LOCATION: us-docker.pkg.dev
+  _REPOSITORY: sifs
+  _VERSION: latest

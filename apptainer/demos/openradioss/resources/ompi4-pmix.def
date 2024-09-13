@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: rockylinux:9
+
+%post
+    dnf group install -y "Development Tools"
+    dnf install -y \
+    gcc gcc-gfortran gcc-c++ make cmake perl git-lfs \
+    wget git patch diffutils libxcrypt-compat \
+    which python
+    dnf install -y epel-release
+    crb enable
+    dnf install -y hwloc-devel slurm-devel numactl-devel
+    dnf -y clean all
+    
+    wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.4.tar.gz
+    tar zxvf openmpi-4.1.4.tar.gz && rm openmpi-4.1.4.tar.gz
+    cd openmpi-4.1.4
+    ./configure --prefix=/opt/openmpi \
+      --with-slurm --with-pmi=/usr
+    make -j $(nproc)
+    make install
+    

@@ -1,0 +1,19 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit . --config=vortex-radioss.yaml
+
+steps:
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'build'
+  - '--fakeroot'
+  - 'vortex-radioss.sif'
+  - 'vortex-radioss.def'
+- name: 'gcr.io/$PROJECT_ID/apptainer'
+  args:
+  - 'push'
+  - 'vortex-radioss.sif'
+  - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/vortex-radioss:${_VERSION}'
+substitutions:
+  _LOCATION: us-docker.pkg.dev
+  _REPOSITORY: sifs
+  _VERSION: latest

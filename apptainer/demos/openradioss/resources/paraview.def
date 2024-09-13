@@ -1,0 +1,20 @@
+Bootstrap: docker
+From: rockylinux/rockylinux:8
+
+%post
+dnf install -y libgomp libX11 libXext
+dnf install -y libglvnd libglvnd-egl libglvnd-opengl wget
+wget -P /etc/glvnd/egl_vendor.d https://gitlab.com/nvidia/container-images/opengl/-/raw/centos8/glvnd/runtime/10_nvidia.json
+
+%post
+mkdir -p /opt/ParaView/5.12.0
+wget -O ParaView-5.12.0-egl-MPI-Linux-Python3.10-x86_64.tar.gz "https://www.paraview.org/paraview-downloads/download.php?submit=Download&version=v5.12&type=binary&os=Linux&downloadFile=ParaView-5.12.0-egl-MPI-Linux-Python3.10-x86_64.tar.gz"
+tar -C /opt/ParaView/5.12.0 -zxvf ParaView-5.12.0-egl-MPI-Linux-Python3.10-x86_64.tar.gz --strip-components 1
+rm ParaView-5.12.0-egl-MPI-Linux-Python3.10-x86_64.tar.gz
+
+%environment
+export PATH=/opt/ParaView/5.12.0/bin:$PATH
+
+%runscript
+export PATH=/opt/ParaView/5.12.0/bin:$PATH
+"$@"

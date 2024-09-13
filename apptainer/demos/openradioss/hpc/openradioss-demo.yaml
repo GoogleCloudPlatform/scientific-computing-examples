@@ -1,0 +1,149 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+# See instructions at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/tree/main/examples#image-builderyaml-
+
+blueprint_name: openradioss-demo
+
+vars:
+  project_id: _YOUR_GCP_PROJECT_ID_
+  deployment_name: openradiossdemo
+  region:  asia-northeast3
+  zone: asia-northeast3-b
+  custom_image:
+    family: apptainer-enabled
+    project: $(vars.project_id)
+  disk_size: 64
+  compute_machine_type: c2-standard-60
+  controller_machine_type: n2-standard-8
+  gpu_machine_type: a2-highgpu-1g
+  login_machine_type: e2-standard-4
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: network
+    source: modules/network/vpc
+
+  - id: scripts_for_image
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: shell
+        destination: install_apptainer.sh
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release
+          dnf install -y apptainer
+
+- group: packer
+  modules:
+  - id: apptainer-enabled-image
+    source: modules/packer/custom-image
+    kind: packer
+    use:
+    - network
+    - scripts_for_image
+    settings:
+      source_image_project_id: [schedmd-slurm-public]
+      # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
+      source_image_family: slurm-gcp-6-6-hpc-rocky-linux-8
+      # You can find size of source image by using following command
+      # gcloud compute images describe-from-family <source_image_family> --project schedmd-slurm-public
+      disk_size: $(vars.disk_size)
+      image_family: $(vars.custom_image.family)
+      state_timeout: 15m
+
+- group: cluster
+  modules:
+
+  - id: homefs
+    source: modules/file-system/filestore
+    use: [network]
+    settings:
+      local_mount: /home
+
+  - id: compute_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 10
+      machine_type: $(vars.compute_machine_type)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      enable_placement: true
+
+  - id: compute_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [compute_nodeset]
+    settings:
+      partition_name: compute
+      is_default: true
+      exclusive: true
+
+  - id: gpu_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 4
+      node_count_static: 1
+      machine_type: $(vars.gpu_machine_type)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      allow_automatic_updates: false
+      enable_placement: false
+
+  - id: gpu_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [gpu_nodeset]
+    settings:
+      partition_name: gpu
+      is_default: false
+      exclusive: false
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [network]
+    settings:
+      machine_type: $(vars.login_machine_type)
+      name_prefix: login
+      enable_login_public_ips: true
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use:
+    - network
+    - compute_partition
+    - gpu_partition
+    - slurm_login
+    - homefs
+    settings:
+      machine_type: $(vars.controller_machine_type)
+      enable_controller_public_ips: true
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
