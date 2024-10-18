@@ -1,6 +1,6 @@
 # Building Apptainer (SIF) Images Interactively
 
-The [builder.yaml](builder.yaml) HPC Toolkit blueprint creates a Google Cloud instance with Apptainer installed that you can use to interactively build SIF images.
+The [builder.yaml](builder.yaml) Cluster Toolkit blueprint creates a Google Cloud instance with Apptainer installed that you can use to interactively build SIF images.
 
 ## Deploy
 
@@ -161,13 +161,16 @@ In either case you should see output similar to
 
 ## Publish
 
-Containers package software and dependencies so that they can be easily shared and deployed. One of the most effective ways to share containers is through _repositories_. Google Cloud provides [Artifact Registry](https://cloud.google.com/artifact-registry) which stores, manages, and secures build artifacts - including containers. SIF images can be stored in Artifact Registry using the [OCI Registry As Storage](https://oras.land/) (oras) scheme. Slurm jobs running in an HPC Toolkit deployed cluster can pull the SIF images they need from Artifact Registry as they need them.
+Containers package software and dependencies so that they can be easily shared and deployed. One of the most effective ways to share containers is through _repositories_. Google Cloud provides [Artifact Registry](https://cloud.google.com/artifact-registry) which stores, manages, and secures build artifacts - including containers. SIF images can be stored in Artifact Registry using the [OCI Registry As Storage](https://oras.land/) (oras) scheme. Slurm jobs running in an Cluster Toolkit deployed cluster can pull the SIF images they need from Artifact Registry as they need them.
 
 If you don't have an Artifact Registry repository available follow the steps [here](https://cloud.google.com/artifact-registry/docs/repositories/create-repos#description) to create one. Then create an environment variable for your repository URL
 
 ```bash
-export REPOSITORY_URL=<ARTIFACT REGISTRY REPOSITORY URL> # e.g. oras://us-docker.pkg.dev/myproject/sifs
+export REGISTRY_URL=oras://#LOCATION#
+export REPOSITORY_URL=${REGISTRY_URL}/#PROJECT_NAME#/#REPOSITORY_NAME# 
 ```
+
+Where *LOCATION* is the fully-qualified domain of the repository, e.g., us-docker.pkg.dev.
 
 Apptainer needs to authenticate to your repository before it can push or pull images. Use this command to authenticate
 
@@ -175,7 +178,7 @@ Apptainer needs to authenticate to your repository before it can push or pull im
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_URL}
 ```
 
 You should see output like

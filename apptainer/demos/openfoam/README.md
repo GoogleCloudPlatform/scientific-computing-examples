@@ -2,7 +2,7 @@
 
 [OpenFOAM](https://www.openfoam.com/) is a very popular tool for running computational fluid dynamics (CFD) simulations. In this 
 demostration you will run OpenFOAM across multiple cores and nodes in a Slurm-based HPC system deployed 
-via [HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/overview). Your demo will use one of OpenFOAM's tutorial models, 
+via [Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/overview). Your demo will use one of OpenFOAM's tutorial models, 
 the `motorbike` model. To make the demonstration more interesting you will use [Paraview](https://www.paraview.org/) to visualize the
 result of the simulation. The visualization will be served from a compute node with an attached GPU
 in the HPC system you deploy.
@@ -134,7 +134,7 @@ sed -i s/_YOUR_GCP_PROJECT_ID_/${PROJECT_ID}/g #PATH TO#/of-demo.yaml
 Now you can create the deployment artifacts with the command
 
 ```bash
-./ghpc create #PATH TO#/of-demo.yaml
+./gcluster create #PATH TO#/of-demo.yaml
 ```
 
 You should see output that looks like
@@ -142,7 +142,7 @@ You should see output that looks like
 ```
 To deploy your infrastructure run:
 
-./ghpc deploy ofdemo
+./gcluster deploy ofdemo
 
 Find instructions for cleanly destroying infrastructure and advanced manual
 deployment instructions at:
@@ -152,7 +152,7 @@ ofdemo/instructions.txt
 
 Per the instructions, bring up your HPC system with the command
 ```bash
-./ghpc deploy ofdemo
+./gcluster deploy ofdemo
 ```
 
 Go back to the parent directory
@@ -355,5 +355,5 @@ ParaView is a powerful visualizaton tool but a complete exploration of its capab
 
 To bring down your HPC system use the command
 ```bash
-./ghpc destroy ofdemo
+./gcluster destroy ofdemo
 ```

@@ -93,7 +93,7 @@ gcr.io/#PROJECT_NAME#/apptainer
 
 ## Building
 
-Containers package software and dependencies so that they can be easily shared and deployed. One of the most effective ways to share containers is through _repositories_. Google Cloud provides [Artifact Registry](https://cloud.google.com/artifact-registry) which stores, manages, and secures build artifacts - including containers. SIF images can be stored in Artifact Registry using the [OCI Registry As Storage](https://oras.land/) (oras) scheme. Slurm jobs running in an HPC Toolkit deployed cluster can pull the SIF images they need from Artifact Registry as they need them.
+Containers package software and dependencies so that they can be easily shared and deployed. One of the most effective ways to share containers is through _repositories_. Google Cloud provides [Artifact Registry](https://cloud.google.com/artifact-registry) which stores, manages, and secures build artifacts - including containers. SIF images can be stored in Artifact Registry using the [OCI Registry As Storage](https://oras.land/) (oras) scheme. Slurm jobs running in an Cluster Toolkit deployed cluster can pull the SIF images they need from Artifact Registry as they need them.
 
 If you don't have an Artifact Registry repository available follow the steps [here](https://cloud.google.com/artifact-registry/docs/repositories/create-repos#description) to create one.
 
@@ -154,20 +154,23 @@ ID                                    CREATE_TIME                DURATION  SOURC
 You can get a list of images in your repository with the commands
 
 ```bash
-gcloud config set artifacts/location #LOCATION#
+gcloud config set artifacts/location #REPOSITORY LOCATION#
 gcloud config set artifacts/respository #REPOSITORY_NAME#
 gcloud artifacts docker tags list --format="value(IMAGE,TAG)" 2>/dev/null | awk '{ printf "%s:%s\n", $1, $2 }'
 ```
 
-Where *LOCATION* is the location of your repository, e.g., 'us', and *REPOSITORY_NAME* is the name of the Artifact Registry repository you specified above.
+Where *REPOSITORY LOCATION* is the location of your repository, e.g., 'us', and *REPOSITORY_NAME* is the name of the Artifact Registry repository you specified above.
 
 ## Deployment
 
 Create an environment variable for your repository URL
 
 ```bash
-export REPOSITORY_URL=oras://#LOCATION#/#PROJECT_NAME#/#REPOSITORY_NAME# 
+export REGISTRY_URL=oras://#LOCATION#
+export REPOSITORY_URL=${REGISTRY_URL}/#PROJECT_NAME#/#REPOSITORY_NAME# 
 ```
+
+Where *LOCATION* is the fully-qualified domain of the repository, e.g., us-docker.pkg.dev.
 
 Apptainer needs to authenticate to your repository before it can push or pull images. Use this command to authenticate
 
@@ -175,7 +178,7 @@ Apptainer needs to authenticate to your repository before it can push or pull im
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REPOSITORY_URL}
+${REGISTRY_URL}
 ```
 
 You should see output like

@@ -1,6 +1,6 @@
 # Apptainer Enabled Slurm Clusters
 
-The [HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/overview) streamlines the definition and deployment of HPC Systems via _blueprints_ that it uses to generate and deploy [Terraform](https://www.terraform.io/) configurations. Here we provide two example blueprints that build custom [Apptainer](https://apptainer.org/) enabled images for use in the HPC system configuration created by the HPC Toolkit `ghpc` command line tool. The blueprints are:
+The [Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/overview) streamlines the definition and deployment of HPC Systems via _blueprints_ that it uses to generate and deploy [Terraform](https://www.terraform.io/) configurations. Here we provide two example blueprints that build custom [Apptainer](https://apptainer.org/) enabled images for use in the HPC system configuration created by the Cluster Toolkit `gcluster` command line tool. The blueprints are:
 - [slurm-apptainer.yaml](./slurm-apptainer.yaml)
 - [slurm-apptainer-gpu.yaml](./slurm-apptainer-gpu.yaml)
 
@@ -21,7 +21,7 @@ where _BLUEPRINT_ is your blueprint of choice.
 Now you can create the deployment artifacts with the command
 
 ```bash
-./ghpc create #BLUEPRINT#
+./gcluster create #BLUEPRINT#
 ```
 
 If you chose the `slurm-apptainer.yaml` blueprint you should see output that looks like
@@ -29,7 +29,7 @@ If you chose the `slurm-apptainer.yaml` blueprint you should see output that loo
 ```
 To deploy your infrastructure please run:
 
-./ghpc deploy hpctainer
+./gcluster deploy hpctainer
 
 Find instructions for cleanly destroying infrastructure and advanced manual
 deployment instructions at:
@@ -39,7 +39,7 @@ hpctainer/instructions.txt
 
 If you chose `slurm-apptatiner-gpu.yaml` the output will be the same with the exception of the deployment name, which will be `gputainer`.
 
-Enter ```./ghpc deploy hpctainer```, or ```./ghpc deploy gputainer```,to deploy the HPC system.
+Enter ```./gcluster deploy hpctainer```, or ```./gcluster deploy gputainer```,to deploy the HPC system.
 
 Once the deployment is complete you can login to the system's login node with the command
 
@@ -102,5 +102,5 @@ Now you can run Apptainer containerized workloads. For examples of containerized
 When your work is complete you can teardown the HPC system with
 
 ```bash
-./ghpc destroy hpctainer # or gputainer
+./gcluster destroy hpctainer # or gputainer
 ```
