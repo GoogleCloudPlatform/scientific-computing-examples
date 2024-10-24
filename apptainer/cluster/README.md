@@ -4,42 +4,67 @@ The [Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/overview) st
 - [slurm-apptainer.yaml](./slurm-apptainer.yaml)
 - [slurm-apptainer-gpu.yaml](./slurm-apptainer-gpu.yaml)
 
-Blueprint Prep
+The [Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/overview) streamlines the definition and deployment of HPC Systems via _blueprints_ that it uses to generate and deploy [Terraform](https://www.terraform.io/) configurations. The `community/examples` directory in the Cluster Toolkit repository contains a blueprint that builds custom Apptainer images for use in the HPC system configuration created by the Cluster Toolkit `gcluster` command line tool.
 
-If you want to deploy a Slurm-based HPC System with a GPU partition use the `slurm-apptainer-gpu.yaml` blueprint, otherwise choose the `slurm-apptainer.yaml` blueprint.
+## Blueprint Prep
 
-Edit your chosen blueprint to set the `project_id` field appropriately. Use your preferred text editor or the `sed` command below to make the change.
+Download the Cluster Toolkit `community/examples/hpc-slurm6-apptainer.yaml` blueprint with the command
 
 ```bash
-sed -i s/_YOUR_GCP_PROJECT_ID_/${PROJECT_ID}/g #BLUEPRINT#
+wget https://raw.githubusercontent.com/GoogleCloudPlatform/cluster-toolkit/refs/heads/main/community/examples/hpc-slurm6-apptainer.yaml
 ```
 
-where _BLUEPRINT_ is your blueprint of choice.
+If you want to deploy a Slurm-based HPC system with a GPU partition apply the `hpc-slurm6-gputainer.patch` file to the blueprint downloaded via the command above
+
+```bash
+patch -o hpc-slurm6-apptainer.yaml -i hpc-slurm6-gputainer.patch
+```
 
 ## Deployment
 
 Now you can create the deployment artifacts with the command
 
 ```bash
-./gcluster create #BLUEPRINT#
+./gcluster create ./hpc-slurm6-apptainer.yaml \
+  --vars project_id=$(gcloud config get project)
 ```
 
-If you chose the `slurm-apptainer.yaml` blueprint you should see output that looks like
-
+Which should result in out put like
 ```
 To deploy your infrastructure please run:
 
-./gcluster deploy hpctainer
+./gcluster deploy slurm6-apptainer
 
 Find instructions for cleanly destroying infrastructure and advanced manual
 deployment instructions at:
 
-hpctainer/instructions.txt
+slurm6-apptainer/instructions.txt
 ```
 
-If you chose `slurm-apptatiner-gpu.yaml` the output will be the same with the exception of the deployment name, which will be `gputainer`.
+Or, if you are creating an HPC system with a GPU partition use the command
 
-Enter ```./gcluster deploy hpctainer```, or ```./gcluster deploy gputainer```,to deploy the HPC system.
+```bash
+gcluster create BLUEPRINT \
+  --vars project_id=$(gcloud config get core/project) \
+  --vars guest_accelerator_type="nvidia-tesla-v100" \
+  --vars guest_accelerator_count=1 \
+  --vars max_dynamic_node_count=8 \
+  --vars static_node_count=1 \
+  --vars enable_placement=false --vars exclusive=false
+```
+Which should result in output like
+```
+To deploy your infrastructure please run:
+
+./gcluster deploy slurm6-gputainer
+
+Find instructions for cleanly destroying infrastructure and advanced manual
+deployment instructions at:
+
+slurm6-gputainer/instructions.txt
+```
+
+Enter ```./gcluster deploy slurm6-apptainer```, or ```./gcluster deploy slurm6-gputainer```,to deploy the HPC system.
 
 Once the deployment is complete you can login to the system's login node with the command
 
