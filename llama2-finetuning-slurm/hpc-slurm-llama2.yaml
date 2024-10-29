@@ -372,7 +372,7 @@ deployment_groups:
         family: $(vars.new_image_family)
         project: $(vars.project_id)
   - id: g2_partition
-    source: community/modules/compute/schedmd-slurm-gcp-v7-partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [g2_nodeset]
     settings:
       partition_name: g2gpu8
