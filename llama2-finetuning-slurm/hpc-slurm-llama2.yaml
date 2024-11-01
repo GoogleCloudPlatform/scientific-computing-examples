@@ -20,9 +20,9 @@ vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: us-east4
-  zone: us-east4-a
-  zone_list: [us-east4-a, us-east4-b, us-east4-c]
+  region: asia-northeast3
+  zone: asia-northeast3-b
+  zone_list: [asia-northeast3-b,asia-northeast3-c]
   new_image_family: llama2-slurm-v6
   instance_image_custom: true
   disk_size_gb: 200
@@ -134,6 +134,7 @@ deployment_groups:
     settings:
       name_prefix: $(vars.bucket_model)
       random_suffix: true
+      force_destroy: true
       local_mount: /data_bucket
       mount_options: defaults,_netdev,implicit_dirs,allow_other,dir_mode=0777,file_mode=766
 
