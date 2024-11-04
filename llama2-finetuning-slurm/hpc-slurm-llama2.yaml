@@ -20,9 +20,9 @@ vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: asia-northeast3
-  zone: asia-northeast3-b
-  zone_list: [asia-northeast3-b,asia-northeast3-c]
+  region: us-east4
+  zone: us-east4-c
+  zone_list: [us-east4-c]
   new_image_family: llama2-slurm-v6
   instance_image_custom: true
   disk_size_gb: 200
@@ -305,9 +305,8 @@ deployment_groups:
       machine_type: n2-standard-4
       on_host_maintenance: TERMINATE
       instance_image:
-        #family: $(vars.new_image_family)
+        family: $(vars.new_image_family)
         project: $(vars.project_id)
-        name: llama2-slurm-v6-20240911t192317z
   - id: n2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [n2_nodeset]
@@ -328,9 +327,8 @@ deployment_groups:
       machine_type: g2-standard-96
       on_host_maintenance: TERMINATE
       instance_image:
-        #family: $(vars.new_image_family)
+        family: $(vars.new_image_family)
         project: $(vars.project_id)
-        name: llama2-slurm-v6-20240911t192317z
   - id: g2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [g2_nodeset]
@@ -346,10 +344,8 @@ deployment_groups:
       machine_type: n2-standard-4
       enable_login_public_ips: true
       instance_image: 
-        #family: $(vars.new_image_family)
-        project: $(vars.project_id)
-        name: llama2-slurm-v6-20240911t192317z
-        
+        family: $(vars.new_image_family)
+        project: $(vars.project_id)        
 
   - id: slurm_controller
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
@@ -370,6 +366,5 @@ deployment_groups:
       login_startup_script: $(startup_script.startup_script)
       login_startup_scripts_timeout: 21600
       instance_image: 
-        #family: $(vars.new_image_family)
+        family: $(vars.new_image_family)
         project: $(vars.project_id)
-        name: llama2-slurm-v6-20240911t192317z
