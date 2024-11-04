@@ -20,9 +20,9 @@ vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: asia-northeast3
-  zone: asia-northeast3-b
-  zone_list: [asia-northeast3-b,asia-northeast3-c]
+  region: us-east4
+  zone: us-east4-c
+  zone_list: [us-east4-c]
   new_image_family: llama2-slurm-v6
   instance_image_custom: true
   disk_size_gb: 200
@@ -215,6 +215,37 @@ deployment_groups:
           source $CONDA_BASE/bin/activate base
           conda env create -n llama2 --file /tmp/llama2_env.yml
 
+          # Install Docker
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/containerd.io_1.7.22-1_amd64.deb
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-buildx-plugin_0.17.1-1~debian.11~bullseye_amd64.deb
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_27.3.1-1~debian.11~bullseye_amd64.deb
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_27.3.1-1~debian.11~bullseye_amd64.deb
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-compose-plugin_2.6.0~debian-bullseye_amd64.deb
+          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-scan-plugin_0.9.0~debian-bullseye_amd64.deb
+
+          dpkg -i containerd.io_1.7.22-1_amd64.deb \
+            docker-scan-plugin_0.9.0~debian-bullseye_amd64.deb \
+            docker-buildx-plugin_0.17.1-1~debian.11~bullseye_amd64.deb \
+            docker-ce_27.3.1-1~debian.11~bullseye_amd64.deb \
+            docker-ce-cli_27.3.1-1~debian.11~bullseye_amd64.deb \
+            docker-compose-plugin_2.6.0~debian-bullseye_amd64.deb
+          service docker start
+
+          # Install Pyxis
+          if [ ! -f "/usr/local/lib/slurm/spank_pyxis.so" ]; then
+            git clone --depth 1 https://github.com/NVIDIA/pyxis.git
+            cd pyxis && make install && cd -
+            rm -rf pyxis
+            echo "required /usr/local/lib/slurm/spank_pyxis.so" > /etc/slurm/plugstack.conf
+          fi
+
+      - type: data
+        destination: /etc/enroot/enroot.conf
+        content: |
+          ENROOT_RUNTIME_PATH    /tmp/${UID}/enroot/runtime
+          ENROOT_CACHE_PATH      /tmp/${UID}/enroot/cache
+          ENROOT_DATA_PATH       /tmp/${UID}/enroot/data
+          ENROOT_TEMP_PATH       /tmp/${UID}/enroot
   - id: startup_script
     source: modules/scripts/startup-script
     settings:
@@ -256,7 +287,7 @@ deployment_groups:
       disk_size: $(vars.disk_size_gb)
       image_family: $(vars.new_image_family)
       machine_type: c2-standard-8 # building this image does not require a GPU-enabled VM
-      state_timeout: 30m
+      state_timeout: 80m
 
 
 - group: cluster
@@ -313,50 +344,6 @@ deployment_groups:
       partition_name: n2
       is_default: true
 
-  - id: a2gpu1_nodeset
-    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network1]
-    settings:
-      zones: $(vars.zone_list)
-      node_count_dynamic_max: 1
-      bandwidth_tier: gvnic_enabled
-      disk_size_gb: $(vars.disk_size_gb)
-      enable_public_ips: true
-      enable_smt: true
-      machine_type: a2-highgpu-1g
-      on_host_maintenance: TERMINATE
-      instance_image:
-        family: $(vars.new_image_family)
-        project: $(vars.project_id)
-  - id: a2gpu1_partition
-    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
-    use: [a2gpu1_nodeset]
-    settings:
-      partition_name: a2gpu1
-      is_default: false
-
-  - id: a2_nodeset
-    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network1]
-    settings:
-      zones: $(vars.zone_list)
-      node_count_dynamic_max: 1
-      bandwidth_tier: gvnic_enabled
-      disk_size_gb: $(vars.disk_size_gb)
-      enable_public_ips: true
-      enable_smt: true
-      machine_type: a2-highgpu-4g
-      on_host_maintenance: TERMINATE
-      instance_image:
-        family: $(vars.new_image_family)
-        project: $(vars.project_id)
-  - id: a2_partition
-    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
-    use: [a2_nodeset]
-    settings:
-      partition_name: a2gpu4
-      is_default: false
-
   - id: g2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network1]
@@ -398,8 +385,6 @@ deployment_groups:
     - n1t4_partition
     - n2_partition
     - g2_partition
-    - a2_partition
-    - a2gpu1_partition
     - slurm_login
     - homefs
     - data_bucket
