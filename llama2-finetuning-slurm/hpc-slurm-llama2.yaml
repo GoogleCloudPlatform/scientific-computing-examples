@@ -20,9 +20,9 @@ vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: us-east4
-  zone: us-east4-c
-  zone_list: [us-east4-c]
+  region: asia-northeast3
+  zone: asia-northeast3-b
+  zone_list: [asia-northeast3-b,asia-northeast3-c]
   new_image_family: llama2-slurm-v6
   instance_image_custom: true
   disk_size_gb: 200
@@ -215,37 +215,6 @@ deployment_groups:
           source $CONDA_BASE/bin/activate base
           conda env create -n llama2 --file /tmp/llama2_env.yml
 
-          # Install Docker
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/containerd.io_1.7.22-1_amd64.deb
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-buildx-plugin_0.17.1-1~debian.11~bullseye_amd64.deb
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce-cli_27.3.1-1~debian.11~bullseye_amd64.deb
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-ce_27.3.1-1~debian.11~bullseye_amd64.deb
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-compose-plugin_2.6.0~debian-bullseye_amd64.deb
-          curl -O https://download.docker.com/linux/debian/dists/bullseye/pool/stable/amd64/docker-scan-plugin_0.9.0~debian-bullseye_amd64.deb
-
-          dpkg -i containerd.io_1.7.22-1_amd64.deb \
-            docker-scan-plugin_0.9.0~debian-bullseye_amd64.deb \
-            docker-buildx-plugin_0.17.1-1~debian.11~bullseye_amd64.deb \
-            docker-ce_27.3.1-1~debian.11~bullseye_amd64.deb \
-            docker-ce-cli_27.3.1-1~debian.11~bullseye_amd64.deb \
-            docker-compose-plugin_2.6.0~debian-bullseye_amd64.deb
-          service docker start
-
-          # Install Pyxis
-          if [ ! -f "/usr/local/lib/slurm/spank_pyxis.so" ]; then
-            git clone --depth 1 https://github.com/NVIDIA/pyxis.git
-            cd pyxis && make install && cd -
-            rm -rf pyxis
-            echo "required /usr/local/lib/slurm/spank_pyxis.so" > /etc/slurm/plugstack.conf
-          fi
-
-      - type: data
-        destination: /etc/enroot/enroot.conf
-        content: |
-          ENROOT_RUNTIME_PATH    /tmp/${UID}/enroot/runtime
-          ENROOT_CACHE_PATH      /tmp/${UID}/enroot/cache
-          ENROOT_DATA_PATH       /tmp/${UID}/enroot/data
-          ENROOT_TEMP_PATH       /tmp/${UID}/enroot
   - id: startup_script
     source: modules/scripts/startup-script
     settings:
@@ -273,22 +242,22 @@ deployment_groups:
           curl -sSO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
           sudo bash add-google-cloud-ops-agent-repo.sh --also-install
           sudo service google-cloud-ops-agent start
-- group: packer
-  modules:
-  - id: custom-image
-    source: modules/packer/custom-image
-    kind: packer
-    use:
-    - network1
-    - packer_script
-    settings:
-      source_image_project_id: [schedmd-slurm-public]
-      source_image_family: slurm-gcp-6-6-debian-11
-      disk_size: $(vars.disk_size_gb)
-      image_family: $(vars.new_image_family)
-      machine_type: c2-standard-8 # building this image does not require a GPU-enabled VM
-      state_timeout: 80m
-
+# - group: packer
+#   modules:
+#   - id: custom-image
+#     source: modules/packer/custom-image
+#     kind: packer
+#     use:
+#     - network1
+#     - packer_script
+#     settings:
+#       source_image_project_id: [schedmd-slurm-public]
+#       source_image_family: slurm-gcp-6-6-debian-11
+#       disk_size: $(vars.disk_size_gb)
+#       image_family: $(vars.new_image_family)
+#       machine_type: c2-standard-8 # building this image does not require a GPU-enabled VM
+#       state_timeout: 30m
+#       omit_external_ip: false
 
 - group: cluster
   modules:
@@ -311,8 +280,9 @@ deployment_groups:
 
       on_host_maintenance: TERMINATE
       instance_image:
-        family: $(vars.new_image_family)
+        #family: $(vars.new_image_family)
         project: $(vars.project_id)
+        name: llama2-slurm-v6-20240911t192317z
   - id: n1t4_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [n1t4_nodeset]
@@ -335,8 +305,9 @@ deployment_groups:
       machine_type: n2-standard-4
       on_host_maintenance: TERMINATE
       instance_image:
-        family: $(vars.new_image_family)
+        #family: $(vars.new_image_family)
         project: $(vars.project_id)
+        name: llama2-slurm-v6-20240911t192317z
   - id: n2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [n2_nodeset]
@@ -357,8 +328,9 @@ deployment_groups:
       machine_type: g2-standard-96
       on_host_maintenance: TERMINATE
       instance_image:
-        family: $(vars.new_image_family)
+        #family: $(vars.new_image_family)
         project: $(vars.project_id)
+        name: llama2-slurm-v6-20240911t192317z
   - id: g2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [g2_nodeset]
@@ -374,8 +346,9 @@ deployment_groups:
       machine_type: n2-standard-4
       enable_login_public_ips: true
       instance_image: 
-        family: $(vars.new_image_family)
+        #family: $(vars.new_image_family)
         project: $(vars.project_id)
+        name: llama2-slurm-v6-20240911t192317z
         
 
   - id: slurm_controller
@@ -397,5 +370,6 @@ deployment_groups:
       login_startup_script: $(startup_script.startup_script)
       login_startup_scripts_timeout: 21600
       instance_image: 
-        family: $(vars.new_image_family)
+        #family: $(vars.new_image_family)
         project: $(vars.project_id)
+        name: llama2-slurm-v6-20240911t192317z
