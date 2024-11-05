@@ -19,7 +19,7 @@ data "google_compute_image" "fluxfw_manager_image" {
 
 module "flux_manager_instance_template" {
     source  = "terraform-google-modules/vm/google//modules/instance_template"
-    version = "~> 10.1"
+    version = "~> 12.1"
 
     region               = var.region
     project_id           = var.project_id
@@ -42,7 +42,7 @@ module "flux_manager_instance_template" {
 
 module "flux_manager_instance" {
     source  = "terraform-google-modules/vm/google//modules/compute_instance"
-    version = "~> 10.1"
+    version = "~> 12.1"
 
     region            = var.region
     hostname          = "${var.name_prefix}-manager"

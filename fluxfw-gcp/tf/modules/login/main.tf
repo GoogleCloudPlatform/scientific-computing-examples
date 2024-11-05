@@ -33,7 +33,7 @@ locals {
 
 module "flux_login_instance_template" {
     source  = "terraform-google-modules/vm/google//modules/instance_template"
-    version = "~> 10.1"
+    version = "~> 12.1"
 
     region               = var.region
     project_id           = var.project_id
@@ -57,7 +57,7 @@ module "flux_login_instance_template" {
 
 module "flux_login_instances" {
     source  = "terraform-google-modules/vm/google//modules/compute_instance"
-    version = "~> 10.1"
+    version = "~> 12.1"
 
     region              = var.region
     zone                = data.google_compute_zones.available.names[0]
