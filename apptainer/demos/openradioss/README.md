@@ -6,6 +6,10 @@ The demonstration will leverage a number of techniques illustrated in various Ap
 
 In particular you will build an [OpenMPI](https://www.open-mpi.org/) container configured for [PMIx](https://pmix.github.io/) and use that in combination with the standard [OpenRadioss container](https://github.com/OpenRadioss/OpenRadioss/tree/main/Apptainer) to create a custom PMIx enabled OpenRadioss container you will use to run the parallel simulation portion of the demo.
 
+<video controls>
+    <source src="images/surfacevideo.mp4" type="video/mp4">
+</video>
+
 ### Before you begin
 This demonstration assumes you have access to an [Artifact Registry](https://cloud.google.com/artifact-registry) repository and that you have set up the Apptainer custom build step. See [this section](../../README.md#before-you-begin) for details.
 
