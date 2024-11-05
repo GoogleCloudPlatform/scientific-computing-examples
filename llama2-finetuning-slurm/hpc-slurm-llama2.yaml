@@ -181,7 +181,7 @@ deployment_groups:
           channels:
             - conda-forge
             - nvidia
-            - nvidia/label/cuda-12.2.0
+            - nvidia/label/cuda-12.4.0
           dependencies:
             - appdirs
             - loralib
