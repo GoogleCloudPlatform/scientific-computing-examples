@@ -141,6 +141,11 @@ gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2
 ```
 The result will be a directory in your home directory.
 
+### Install Huggingface Transformers directly
+To ensure the latest Huggingface install run pip.
+```
+pip install git+https://github.com/huggingface/transformers
+```
 
 ### Run the Slurm `sbatch` command to submit your job
 
