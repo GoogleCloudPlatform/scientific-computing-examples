@@ -1,12 +1,11 @@
-
 **Run Llama 2 Fine Tuning on Slurm**
 
 
 ---
 
-This tutorial shows you how to deploy an HPC cluster and run a _fine tuning_ workload using the [Slurm](https://slurm.schedmd.com/overview.html) scheduler. The HPC cluster deployment is done by using Cloud HPC Toolkit and this tutorial assumes you've already [set up Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment) in your environment.
+This tutorial shows you how to deploy an HPC cluster and run a _fine tuning_ workload using the [Slurm](https://slurm.schedmd.com/overview.html) scheduler. The HPC cluster deployment is done by using Cloud Cluster Toolkit and this tutorial assumes you've already [set up Cloud Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/setup/configure-environment) in your environment.
 
-Cloud HPC Toolkit is open-source software offered by Google Cloud which makes it easy for you to deploy high performance computing (HPC) environments. [Llama 2](https://huggingface.co/meta-llama/Llama-2-7b) is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. In this tutorial we work with Llama-2-7b, using 7 billion parameters.
+Cloud Cluster Toolkit is open-source software offered by Google Cloud which makes it easy for you to deploy high performance computing (HPC) environments. [Llama 2](https://huggingface.co/meta-llama/Llama-2-7b) is a collection of pretrained and fine-tuned generative text models ranging in scale from 7 billion to 70 billion parameters. In this tutorial we work with Llama-2-7b, using 7 billion parameters.
 
 
 ### Objectives
@@ -15,7 +14,7 @@ In this tutorial, you will learn how to complete the following task:
 
 
 
-* Use Cloud HPC Toolkit to create a g2 node cluster suitable for running Llama 2 fine tuning
+* Use Cloud Cluster Toolkit to create a g2 node cluster suitable for running Llama 2 fine tuning
 * Run Llama 2 fine tuning
 
 
@@ -36,8 +35,8 @@ To generate a cost estimate based on your projected usage, use the [pricing calc
 
 
 
-* Set up [Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment). During the setup ensure you enable all the required APIs, and permissions, and grant credentials to Terraform. Also ensure you clone and build the Cloud HPC Toolkit repository in your local environment.
-* Review the [best practices](https://cloud.google.com/hpc-toolkit/docs/tutorials/best-practices).
+* Set up [Cloud Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/setup/configure-environment). During the setup ensure you enable all the required APIs, and permissions, and grant credentials to Terraform. Also ensure you clone and build the Cloud Cluster Toolkit repository in your local environment.
+* Review the [best practices](https://cloud.google.com/cluster-toolkit/docs/tutorials/best-practices).
 * **Ensure you have [sufficient quota](https://cloud.google.com/docs/quotas/view-manage) to run**. Verify at the Cloud Console by clicking the link
 ```
 https://console.cloud.google.com/iam-admin/quotas
@@ -77,7 +76,7 @@ From the Cloud Shell (or local shell), complete the following steps:
 
 
 
-1. Setup the  [Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit/docs/setup/configure-environment).
+1. Setup the  [Cloud Cluster Toolkit](https://cloud.google.com/cluster-toolkit/docs/setup/configure-environment).
 2. Clone the Github repository.
 ```
 git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
@@ -88,11 +87,11 @@ cd scientific-computing-examples/llama2-finetuning-slurm
 ```
 4. Execute  
 ```
-ghpc create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
+gcluster create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
 ```
-5. Use the ``ghpc deploy`` command to begin automatic deployment of your cluster:
+5. Use the ``gcluster deploy`` command to begin automatic deployment of your cluster:
 ```
-ghpc deploy hpc-slurm-llama2 --auto-approve
+gcluster deploy hpc-slurm-llama2 --auto-approve
 ```
 6. This process can take over 30 minutes.
 7. If the run is successful, the output is similar to the following:
@@ -132,7 +131,7 @@ On the Slurm login node, you can download the Hugging Face models to your local 
 
 1. Accept the EULA for Llama 2
 
-    https://console.cloud.google.com/vertex-ai/publishers/google/model-garden/llama2
+    https://console.cloud.google.com/vertex-ai/publishers/meta/model-garden/llama2
 
 
 ![eula](images/image2.png "llama2 EULA")
@@ -179,7 +178,7 @@ A status of "CF" may indicate there are no resources available to run the job at
 
 ### View the running job metrics with Cloud Monitoring
 
-When `squeue` indicates the job is running (status "R"), you can view the results at the Monitoring Dashboard created by the HPC Toolkit.
+When `squeue` indicates the job is running (status "R"), you can view the results at the Monitoring Dashboard created by the Cluster Toolkit.
 
 https://console.cloud.google.com/monitoring/dashboards
 
@@ -227,7 +226,7 @@ To avoid incurring charges to your Google Cloud account for the resources used i
 
 To delete the HPC cluster, run the following command:
 ```
-ghpc deploy hpc-slurm-llama2 --auto-approve
+gcluster deploy hpc-slurm-llama2 --auto-approve
 ```
 When complete you will see output similar to:
 
