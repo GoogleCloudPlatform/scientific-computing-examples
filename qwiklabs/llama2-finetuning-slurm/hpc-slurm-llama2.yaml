@@ -19,7 +19,7 @@ blueprint_name: hpc-slurm-llama
 vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
-  deployment_name: hpc-slurm-llama2-0
+  deployment_name: hpc-slurm-llama2
   region: us-east4
   zone: us-east4-c
   zone_list: [us-east4-c]
