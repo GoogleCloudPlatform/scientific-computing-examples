@@ -8,6 +8,7 @@
 export CONDA_BASE=/opt/conda
 source $CONDA_BASE/bin/activate base
 conda activate llama2
+pip install git+https://github.com/huggingface/transformers
 cd $SLURM_SUBMIT_DIR
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 python /data_bucket/fine-tune.py

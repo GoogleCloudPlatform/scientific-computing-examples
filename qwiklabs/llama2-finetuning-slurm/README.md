@@ -85,15 +85,11 @@ git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.g
 ```
 cd scientific-computing-examples/llama2-finetuning-slurm
 ```
-4. Execute  
-```
-gcluster create hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2
-```
 5. Use the ``gcluster deploy`` command to begin automatic deployment of your cluster:
 ```
-gcluster deploy hpc-slurm-llama2 --auto-approve
+gcluster deploy hpc-slurm-llama2.yaml --vars project_id=$(gcloud config get-value project) -w --vars bucket_model=llama2 --auto-approve
 ```
-6. This process can take over 30 minutes.
+6. This process can take about 10 minutes.
 7. If the run is successful, the output is similar to the following:
 
 Apply complete! Resources: 39 added, 0 changed, 0 destroyed.
@@ -145,6 +141,11 @@ gcloud storage cp --recursive gs://vertex-model-garden-public-us-central1/llama2
 ```
 The result will be a directory in your home directory.
 
+### Install Huggingface Transformers directly
+To ensure the latest Huggingface install run pip.
+```
+pip install git+https://github.com/huggingface/transformers
+```
 
 ### Run the Slurm `sbatch` command to submit your job
 
