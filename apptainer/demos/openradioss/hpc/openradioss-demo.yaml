@@ -21,17 +21,17 @@ blueprint_name: openradioss-demo
 
 vars:
   project_id: _YOUR_GCP_PROJECT_ID_
-  deployment_name: openradiossdemo
-  region:  asia-northeast3
-  zone: asia-northeast3-b
+  deployment_name: ordemo
+  region:  us-central1
+  zone: us-central1-a
   custom_image:
     family: apptainer-enabled
     project: $(vars.project_id)
   disk_size: 64
-  compute_machine_type: c2-standard-60
+  compute_machine_type: h3-standard-88
   controller_machine_type: n2-standard-8
-  gpu_machine_type: a2-highgpu-1g
-  login_machine_type: e2-standard-4
+  gpu_machine_type: g2-standard-8
+  login_machine_type: n2-standard-4
 
 # Documentation for each of the modules used below can be found at
 # https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md

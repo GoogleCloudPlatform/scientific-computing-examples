@@ -131,7 +131,7 @@ cd hpc
 Now you can create the deployment artifacts with the command
 
 ```bash
-gcluster create openradioss-demo.yaml --vars project_id=$(gcloud config get core/project) --skip-validators=test_tf_version_for_slurm
+gcluster create openradioss-demo.yaml --vars project_id=$(gcloud config get core/project) --vars disk_type=pd-balanced
 ```
 
 You should see output that looks like
@@ -139,7 +139,7 @@ You should see output that looks like
 ```
 To deploy your infrastructure run:
 
-glucster deploy openradiossdemo
+glucster deploy ordemo
 
 Find instructions for cleanly destroying infrastructure and advanced manual
 deployment instructions at:
@@ -149,7 +149,7 @@ openradiossdemo/instructions.txt
 
 Per the instructions, bring up your HPC system with the command
 ```bash
-gcluster deploy openradiossdemo --auto-approve
+gcluster deploy ordemo --auto-approve
 ```
 
 Go back to the parent directory
@@ -212,7 +212,7 @@ export REPOSITORY_URL=#ARTIFACT REGISTRY REPOSITORY URL# e.g. oras://us-docker.p
 apptainer registry login \
 --username=oauth2accesstoken \
 --password=$(gcloud auth print-access-token) \ 
-${REGISTORY_URL}
+${REGISTRY_URL}A
 ```
 
 Pull the `openradioss-pmix` container and put it in `~/bin`
@@ -346,8 +346,7 @@ Accepting connection(s): openradios-gpunodeset-0:11111
 
 On a workstation, create an `ssh tunnel` using the command
 ```
-gcloud compute start-iap-tunnel openradios-gpunodeset-0 11111 \
-    --local-host-port=localhost:11111
+gcloud compute ssh ofdemo-gpunodeset-0 -- -L 11111:localhost:11111
 ```
 
 Now start the `paraview` client that you downloaded. The first time you start it the client may take a few minutes to come up. Eventually you should
@@ -388,5 +387,5 @@ ParaView is a powerful visualizaton tool but a complete exploration of its capab
 
 To bring down your HPC system use the command
 ```bash
-gcluster destroy openradiossdemo
+gcluster destroy ordemo
 ```
