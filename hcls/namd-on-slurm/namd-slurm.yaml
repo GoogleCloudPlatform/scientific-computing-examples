@@ -1,0 +1,137 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+blueprint_name: hpc-slurm
+
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: namd-slurm
+  region: asia-northeast3
+  zone: asia-northeast3-a
+  bucket_prefix: namd_bucket
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: enable_apis
+    source: community/modules/project/service-enablement
+    settings:
+      gcp_service_list: [
+        "cloudresourcemanager.googleapis.com",
+        "container.googleapis.com",
+        "logging.googleapis.com",
+        "compute.googleapis.com"
+      ]
+  - id: network
+    source: modules/network/vpc
+
+  - id: homefs
+    source: modules/file-system/filestore
+    use: [network]
+    settings:
+      local_mount: /home
+
+  - id: apptainer_install
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: shell
+        destination: "/tmp/apptainer.sh"
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release && sudo dnf install -y apptainer-suid
+
+  - id: data_bucket
+    source: community/modules/file-system/cloud-storage-bucket
+    settings:
+      name_prefix: $(vars.bucket_prefix)
+      random_suffix: true
+      force_destroy: true
+      local_mount: /mnt/data_bucket
+      mount_options: defaults,_netdev,implicit_dirs,allow_other,dir_mode=0777,file_mode=766
+
+  - id: debug_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network,apptainer_install]
+    settings:
+      node_count_dynamic_max: 4
+      machine_type: n2-standard-2
+      enable_placement: false # the default is: true
+      allow_automatic_updates: false
+
+  - id: debug_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - debug_nodeset
+    settings:
+      partition_name: debug
+      exclusive: false # allows nodes to stay up after jobs are done
+      is_default: true
+
+  - id: compute_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network,apptainer_install]
+    settings:
+      node_count_dynamic_max: 20
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: compute_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - compute_nodeset
+    settings:
+      partition_name: compute
+
+  - id: a2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network,apptainer_install]
+    settings:
+      node_count_dynamic_max: 20
+      machine_type: a2-highgpu-2g
+      disk_type: pd-balanced
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: a2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2_nodeset
+    settings:
+      partition_name: a2 
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [network]
+    settings:
+      machine_type: n2-standard-4
+      enable_login_public_ips: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use:
+    - network
+    - debug_partition
+    - compute_partition
+    - a2_partition
+    - apptainer_install
+    - data_bucket
+    - homefs
+    - slurm_login
+    settings:
+      enable_controller_public_ips: true
+      login_startup_script: $(apptainer_install.startup_script)
+
