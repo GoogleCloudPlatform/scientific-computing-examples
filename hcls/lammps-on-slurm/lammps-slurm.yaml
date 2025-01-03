@@ -14,14 +14,14 @@
 
 ---
 
-blueprint_name: hpc-slurm
+blueprint_name: lammps-slurm
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: namd-slurm
+  deployment_name: lammps-slurm
   region: asia-northeast3
   zone: asia-northeast3-a
-  bucket_prefix: namd_bucket
+  bucket_prefix: lammps_bucket
 
 deployment_groups:
 - group: primary
@@ -44,12 +44,7 @@ deployment_groups:
     settings:
       local_mount: /home
 
-  - id: hpc_dash
-    source: modules/monitoring/dashboard
-    settings:
-      title: HPC
-
-  - id: startup
+  - id: apptainer_install
     source: modules/scripts/startup-script
     settings:
       runners:
@@ -58,24 +53,6 @@ deployment_groups:
         content: |
           #!/bin/sh
           dnf install -y epel-release && sudo dnf install -y apptainer-suid
-  - id: startup_login
-    source: modules/scripts/startup-script
-    settings:
-      runners:
-      - type: shell
-        destination: "/tmp/apptainer.sh"
-        content: |
-          #!/bin/sh
-          dnf install -y epel-release && sudo dnf install -y apptainer-suid
-      - type: data
-        destination: "/tmp/namd_apoa1.job"
-        content: $(file(ghpc_stage("namd_apoa1.job")))
-      - type: data
-        destination: "/tmp/namd_stmv.job"
-        content: $(file(ghpc_stage("namd_stmv.job")))
-      - type: data
-        destination: "/tmp/get_data.sh"
-        content: $(file(ghpc_stage("get_data.sh")))
 
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
@@ -88,7 +65,7 @@ deployment_groups:
 
   - id: debug_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network,startup]
+    use: [network,apptainer_install]
     settings:
       node_count_dynamic_max: 4
       machine_type: n2-standard-2
@@ -106,7 +83,7 @@ deployment_groups:
 
   - id: compute_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network,startup]
+    use: [network,apptainer_install]
     settings:
       node_count_dynamic_max: 20
       bandwidth_tier: gvnic_enabled
@@ -121,7 +98,7 @@ deployment_groups:
 
   - id: a2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network,startup]
+    use: [network,apptainer_install]
     settings:
       node_count_dynamic_max: 20
       machine_type: a2-highgpu-4g
@@ -135,7 +112,6 @@ deployment_groups:
     - a2_nodeset
     settings:
       partition_name: a2 
-      suspend_time: 600
 
   - id: slurm_login
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
@@ -151,11 +127,11 @@ deployment_groups:
     - debug_partition
     - compute_partition
     - a2_partition
-    - startup
+    - apptainer_install
     - data_bucket
     - homefs
     - slurm_login
     settings:
       enable_controller_public_ips: true
-      login_startup_script: $(startup_login.startup_script)
+      login_startup_script: $(apptainer_install.startup_script)
 
