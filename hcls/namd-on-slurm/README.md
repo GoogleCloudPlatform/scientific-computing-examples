@@ -53,6 +53,7 @@ Execute the `gcluster` command. If the Toolkit is installed in the \$HOME direct
 
 ```
 ~/cluster-toolkit/gcluster deploy namd-slurm.yaml \
+
 --skip-validators="test_apis_enabled"  --auto-approve \
   --vars project_id=$(gcloud config get project)
 ```
@@ -74,6 +75,7 @@ cp /tmp/get_data.sh .
 bash get_data.sh
 ```
 
+
 ## Convert Docker to Apptainer
 [Apptainer](https://apptainer.org/) is recommended for HPC applications. The published 
 [NVIDIA Docker Container](https://catalog.ngc.nvidia.com/orgs/hpc/containers/namd)
@@ -84,6 +86,7 @@ is easily convereted to Apptainer compatible formats.
 The `apptainer build` command will convert a docker container into apptainer format. The Slurm `sbatch` will
 run this step if `namd.sif` is not present, so this step is optional since the `sbatch` file contains 
 commands to download and convert the container.
+
 ```
 export NAMD_TAG=3.0-beta5
 apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
@@ -103,6 +106,7 @@ the follwing into your Slurm login terminal.
 
 ```
 tee namd_apoa1.job << JOB
+
 #!/bin/bash
 #SBATCH --job-name=namd_ipoa1_benchmark
 #SBATCH --partition=a2
@@ -138,6 +142,7 @@ The output lists running and pending jobs.
 ## Review the output
 As configured in the `namd_apoa1.job` file, the standard output of the Slurm job is directed to
 `###/out.txt`, where `###` is the JOBID. When the job is complete, it will not be visible
+
 in the  `squeue` output and the output files will be present.
 
 

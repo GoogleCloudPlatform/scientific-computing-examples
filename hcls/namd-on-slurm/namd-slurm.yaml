@@ -1,4 +1,5 @@
 # Copyright 2024 Google LLC
+
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,10 +15,8 @@
 
 ---
 
-# See instructions at
-# https://github.com/GoogleCloudPlatform/hpc-toolkit/tree/main/examples#image-builderyaml-
-
 blueprint_name: namd-slurm
+
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
@@ -38,6 +37,7 @@ deployment_groups:
   modules:
   - id: network
     source: modules/network/vpc
+
   - id: enable_apis
     source: community/modules/project/service-enablement
     settings:
@@ -98,6 +98,7 @@ deployment_groups:
       - type: data
         destination: "/tmp/get_data.sh"
         content: $(file(ghpc_stage("get_data.sh")))
+
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
     settings:
@@ -106,7 +107,6 @@ deployment_groups:
       force_destroy: true
       local_mount: /mnt/data_bucket
       mount_options: defaults,_netdev,implicit_dirs,allow_other,dir_mode=0777,file_mode=766
-
 
 - group: packer
   modules:
@@ -146,6 +146,7 @@ deployment_groups:
       partition_name: compute
       is_default: true
 
+
   - id: a2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network,startup]
@@ -155,6 +156,7 @@ deployment_groups:
       instance_image: $(vars.custom_image)
       instance_image_custom: true
       machine_type: a2-highgpu-4g
+
       bandwidth_tier: gvnic_enabled
       allow_automatic_updates: false
 
@@ -176,6 +178,7 @@ deployment_groups:
       instance_image: $(vars.custom_image)
       instance_image_custom: true
 
+
   - id: slurm_controller
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
     use:
@@ -191,3 +194,4 @@ deployment_groups:
       instance_image: $(vars.custom_image)
       instance_image_custom: true
       login_startup_script: $(startup_login.startup_script)
+
