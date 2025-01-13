@@ -52,7 +52,7 @@ Clone the tutorial repository.
 Execute the `gcluster` command. If the Toolkit is installed in the \$HOME directory, the command is:
 
 ```
-~/cluster-toolkit/gcluster deploy namd-on-slurm.yaml \
+~/cluster-toolkit/gcluster deploy namd-slurm.yaml \
 --skip-validators="test_apis_enabled"  --auto-approve \
   --vars project_id=$(gcloud config get project)
 ```
@@ -64,10 +64,16 @@ gcloud compute ssh --zone "asia-northeast3-a" "namdslurm-slurm-login-001" --proj
 An alternative to SSH connection to the login node is to connect from the 
 [Cloud Console](https://console.cloud.google.com/compute/instances). Click on the `SSH` link.
 ## Download sample configuration
-To run NAMD, configuration files are required. NVIDIA shares information for the APOA1 benchmark. Download the benchmark configuration.
+To run NAMD, configuration files are required. NVIDIA shares information for the APOA1 benchmark. Download the benchmark configuration. 
 ```
 wget -O - https://gitlab.com/NVHPC/ngc-examples/raw/master/namd/3.0/get_apoa1.sh | bash
 ```
+>> For convenience, the deployment has created  download shell script to get this data and the data for STMV. Available on the login node.
+```
+cp /tmp/get_data.sh .
+bash get_data.sh
+```
+
 ## Convert Docker to Apptainer
 [Apptainer](https://apptainer.org/) is recommended for HPC applications. The published 
 [NVIDIA Docker Container](https://catalog.ngc.nvidia.com/orgs/hpc/containers/namd)
@@ -76,18 +82,27 @@ is easily convereted to Apptainer compatible formats.
 `apptainer` has been previously installed on the cluster.
 
 The `apptainer build` command will convert a docker container into apptainer format. The Slurm `sbatch` will
-run this step if `namd.sif` is not present, so this step is optional.
+run this step if `namd.sif` is not present, so this step is optional since the `sbatch` file contains 
+commands to download and convert the container.
 ```
 export NAMD_TAG=3.0-beta5
 apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
 ```
 This may take 5 minutes.
 
+## Slurm batch file
+To submit a job on Slurm, a Slurm Batch script must be created.
+
+>> For convenience, the deployment created two Slurm batch job files to run these samples.
+```
+cp /tmp/*.job .
+```
 ## Create the Slurm batch file
-To submit a job on Slurm, a Slurm Batch script can be created.  Use the `heredoc` below. Cut and paste the follwing into your Slurm login terminal. 
+Alternatively, you can create the batch file manually.  Use the `heredoc` below. Cut and paste
+the follwing into your Slurm login terminal. 
 
 ```
-tee namd.job << JOB
+tee namd_apoa1.job << JOB
 #!/bin/bash
 #SBATCH --job-name=namd_ipoa1_benchmark
 #SBATCH --partition=a2
@@ -109,7 +124,7 @@ The command to submit a job with Slurm is [sbatch](https://slurm.schedmd.com/sba
 
 Submit the job.
 ```
-sbatch namd.job
+sbatch namd_apoa1.job
 ```
 The command to see the jobs in the Slurm batch queue is [squeue](https://slurm.schedmd.com/squeue.html)
 ```
@@ -121,14 +136,14 @@ The output lists running and pending jobs.
                  6        a2 namd_ipo drj_gcp_ CF       0:02      1 namdslurm-a2nodeset-0
 ```
 ## Review the output
-As configured in the `namd.job` file, the standard output of the Slurm job is directed to
-`###_out.txt`, where `###` is the JOBID. When the job is complete, it will not be visible
+As configured in the `namd_apoa1.job` file, the standard output of the Slurm job is directed to
+`###/out.txt`, where `###` is the JOBID. When the job is complete, it will not be visible
 in the  `squeue` output and the output files will be present.
 
 
 You can use `head` to see the start of the output.
 ```
-head out_001.txt 
+head 001/out.txt 
 ```
 Shows:
 ```
@@ -146,7 +161,7 @@ This container image and its contents are governed by the NVIDIA Deep Learning C
 
 You can use `tail` to see the end of the output.
 ```
-tail out_001.txt 
+tail 001/out.txt 
 ```
 Shows:
 ```

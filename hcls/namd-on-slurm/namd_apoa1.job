@@ -7,6 +7,6 @@
 # Build SIF, if it doesn't exist
 if [[ ! -f namd.sif ]]; then
   export NAMD_TAG=3.0-beta5
-  apptainer build namd.sif docker://nvcr.io/hpc/namd:\$NAMD_TAG 
+  apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
 fi
 apptainer run --nv namd.sif namd3 +p64 +devices 0,1,2,3 +setcpuaffinity apoa1_gpu/apoa1_gpures_npt.namd
