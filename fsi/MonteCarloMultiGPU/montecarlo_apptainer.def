@@ -1,0 +1,16 @@
+Bootstrap: docker
+From: nvidia/cuda:12.6.3-cudnn-devel-rockylinux8
+Stage: compile
+
+%post
+  dnf install -y git
+  git clone https://github.com/NVIDIA/cuda-samples.git
+  cd cuda-samples/Samples/5_Domain_Specific/MonteCarloMultiGPU
+  make TARGET_ARCH=x86_64
+
+Bootstrap: docker
+From: nvcr.io/nvidia/cuda:12.6.3-cudnn-runtime-rockylinux9
+Stage: final
+
+%files from compile
+  /cuda-samples/Samples/5_Domain_Specific/MonteCarloMultiGPU/MonteCarloMultiGPU /bin/MonteCarloMultiGPU

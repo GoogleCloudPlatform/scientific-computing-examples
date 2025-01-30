@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --job-name=MonteCarloMultiGPU
+#SBATCH --partition=a2
+#SBATCH --output=%3A/out.txt
+#SBATCH --error=%3A/err.txt
+
+export PROJECT_ID=$(gcloud config get-value project)
+# Build SIF, if it doesn't exist
+if [[ ! -f montecarlo.sif ]]; then
+  export REPOSITORY_URL=oras://us-docker.pkg.dev
+  apptainer remote login --username=oauth2accesstoken --password=$(gcloud auth print-access-token) ${REPOSITORY_URL}
+  apptainer pull montecarlo.sif oras://us-docker.pkg.dev/${PROJECT_ID}/sifs/montecarlo:latest
+fi
+apptainer run --nv montecarlo.sif /bin/MonteCarloMultiGPU
