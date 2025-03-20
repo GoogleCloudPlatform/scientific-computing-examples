@@ -187,6 +187,8 @@ deployment_groups:
       disk_size_gb: $(vars.disk_size_gb)
       enable_public_ips: true
       enable_placement: false
+      advanced_machine_features:
+        threads_per_core: 1
       machine_type: n1-standard-96
       guest_accelerator:
       - type: nvidia-tesla-t4
