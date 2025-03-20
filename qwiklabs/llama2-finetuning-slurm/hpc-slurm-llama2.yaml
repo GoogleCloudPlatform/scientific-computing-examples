@@ -187,7 +187,6 @@ deployment_groups:
       disk_size_gb: $(vars.disk_size_gb)
       enable_public_ips: true
       enable_placement: false
-      enable_smt: true
       machine_type: n1-standard-96
       guest_accelerator:
       - type: nvidia-tesla-t4
@@ -215,7 +214,8 @@ deployment_groups:
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
       enable_public_ips: true
-      enable_smt: true
+      advanced_machine_features:
+        threads_per_core: 1
       machine_type: n2-standard-4
       on_host_maintenance: TERMINATE
       instance_image:
