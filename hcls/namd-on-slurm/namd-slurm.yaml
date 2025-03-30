@@ -22,8 +22,8 @@ blueprint_name: namd-slurm
 vars:
   project_id:  ## Set GCP Project ID Here ##
   deployment_name: namd-slurm
-  region: asia-northeast3
-  zone: asia-northeast3-a
+  region: us-central1
+  zone: us-central1-c
   custom_image:
     family: apptainer-enabled
     project: $(vars.project_id)
