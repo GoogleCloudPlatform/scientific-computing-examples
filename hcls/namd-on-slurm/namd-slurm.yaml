@@ -146,6 +146,25 @@ deployment_groups:
       partition_name: compute
       is_default: true
 
+  - id: g2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network,startup]
+    settings:
+      node_count_dynamic_max: 16
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      machine_type: g2-standard-48
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: g2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - g2_nodeset
+    settings:
+      partition_name: g2 
+
   - id: a2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network,startup]
@@ -182,6 +201,7 @@ deployment_groups:
     - network
     - compute_partition
     - a2_partition
+    - g2_partition
     - data_bucket
     - homefs
     - slurm_login
