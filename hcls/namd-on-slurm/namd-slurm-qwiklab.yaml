@@ -108,7 +108,48 @@ deployment_groups:
       partition_name: compute
       is_default: true
 
-  - id: g2_nodeset
+  - id: g2x1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 16
+      disk_size_gb: $(vars.disk_size)
+      machine_type: g2-standard-16
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image:
+        name: $(vars.image_name)
+        project: $(vars.image_project)
+
+  - id: g2x1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - g2x1_nodeset
+    settings:
+      partition_name: g2x1 
+
+  - id: a2x1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-1g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image:
+        name: $(vars.image_name)
+        project: $(vars.image_project)
+
+  - id: a2x1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x1_nodeset
+    settings:
+      partition_name: a2x1 
+
+
+  - id: g2x4_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
@@ -121,14 +162,14 @@ deployment_groups:
         name: $(vars.image_name)
         project: $(vars.image_project)
 
-  - id: g2_partition
+  - id: g2x4_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use:
-    - g2_nodeset
+    - g2x4_nodeset
     settings:
-      partition_name: g2 
+      partition_name: g2x4 
 
-  - id: a2_nodeset
+  - id: a2x4_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
@@ -141,12 +182,12 @@ deployment_groups:
         name: $(vars.image_name)
         project: $(vars.image_project)
 
-  - id: a2_partition
+  - id: a2x4_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use:
-    - a2_nodeset
+    - a2x4_nodeset
     settings:
-      partition_name: a2 
+      partition_name: a2x4 
 
   - id: slurm_login
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
@@ -165,8 +206,10 @@ deployment_groups:
     use:
     - network
     - compute_partition
-    - a2_partition
-    - g2_partition
+    - a2x1_partition
+    - g2x1_partition
+    - a2x4_partition
+    - g2x4_partition
     - data_bucket
     - homefs
     - slurm_login

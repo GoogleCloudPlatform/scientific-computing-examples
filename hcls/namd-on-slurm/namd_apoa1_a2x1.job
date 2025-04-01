@@ -1,0 +1,18 @@
+#!/bin/bash
+#SBATCH --job-name=namd_ipoa1_benchmark
+#SBATCH --partition=a2x1
+#SBATCH --output=%3A/out_%a.txt
+#SBATCH --error=%3A/err.txt
+#SBATCH --array=0-1
+#SBATCH --gres=gpus:1 
+#
+
+dirs=("apoa1_gpu/apoa1_gpures_npt.namd" "apoa1_gpu/apoa1_gpures_nve.namd")
+
+# Build SIF, if it doesn't exist
+if [[ ! -f namd.sif ]]; then
+  export NAMD_TAG=3.0-beta5
+  apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
+fi
+echo "Running: "  ${dirs[$SLURM_ARRAY_TASK_ID]}
+apptainer run --nv namd.sif namd3 +devices 0 +setcpuaffinity ${dirs[$SLURM_ARRAY_TASK_ID]}
