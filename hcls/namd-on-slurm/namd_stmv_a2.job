@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --job-name=namd_stmv_benchmark
+#SBATCH --partition=a2
+#SBATCH --output=%3A/out_%a.txt
+#SBATCH --error=%3A/err.txt
+#SBATCH --array=0-1
+
+dirs=("stmv_gpu/stmv_gpures_npt.namd" "stmv_gpu/stmv_gpures_nve.namd")
+
+# Build SIF, if it doesn't exist
+if [[ ! -f namd.sif ]]; then
+  export NAMD_TAG=3.0-beta5
+  apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
+fi
+echo "Running: "  ${dirs[$SLURM_ARRAY_TASK_ID]}
+apptainer run --nv namd.sif namd3 +p32 +setcpuaffinity +devices 0,1,2,3  ${dirs[$SLURM_ARRAY_TASK_ID]}

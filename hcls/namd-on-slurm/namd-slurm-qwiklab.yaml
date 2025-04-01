@@ -21,7 +21,7 @@ blueprint_name: namd-slurm
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: namd-slurm-custom
+  deployment_name: namd-slurm-qwiklab
   region: us-central1
   zone: us-central1-c
   disk_size: 64
@@ -59,33 +59,24 @@ deployment_groups:
       title: HPC
 
 
-  - id: startup
-    source: modules/scripts/startup-script
-    settings:
-      #install_cloud_ops_agent: true
-      runners:
-      - type: shell
-        destination: "/tmp/apptainer.sh"
-        content: |
-          #!/bin/sh
-          dnf install -y epel-release && sudo dnf install -y apptainer-suid
   - id: startup_login
     source: modules/scripts/startup-script
     settings:
       runners:
-      - type: shell
-        destination: "/tmp/apptainer.sh"
-        content: |
-          #!/bin/sh
-          dnf install -y epel-release && sudo dnf install -y apptainer-suid
       - type: data
-        destination: "/tmp/namd_apoa1.job"
-        content: $(file(ghpc_stage("namd_apoa1.job")))
+        destination: "/tmp/namd/namd_apoa1_g2.job"
+        content: $(file(ghpc_stage("namd_apoa1_g2.job")))
       - type: data
-        destination: "/tmp/namd_stmv.job"
-        content: $(file(ghpc_stage("namd_stmv.job")))
+        destination: "/tmp/namd/namd_stmv_g2.job"
+        content: $(file(ghpc_stage("namd_stmv_g2.job")))
       - type: data
-        destination: "/tmp/get_data.sh"
+        destination: "/tmp/namd/namd_apoa1_a2.job"
+        content: $(file(ghpc_stage("namd_apoa1_a2.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv_a2.job"
+        content: $(file(ghpc_stage("namd_stmv_a2.job")))
+      - type: data
+        destination: "/tmp/namd/get_data.sh"
         content: $(file(ghpc_stage("get_data.sh")))
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
@@ -119,7 +110,7 @@ deployment_groups:
 
   - id: g2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network,startup]
+    use: [network]
     settings:
       node_count_dynamic_max: 16
       disk_size_gb: $(vars.disk_size)
@@ -139,7 +130,7 @@ deployment_groups:
 
   - id: a2_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network,startup]
+    use: [network]
     settings:
       node_count_dynamic_max: 20
       disk_size_gb: $(vars.disk_size)
