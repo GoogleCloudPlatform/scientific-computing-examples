@@ -4,6 +4,7 @@
 #SBATCH --output=%3A/out_%a.txt
 #SBATCH --error=%3A/err.txt
 #SBATCH --array=0-1
+#SBATCH --gres=gpus:4 
 
 dirs=("stmv_gpu/stmv_gpuoff_npt.namd" "stmv_gpu/stmv_gpuoff_nve.namd")
 
@@ -13,4 +14,4 @@ if [[ ! -f namd.sif ]]; then
   apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
 fi
 echo "Running: "  ${dirs[$SLURM_ARRAY_TASK_ID]}
-apptainer run --nv namd.sif namd3 +p32 +setcpuaffinity +devices 0,1,2,3  ${dirs[$SLURM_ARRAY_TASK_ID]}
+apptainer run --nv namd.sif namd3 +setcpuaffinity +devices 0,1,2,3  ${dirs[$SLURM_ARRAY_TASK_ID]}
