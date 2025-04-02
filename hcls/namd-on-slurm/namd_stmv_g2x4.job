@@ -4,7 +4,7 @@
 #SBATCH --output=%3A/out_%a.txt
 #SBATCH --error=%3A/err.txt
 #SBATCH --array=0-1
-#SBATCH --gres=gpus:4 
+#SBATCH --gres=gpu:4 
 
 dirs=("stmv_gpu/stmv_gpuoff_npt.namd" "stmv_gpu/stmv_gpuoff_nve.namd")
 
