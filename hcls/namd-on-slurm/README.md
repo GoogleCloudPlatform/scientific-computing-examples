@@ -45,7 +45,7 @@ Running the NAMD platform on Google Cloud using the Cluster Toolkit requires a f
 ## Clone the Scientific Computing Example repo
 Clone the tutorial repository.
 ```
-    git clone https://github.com/mmm/scientific-computing-examples
+    git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples
     cd hcls/namd-on-slurm
 ```
 ## Run the Cluster Toolkit blueprint
