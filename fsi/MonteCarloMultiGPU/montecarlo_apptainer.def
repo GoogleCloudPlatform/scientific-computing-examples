@@ -8,7 +8,9 @@ Stage: compile
   mkdir build
   cd build
   cmake ..
-  cd Samples/5_Domain_Specific/MonteCarloMultiGPU/
+  cd /cuda-samples/build/Samples/5_Domain_Specific/MonteCarloMultiGPU/
+  make
+  cd /cuda-samples/build/Samples/5_Domain_Specific/BlackScholes/
   make
 
 Bootstrap: docker
@@ -17,3 +19,4 @@ Stage: final
 
 %files from compile
   /cuda-samples/build/Samples/5_Domain_Specific/MonteCarloMultiGPU/MonteCarloMultiGPU /bin/MonteCarloMultiGPU
+  /cuda-samples/build/Samples/5_Domain_Specific/BlackScholes/BlackScholes /bin/BlackScholes
