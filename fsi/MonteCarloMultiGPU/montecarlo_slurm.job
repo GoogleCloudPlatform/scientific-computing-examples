@@ -11,4 +11,7 @@ if [[ ! -f montecarlo.sif ]]; then
   apptainer remote login --username=oauth2accesstoken --password=$(gcloud auth print-access-token) ${REPOSITORY_URL}
   apptainer pull montecarlo.sif oras://us-docker.pkg.dev/${PROJECT_ID}/sifs/montecarlo:latest
 fi
-apptainer run --nv montecarlo.sif /bin/MonteCarloMultiGPU
+for i in {1..100}
+do
+  apptainer run --nv montecarlo.sif /bin/MonteCarloMultiGPU
+done
