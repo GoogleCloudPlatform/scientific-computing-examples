@@ -37,7 +37,10 @@ vars:
 deployment_groups:
 - group: primary
   modules:
+  - id: solution
+    source: /usr/local/google/home/jrossthomson/_HPC/scientific-computing-examples/fsi/MonteCarloMultiGPU/solution
   - id: network
+
     source: modules/network/vpc
   - id: enable_apis
     source: community/modules/project/service-enablement
@@ -54,7 +57,7 @@ deployment_groups:
     settings:
       local_mount: /home
 
-  - id: scripts_for_image
+  - id: startup_script
     source: modules/scripts/startup-script
     settings:
       install_cloud_ops_agent: false
@@ -64,7 +67,7 @@ deployment_groups:
         content: |
           #!/bin/sh
           dnf install -y epel-release
-          dnf install -y apptainer
+          dnf install -y apptainer-suid
 
   - id: startup_login
     source: modules/scripts/startup-script
@@ -73,6 +76,13 @@ deployment_groups:
       - type: data
         destination: "/tmp/montecarlo_slurm.job"
         content: $(file(ghpc_stage("montecarlo_slurm.job")))
+      - type: shell
+        destination: install_apptainer.sh
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release
+          dnf install -y apptainer-suid
+
   - id: data_bucket
     source: community/modules/file-system/cloud-storage-bucket
     settings:
@@ -149,23 +159,23 @@ deployment_groups:
           }
 
 
-- group: packer
-  modules:
-  - id: apptainer-enabled-image
-    source: modules/packer/custom-image
-    kind: packer
-    use:
-    - network
-    - scripts_for_image
-    settings:
-      source_image_project_id: [schedmd-slurm-public]
-      # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
-      source_image_family: slurm-gcp-6-8-hpc-rocky-linux-8
-      # You can find size of source image by using following command
-      # gcloud compute images describe-from-family <source_image_family> --project schedmd-slurm-public
-      disk_size: $(vars.disk_size)
-      image_family: $(vars.custom_image.family)
-      state_timeout: 15m
+# - group: packer
+#   modules:
+#   - id: apptainer-enabled-image
+#     source: modules/packer/custom-image
+#     kind: packer
+#     use:
+#     - network
+#     - scripts_for_image
+#     settings:
+#       source_image_project_id: [schedmd-slurm-public]
+#       # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
+#       source_image_family: slurm-gcp-6-8-hpc-rocky-linux-8
+#       # You can find size of source image by using following command
+#       # gcloud compute images describe-from-family <source_image_family> --project schedmd-slurm-public
+#       disk_size: $(vars.disk_size)
+#       image_family: $(vars.custom_image.family)
+#       state_timeout: 15m
 
 - group: cluster
   modules:
@@ -234,3 +244,4 @@ deployment_groups:
       instance_image: $(vars.custom_image)
       instance_image_custom: true
       login_startup_script: $(startup_login.startup_script)
+      controller_startup_script: $(startup_script.startup_script)
