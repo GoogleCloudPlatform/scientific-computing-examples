@@ -1,0 +1,284 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+# See instructions at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/tree/main/examples#image-builderyaml-
+
+blueprint_name: vllm-slurm
+
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: vllm-slurm
+  region: us-central1
+  zone: us-central1-c
+  custom_image:
+    family: apptainer-enabled
+    project: $(vars.project_id)
+  disk_size: 64
+  bucket_prefix: mc_bucket
+  zones: [us-central1-a, us-central1-b, us-central1-c]
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: solution
+    source: /usr/local/google/home/jrossthomson/_HPC/scientific-computing-examples/ai-inferencing/vllm-on-slurm/solution
+  - id: network
+
+    source: modules/network/vpc
+  - id: enable_apis
+    source: community/modules/project/service-enablement
+    settings:
+      gcp_service_list: [
+        "cloudresourcemanager.googleapis.com",
+        "container.googleapis.com",
+        "logging.googleapis.com",
+        "compute.googleapis.com"
+      ]
+  - id: homefs
+    source: community/modules/file-system/nfs-server
+    use: [network]
+    settings:
+      local_mounts: ["/home"]
+
+  - id: startup_script
+    source: modules/scripts/startup-script
+    settings:
+      install_cloud_ops_agent: false
+      runners:
+      - type: shell
+        destination: install_uv_vllm.sh
+        content: |
+          #!/bin/sh
+          # curl -LsSf https://astral.sh/uv/install.sh | sh
+          # uv venv myenv --python 3.12 --seed
+          # source myenv/bin/activate
+          # uv pip install vllm
+
+      - type: shell
+        destination: install_apptainer.sh
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release
+          dnf install -y apptainer-suid
+
+  - id: startup_login
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: data
+        destination: "/tmp/vllm_basic_slurm.job"
+        content: $(file(ghpc_stage("vllm_basic_slurm.job")))
+      # - type: shell
+      #   destination: install_apptainer.sh
+      #   content: |
+      #     #!/bin/sh
+      #     dnf install -y epel-release
+      #     dnf install -y apptainer-suid
+
+  - id: data_bucket
+    source: community/modules/file-system/cloud-storage-bucket
+    settings:
+      name_prefix: $(vars.bucket_prefix)
+      random_suffix: true
+      force_destroy: false
+      local_mount: /mnt/data_bucket
+      mount_options: defaults,_netdev,implicit_dirs,allow_other,dir_mode=0777,file_mode=766
+
+  ## Monitoring
+  - id: hpc_dash
+    source: modules/monitoring/dashboard
+    settings:
+      title: HPC
+  - id: gpu_dash
+    source: modules/monitoring/dashboard
+    settings:
+      title: GPU
+      base_dashboard: Empty
+      widgets:
+      - |
+          {
+            "title": "GPU Memory Utilization",
+            "xyChart": {
+              "dataSets": [
+                {
+                  "timeSeriesQuery": {
+                    "timeSeriesFilter": {
+                      "filter": "metric.type=\"agent.googleapis.com/gpu/memory/bytes_used\" resource.type=\"gce_instance\"",
+                      "aggregation": {
+                        "perSeriesAligner": "ALIGN_MEAN",
+                        "crossSeriesReducer": "REDUCE_NONE",
+                        "groupByFields": []
+                      }
+                    }
+                  },
+                  "plotType": "LINE",
+                  "targetAxis": "Y1",
+                  "minAlignmentPeriod": "60s"
+                }
+              ],
+              "chartOptions": {
+                "mode": "COLOR",
+                "displayHorizontal": false
+              },
+              "thresholds": [],
+              "yAxis": {
+                "scale": "LINEAR"
+              }
+            }
+          }
+      - |
+          {
+            "title": "GPU Utilization",
+            "xyChart": {
+              "dataSets": [
+                {
+                  "timeSeriesQuery": {
+                    "prometheusQuery": "avg_over_time(agent_googleapis_com:gpu_utilization{monitored_resource=\"gce_instance\"}[${__interval}])"
+                  },
+                  "plotType": "LINE",
+                  "targetAxis": "Y1"
+                }
+              ],
+              "chartOptions": {
+                "mode": "COLOR",
+                "displayHorizontal": false
+              },
+              "thresholds": [],
+              "yAxis": {
+                "scale": "LINEAR"
+              }
+            }
+          }
+
+- group: cluster
+  modules:
+  - id: compute_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      zones: $(vars.zones)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: compute_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [compute_nodeset]
+    settings:
+      partition_name: compute
+      is_default: true
+
+  - id: a2dws_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      zones: $(vars.zones)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      machine_type: a2-highgpu-4g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      enable_placement: false
+      dws_flex:
+        enabled: true
+        use_job_duration: true
+
+  - id: a2dws_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2dws_nodeset
+    settings:
+      partition_name: a2dws 
+
+  - id: a2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      zones: $(vars.zones)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      machine_type: a2-highgpu-4g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: a2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2_nodeset
+    settings:
+      partition_name: a2 
+
+
+  - id: g2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      zones: $(vars.zones)
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      machine_type: g2-standard-48
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: g2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - g2_nodeset
+    settings:
+      partition_name: g2 
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [network]
+    settings:
+      name_prefix: login
+      enable_login_public_ips: true
+      machine_type: n2-standard-4
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use:
+    - network
+    - compute_partition
+    - g2_partition
+    - a2_partition
+    - a2dws_partition
+    - data_bucket
+    - homefs
+    - slurm_login
+    settings:
+      enable_controller_public_ips: true
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+      instance_image_custom: true
+      login_startup_script: $(startup_login.startup_script)
+      controller_startup_script: $(startup_script.startup_script)
