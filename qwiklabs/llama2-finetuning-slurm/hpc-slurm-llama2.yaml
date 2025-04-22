@@ -20,9 +20,9 @@ vars:
   project_id:  ## Set GCP Project ID Here ##
   bucket_model: ## Set your bucket name prefix here ##
   deployment_name: hpc-slurm-llama2
-  region: us-east4
-  zone: us-east4-c
-  zone_list: [us-east4-c]
+  region: us-central1
+  zone: us-central1-a
+  zone_list: [us-central1-a, us-central1-b, us-central1-c]
   image_name: llama2-slurm-v6-20241115t205427z
   image_project: ai-infra-jrt-0
   instance_image_custom: true
@@ -239,7 +239,8 @@ deployment_groups:
       bandwidth_tier: gvnic_enabled
       disk_size_gb: $(vars.disk_size_gb)
       enable_public_ips: true
-      enable_smt: true
+      advanced_machine_features:
+        threads_per_core: 1
       machine_type: g2-standard-96
       on_host_maintenance: TERMINATE
       instance_image:
@@ -275,8 +276,6 @@ deployment_groups:
     - data_bucket
     settings:
       enable_controller_public_ips: true
-      compute_startup_script: $(startup_script.startup_script)
-      compute_startup_scripts_timeout: 21600
       controller_startup_script: $(startup_script.startup_script)
       controller_startup_scripts_timeout: 21600
       login_startup_script: $(startup_script.startup_script)
