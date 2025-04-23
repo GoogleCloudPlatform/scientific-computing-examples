@@ -253,6 +253,29 @@ deployment_groups:
       partition_name: g2gpu8
       is_default: false
 
+  - id: a2_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network1]
+    settings:
+      zones: $(vars.zone_list)
+      node_count_dynamic_max: 1
+      bandwidth_tier: gvnic_enabled
+      disk_size_gb: $(vars.disk_size_gb)
+      enable_public_ips: true
+      advanced_machine_features:
+        threads_per_core: 1
+      machine_type: a2-highgpu-4g
+      on_host_maintenance: TERMINATE
+      instance_image:
+        family: $(vars.new_image_family)
+        project: $(vars.project_id)
+  - id: a2_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [a2_nodeset]
+    settings:
+      partition_name: a2gpu4
+      is_default: false
+
   - id: slurm_login
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
     use: [network1]
@@ -271,6 +294,7 @@ deployment_groups:
     - n1t4_partition
     - n2_partition
     - g2_partition
+    - a2_partition
     - slurm_login
     - homefs
     - data_bucket
