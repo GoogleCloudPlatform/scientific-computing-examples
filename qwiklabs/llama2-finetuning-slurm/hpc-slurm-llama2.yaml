@@ -267,8 +267,8 @@ deployment_groups:
       machine_type: a2-highgpu-4g
       on_host_maintenance: TERMINATE
       instance_image:
-        family: $(vars.new_image_family)
-        project: $(vars.project_id)
+        name: $(vars.image_name)
+        project: $(vars.image_project)
   - id: a2_partition
     source: community/modules/compute/schedmd-slurm-gcp-v6-partition
     use: [a2_nodeset]
