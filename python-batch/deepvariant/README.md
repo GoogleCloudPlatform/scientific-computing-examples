@@ -40,7 +40,7 @@ Update `project_id`, `region`, and `bucket_name:  <my_bucket>` to reflect your c
 ## Run the batch jobs
 The command to run the job is:
 ```
-python3 ../batch.py  --config_file cuquantum-noise.yaml  --create_job 
+python3 ../batch.py  --config_file deepvariant.yaml  --create_job 
 ```
 ## View results
 The easiest way to find the results is to look at the log files. You can see them in the Batch console:
