@@ -1,4 +1,4 @@
-# Copyright 2024 Google LLC
+# Copyright 2025 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,8 +37,9 @@ vars:
 deployment_groups:
 - group: primary
   modules:
+  ## Creates tags on solution usage
   - id: solution
-    source: /usr/local/google/home/jrossthomson/_HPC/scientific-computing-examples/fsi/MonteCarloMultiGPU/solution
+    source: ./solution
   - id: network
 
     source: modules/network/vpc
