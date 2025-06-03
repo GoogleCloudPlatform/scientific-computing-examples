@@ -149,6 +149,8 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
       zones: $(vars.zones)
       node_count_dynamic_max: 16
       disk_size_gb: $(vars.disk_size)
@@ -170,6 +172,8 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
       zones: $(vars.zones)
       node_count_dynamic_max: 20
       disk_size_gb: $(vars.disk_size)
@@ -192,6 +196,8 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
       zones: $(vars.zones)
       node_count_dynamic_max: 16
       disk_size_gb: $(vars.disk_size)
@@ -213,6 +219,8 @@ deployment_groups:
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
     settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
       zones: $(vars.zones)
       node_count_dynamic_max: 20
       disk_size_gb: $(vars.disk_size)
