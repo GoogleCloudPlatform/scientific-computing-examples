@@ -30,7 +30,6 @@ vars:
   image_project: qwiklabs-resources
   instance_image_custom: true
   zones: [us-central1-a, us-central1-b, us-central1-c]
-  
 
 # Documentation for each of the modules used below can be found at
 # https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
@@ -59,7 +58,6 @@ deployment_groups:
     source: modules/monitoring/dashboard
     settings:
       title: HPC
-
 
   - id: startup_login
     source: modules/scripts/startup-script
@@ -118,8 +116,7 @@ deployment_groups:
       install_nvidia_driver: true
       startup_script: |
         wget https://www.ks.uiuc.edu/Research/vmd/alpha/vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
-        tar xvzf vmd-2.0.0a5.bin.LINUXAMD64.tar.gz ./
-        #find /user_provided_software -name vmd-1.9.*.bin.LINUXAMD64*.tar.gz -exec tar xvzf '{}' -C . \;
+        tar xvzf vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
         cd vmd-2.0.*/
         ./configure
         cd src/
