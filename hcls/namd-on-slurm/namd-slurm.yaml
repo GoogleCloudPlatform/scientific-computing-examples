@@ -128,6 +128,27 @@ deployment_groups:
 
 - group: cluster
   modules:
+
+  ### Remote Desktop ###
+
+  - id: desktop
+    source: community/modules/remote-desktop/chrome-remote-desktop
+    use:
+    - network
+    - data_bucket
+    - homefs
+    settings:
+      add_deployment_name_before_prefix: true
+      name_prefix: chrome-remote-desktop
+      install_nvidia_driver: true
+      startup_script: |
+        wget https://www.ks.uiuc.edu/Research/vmd/alpha/vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
+        tar xvzf vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
+        cd vmd-2.0.*/
+        ./configure
+        cd src/
+        sudo make install
+  
   - id: compute_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
