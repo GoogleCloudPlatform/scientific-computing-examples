@@ -1,0 +1,191 @@
+#############################################################
+## JOB DESCRIPTION                                         ##
+#############################################################
+
+# NPT (constant pressure & temperature) benchmark GPU-resident
+
+#############################################################
+## VARIABLES                                               ##
+#############################################################
+
+set doBenchmark  1
+set benchtime    1200  ;# benchmarking for 3 min of simulation
+
+set doGPUres     1    ;# GPU-resident mode and optimizations
+
+set skipFFTWconfig 1  ;# no need to configure FFTW for single-node GPU
+
+set doMTS        1    ;# multiple time stepping typically recommended
+set doHMR        0    ;# hydrogen-mass repartitioning has custom input files
+set doThermostat 1    ;# for constant temperature simulation
+set doBarostat   1    ;# for constant pressure simulation
+
+set doRestart    0    ;# using restart files from previous simulation
+
+set doMin        0    ;# do some minimization steps before dynamics
+
+# specific to this system
+set temp         400  ;# temperature in Kelvin
+
+set basename  apoa1
+set resname   apoa1
+set outname   out_apoa1
+
+set dir_ff    .
+set dir_pdb   .
+
+# values based on system size
+set logsteps        1000     ;# steps interval for log file
+set dcdsteps        5000    ;# steps interval for trajectory
+set num_steps_run   100000  ;# 500000 steps = 1 ns
+set num_steps_min   1000
+
+
+#############################################################
+## ADJUSTABLE PARAMETERS                                   ##
+#############################################################
+
+############
+## Input  ##
+structure           ${dir_pdb}/${basename}.psf
+coordinates         ${dir_pdb}/${basename}.pdb
+
+# seed random number generator for some amount of repeatability in runs
+seed                314159
+
+# Continuing a job from the restart files
+if { $doRestart } {
+  binCoordinates      ${resname}.restart.coor
+  binVelocities       ${resname}.restart.vel
+  extendedSystem      ${resname}.restart.xsc
+} else {
+  # NOTE: Do not set the initial velocity temperature if you 
+  # have also specified a .vel restart file!
+  temperature         $temp
+}
+
+############
+## Output ##
+outputName          ${outname}
+
+firsttimestep       0
+#restartfreq         $dcdsteps
+dcdfreq              $dcdsteps
+#xstFreq             $dcdsteps
+outputEnergies      $logsteps
+outputPressure      $logsteps
+outputTiming        $logsteps
+
+DCDfile             custom_trajectory.dcd
+
+
+#############################################################
+## SIMULATION PARAMETERS                                   ##
+#############################################################
+
+###############
+## X-PLOR FF ##
+paraTypeCharmm	    off
+parameters          ${dir_ff}/par_all22_prot_lipid.xplor
+parameters          ${dir_ff}/par_all22_popc.xplor
+
+
+# non-bonded force field parameters
+exclude             scaled1-4
+1-4scaling          1.0
+cutoff              12.
+switching           on
+switchdist          10.
+pairlistdist        13.5
+
+# integrator parameters
+rigidbonds          all
+if { $doMTS } {
+  timestep            2.0
+  nonbondedFreq       1
+  fullElectFrequency  2  
+} elseif { $doHMR } {
+  timestep            4.0
+  nonbondedFreq       1
+  fullElectFrequency  1
+} else {
+  timestep            2.0
+  nonbondedFreq       1
+  fullElectFrequency  1
+}
+
+# temperature control
+if { $doThermostat } {
+  langevin            on    ;# do langevin dynamics
+  langevinDamping     5     ;# damping coefficient (gamma) of 5/ps
+  langevinTemp        $temp
+  langevinHydrogen    off   ;# don't couple langevin bath to hydrogens
+}
+
+# pressure control
+if { $doBarostat } {
+  useGroupPressure      yes ;# needed for rigidBonds
+  useFlexibleCell       no
+  useConstantArea       no
+
+  langevinPiston        on
+  langevinPistonTarget  1.01325 ;#  in bar -> 1 atm
+  langevinPistonPeriod  100.
+  langevinPistonDecay   50.
+  langevinPistonTemp    $temp
+}
+
+# periodic boundary conditions
+# NOTE: Do not set the periodic cell basis if you have also 
+# specified an .xsc restart file!
+if { ! $doRestart } {
+  cellBasisVector1     108.8612 0.0 0.0
+  cellBasisVector2     0.0 108.8612 0.0
+  cellBasisVector3     0.0 0.0 77.758
+  cellOrigin           0.0 0.0 0.0
+}
+
+################################################
+## PME (for full-system periodic electrostatics)
+PME                  on
+PMEGridSizeX         108
+PMEGridSizeY         108
+PMEGridSizeZ         80
+
+#############################################################
+## EXECUTION SCRIPT                                        ##
+#############################################################
+
+if { $doBenchmark } {
+  benchmarkTime        $benchtime  ;# halt run after 3 min
+}
+
+if { $skipFFTWconfig } {
+  FFTWestimate         yes   ;# skip FFTW measurement-based optimizations
+  FFTWuseWisdom        no    ;# skip FFTW config file
+  ldbalancer           none  ;# not needed for short simulation
+}
+
+# GPU-resident mode and optimizations
+if { $doGPUres } {
+  CUDASOAintegrate     on
+
+  # these settings make GPU-resident mode faster
+  DeviceMigration      on    ;# experimental
+  CUDAForceTable       off   ;# experimental
+
+  # zeroing these also improves performance slightly
+  pairlistGrow         0.0
+  pairlistShrink       0.0
+  pairlistTrigger      0.0
+}
+
+# Minimization
+if { $doMin } {
+  minimize             $num_steps_min
+  reinitvels           $temp
+}
+
+# Dynamics
+run                  $num_steps_run
+

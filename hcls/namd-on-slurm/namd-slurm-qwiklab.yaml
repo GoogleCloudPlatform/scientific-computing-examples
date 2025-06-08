@@ -60,6 +60,19 @@ deployment_groups:
     settings:
       title: HPC
 
+  ######## Remote Desktop(s) #######
+  # This block creates chrome remote desktop.
+  # For more info: https://github.com/GoogleCloudPlatform/hpc-toolkit/tree/main/community/modules/remote-desktop/chrome-remote-desktop
+  - id: remotedesktop
+    source: community/modules/remote-desktop/chrome-remote-desktop
+    use: [network]
+    settings:
+      install_nvidia_driver: true
+      add_deployment_name_before_prefix: true
+      name_prefix: chrome-remote-desktop
+      guest_accelerator:
+      - type: nvidia-tesla-t4-vws
+        count: 1
 
   - id: startup_login
     source: modules/scripts/startup-script
@@ -144,28 +157,6 @@ deployment_groups:
     settings:
       partition_name: g2x1 
 
-  - id: a2x1_nodeset
-    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
-    use: [network]
-    settings:
-      zones: $(vars.zones)
-      node_count_dynamic_max: 20
-      disk_size_gb: $(vars.disk_size)
-      machine_type: a2-highgpu-1g
-      bandwidth_tier: gvnic_enabled
-      allow_automatic_updates: false
-      instance_image:
-        name: $(vars.image_name)
-        project: $(vars.image_project)
-
-  - id: a2x1_partition
-    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
-    use:
-    - a2x1_nodeset
-    settings:
-      partition_name: a2x1 
-
-
   - id: g2x4_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
     use: [network]
@@ -186,6 +177,27 @@ deployment_groups:
     - g2x4_nodeset
     settings:
       partition_name: g2x4 
+
+  - id: a2x1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      zones: $(vars.zones)
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-1g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image:
+        name: $(vars.image_name)
+        project: $(vars.image_project)
+
+  - id: a2x1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x1_nodeset
+    settings:
+      partition_name: a2x1 
 
   - id: a2x4_nodeset
     source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
@@ -208,6 +220,56 @@ deployment_groups:
     settings:
       partition_name: a2x4 
 
+  - id: a2x1_dws_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-1g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image:
+        name: $(vars.image_name)
+        project: $(vars.image_project)
+      zones: []
+      enable_placement: false
+      dws_flex:
+        enabled: true
+        use_job_duration: true
+
+  - id: a2x1_dws_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x1_dws_nodeset
+    settings:
+      partition_name: a2x1dws 
+
+  - id: a2x4_dws_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-4g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image:
+        name: $(vars.image_name)
+        project: $(vars.image_project)
+      zones: []
+      enable_placement: false
+      dws_flex:
+        enabled: true
+        use_job_duration: true
+
+  - id: a2x4_dws_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x4_dws_nodeset
+    settings:
+      partition_name: a2x4dws 
+
   - id: slurm_login
     source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
     use: [network]
@@ -226,8 +288,10 @@ deployment_groups:
     - network
     - compute_partition
     - a2x1_partition
-    - g2x1_partition
     - a2x4_partition
+    - a2x1_dws_partition
+    - a2x4_dws_partition
+    - g2x1_partition
     - g2x4_partition
     - data_bucket
     - homefs
