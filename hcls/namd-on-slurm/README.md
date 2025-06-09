@@ -59,7 +59,7 @@ Execute the `gcluster` command. If the Toolkit is installed in the \$HOME direct
 ## Connect to Slurm
 The remaining steps in this tutorial will all be run on the Slurm cluster login node. SSH is used to connect to the login node, and `gcloud` offers an option for SSH connections.
 ```
-gcloud compute ssh --zone "asia-northeast3-a" "namdslurm-slurm-login-001" --project $(gcloud config get project)
+gcloud compute ssh --zone "us-central1-c" "namdslurm-slurm-login-001" --project $(gcloud config get project)
 ```
 An alternative to SSH connection to the login node is to connect from the 
 [Cloud Console](https://console.cloud.google.com/compute/instances). Click on the `SSH` link.
@@ -70,7 +70,7 @@ wget -O - https://gitlab.com/NVHPC/ngc-examples/raw/master/namd/3.0/get_apoa1.sh
 ```
 >> For convenience, the deployment has created  download shell script to get this data and the data for STMV. Available on the login node.
 ```
-cp /tmp/get_data.sh .
+cp /tmp/namd/* .
 bash get_data.sh
 ```
 
@@ -93,9 +93,10 @@ This may take 5 minutes.
 ## Slurm batch file
 To submit a job on Slurm, a Slurm Batch script must be created.
 
->> For convenience, the deployment created two Slurm batch job files to run these samples.
+>> For convenience, the deployment created several Slurm batch job files to run these samples.
+These were already copied over with the command:
 ```
-cp /tmp/*.job .
+cp /tmp/namd/* .
 ```
 ## Create the Slurm batch file
 Alternatively, you can create the batch file manually.  Use the `heredoc` below. Cut and paste
@@ -105,16 +106,22 @@ the follwing into your Slurm login terminal.
 tee namd_apoa1.job << JOB
 #!/bin/bash
 #SBATCH --job-name=namd_ipoa1_benchmark
-#SBATCH --partition=a2
-#SBATCH --output=%3A/out.txt
+#SBATCH --partition=a2x1
+#SBATCH --output=%3A/out_%a.txt
 #SBATCH --error=%3A/err.txt
+#SBATCH --array=0
+#SBATCH --gres=gpu:1 
+#
+
+dirs=("apoa1_gpu/apoa1_gpures_npt.namd")
 
 # Build SIF, if it doesn't exist
 if [[ ! -f namd.sif ]]; then
   export NAMD_TAG=3.0-beta5
-  apptainer build namd.sif docker://nvcr.io/hpc/namd:\$NAMD_TAG 
+  apptainer build namd.sif docker://nvcr.io/hpc/namd:$NAMD_TAG 
 fi
-apptainer run --nv namd.sif namd3 +p4 +devices 0,1 +setcpuaffinity apoa1/apoa1_nve_cuda_soa.namd
+echo "Running: "  ${dirs[$SLURM_ARRAY_TASK_ID]}
+apptainer run --nv namd.sif namd3 +devices 0 +setcpuaffinity ${dirs[$SLURM_ARRAY_TASK_ID]}
 JOB
 ```
 This creates a Slurm batch file named namd.job
@@ -143,7 +150,7 @@ in the  `squeue` output and the output files will be present.
 
 You can use `head` to see the start of the output.
 ```
-head 001/out.txt 
+head 001/out*.txt 
 ```
 Shows:
 ```
@@ -161,7 +168,7 @@ This container image and its contents are governed by the NVIDIA Deep Learning C
 
 You can use `tail` to see the end of the output.
 ```
-tail 001/out.txt 
+tail 001/out*.txt 
 ```
 Shows:
 ```
@@ -175,6 +182,69 @@ The last velocity output (seq=-2) takes 0.026 seconds, 0.000 MB of memory in use
 WallClock: 13.387387  CPUTime: 13.058638  Memory: 0.000000 MB
 [Partition 0][Node 0] End of program
 ```
+
+## Visualization with VMD
+To visualize the molecules being simulations with NAMD, we use a recommended tool, 
+[VMD](https://www.ks.uiuc.edu/Research/vmd/). Since VMD is a Graphical User Interface (GUI), 
+it requires Virtual Desktop Infrastructure (VDI). Google offers a VDI solution free of cost called 
+[Chrome Remote Desktop](https://remotedesktop.corp.google.com/access/) (CRD). 
+This Cluster Toolkit deployment of NAMD creates a VM with CRD and VMD preinstalled.
+
+### Authenticate Chrome Remote Desktop
+
+As above, you can login to the CRD VM using the Google Cloud Console. 
+SSH is used to connect to the login node, and `gcloud` offers an option for SSH connections.
+```
+gcloud compute ssh --zone "us-central1-c" "namdslurm-chrome-remote-desktop-0" --project $(gcloud config get project)
+```
+An alternative to SSH connection to the login node is to connect from the 
+[Cloud Console](https://console.cloud.google.com/compute/instances). Click on the `SSH` link.
+
+Once you are connected to the CRD VM, you must open a new window on the CRD page:
+
+https://remotedesktop.google.com/headless
+
+1. Click on "Begin": ![Begin](images/crd_1.png)
+1. Then click on "Next": ![Next](images/crd_2.png)
+1. Then click on "Authorize": ![Authorize](images/crd_3.png)
+1. Finally, "Copy to Clipboard" for Debian: ![Copy](images/crd_4.png)
+
+### Paste authentication string into CRD VM Shell
+
+The content that was copied in the previous step should be pasted into the shell on the CRD VM:
+
+![Paste](images/crd_5.png)
+
+If successful, you will be prompted for a 6 digit PIN.
+
+### Connect to the VM via CRD
+With authentication established, you can connect to the VM via CRD. Open the webpage.
+
+https://remotedesktop.google.com/access
+
+The NAMD VDI VM should be visible in a list of VMs.
+
+![Connect](images/crd_6.png)
+
+You can now see a full Linux WM interface. 
+
+### Start the VMD application
+
+The following steps will allow you to start the VMD application and visualize the
+simulated molecule.
+
+1. Select the "Terminal Emulator": <p/> ![terminal](images/vmd_1.png)
+1. Type "vmd" in the terminal window: ![vmd](images/vmd_2.png)
+1. The VMD UI is now visible: ![vmdui](images/vmd_3.png)
+1. Select "New Molecule" from the "VMD Main" menu : ![newmol](images/vmd_4.png)
+1. "Browse" to "apoa1_gpu" and select "apoa1.pdb". Click "Okay" then "Load": ![pdb](images/vmd_5.png)
+1. "Browse" to select "custom_trajectory.dcd". Click "Okay" then "Load": ![trajectory](images/vmd_6.png)
+1. Update the Graphics to reflect the image, "licorice" ... "protein": ![graphics](images/vmd_7.png)
+1. Finally, click the "Play" button to view the animation: ![animate](images/vmd_8.png)
+1. The animation: ![animate](images/vmd_9.png)
+
+
+
 ## Discussion
 
 The tutorial demonstrated how to run the NAMD molecular dynamics IPOA1 benchmark 

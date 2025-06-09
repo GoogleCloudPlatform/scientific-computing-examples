@@ -21,7 +21,7 @@ blueprint_name: namd-slurm
 
 vars:
   project_id:  ## Set GCP Project ID Here ##
-  deployment_name: namd-slurm-qwiklab
+  deployment_name: namd-slurm
   region: us-central1
   zone: us-central1-c
   custom_image:
