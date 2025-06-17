@@ -170,6 +170,7 @@ deployment_groups:
       name_prefix: chrome-remote-desktop
       install_nvidia_driver: true
       startup_script: |
+        sudo apt-get install dbus-x11
         wget https://www.ks.uiuc.edu/Research/vmd/alpha/vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
         tar xvzf vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
         cd vmd-2.0.*/
