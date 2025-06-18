@@ -1,0 +1,30 @@
+steps:
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/google-deepmind/alphafold3.git']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+    - 'buildx'
+    - 'build'
+    - '-t'
+    - 'us-docker.pkg.dev/${PROJECT_ID}/docker/af3:latest'
+    - '--push'
+    - '-f'
+    - 'alphafold3/docker/Dockerfile'
+    - 'alphafold3'
+  - name: 'gcr.io/$PROJECT_ID/apptainer'
+    args:
+    - 'build'
+    - '--fakeroot'
+    - '--force'
+    - 'af3.sif'
+    - 'docker://us-docker.pkg.dev/${PROJECT_ID}/docker/af3:latest'
+  - name: 'gcr.io/$PROJECT_ID/apptainer'
+    args:
+    - 'push'
+    - 'af3.sif'
+    - 'oras://${_LOCATION}/$PROJECT_ID/${_REPOSITORY}/af3:${_VERSION}'
+substitutions:
+  _LOCATION: us-docker.pkg.dev
+  _REPOSITORY: sifs
+  _VERSION: latest

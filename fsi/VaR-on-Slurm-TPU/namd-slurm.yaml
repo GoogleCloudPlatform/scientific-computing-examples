@@ -1,0 +1,309 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+# See instructions at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/tree/main/examples#image-builderyaml-
+
+blueprint_name: namd-slurm
+
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: namd-slurm
+  region: us-central1
+  zone: us-central1-c
+  custom_image:
+    family: apptainer-enabled
+    project: $(vars.project_id)
+  disk_size: 64
+  bucket_prefix: namd_bucket
+  instance_image_custom: true
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: network
+    source: modules/network/vpc
+  - id: enable_apis
+    source: community/modules/project/service-enablement
+    settings:
+      gcp_service_list: [
+        "cloudresourcemanager.googleapis.com",
+        "container.googleapis.com",
+        "logging.googleapis.com",
+        "compute.googleapis.com"
+      ]
+  - id: homefs
+    source: modules/file-system/filestore
+    use: [network]
+    settings:
+      local_mount: /home
+
+  - id: hpc_dash
+    source: modules/monitoring/dashboard
+    settings:
+      title: HPC
+
+
+  - id: scripts_for_image
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: shell
+        destination: install_apptainer.sh
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release
+          dnf install -y apptainer
+
+  - id: startup
+    source: modules/scripts/startup-script
+    settings:
+      #install_cloud_ops_agent: true
+      runners:
+      - type: shell
+        destination: "/tmp/apptainer.sh"
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release && sudo dnf install -y apptainer-suid
+  - id: startup_login
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: shell
+        destination: "/tmp/apptainer.sh"
+        content: |
+          #!/bin/sh
+          dnf install -y epel-release && sudo dnf install -y apptainer-suid
+      - type: data
+        destination: "/tmp/namd/apoa1_gpures_npt.namd"
+        content: $(file(ghpc_stage("apoa1_gpures_npt.namd")))
+      - type: data
+        destination: "/tmp/namd/namd_apoa1.job"
+        content: $(file(ghpc_stage("namd_apoa1.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv.job"
+        content: $(file(ghpc_stage("namd_stmv.job")))
+      - type: data
+        destination: "/tmp/namd/namd_apoa1_g2x1.job"
+        content: $(file(ghpc_stage("namd_apoa1_g2x1.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv_g2x1.job"
+        content: $(file(ghpc_stage("namd_stmv_g2x1.job")))
+      - type: data
+        destination: "/tmp/namd/namd_apoa1_a2x1.job"
+        content: $(file(ghpc_stage("namd_apoa1_a2x1.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv_a2x1.job"
+        content: $(file(ghpc_stage("namd_stmv_a2x1.job")))
+      - type: data
+        destination: "/tmp/namd/namd_apoa1_g2x4.job"
+        content: $(file(ghpc_stage("namd_apoa1_g2x4.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv_g2x4.job"
+        content: $(file(ghpc_stage("namd_stmv_g2x4.job")))
+      - type: data
+        destination: "/tmp/namd/namd_apoa1_a2x4.job"
+        content: $(file(ghpc_stage("namd_apoa1_a2x4.job")))
+      - type: data
+        destination: "/tmp/namd/namd_stmv_a2x4.job"
+        content: $(file(ghpc_stage("namd_stmv_a2x4.job")))
+      - type: data
+        destination: "/tmp/namd/get_data.sh"
+        content: $(file(ghpc_stage("get_data.sh")))
+  - id: data_bucket
+    source: community/modules/file-system/cloud-storage-bucket
+    settings:
+      name_prefix: $(vars.bucket_prefix)
+      random_suffix: true
+      force_destroy: true
+      local_mount: /mnt/data_bucket
+      mount_options: defaults,_netdev,implicit_dirs,allow_other,dir_mode=0777,file_mode=766
+
+
+- group: packer
+  modules:
+  - id: apptainer-enabled-image
+    source: modules/packer/custom-image
+    kind: packer
+    use:
+    - network
+    - scripts_for_image
+    settings:
+      source_image_project_id: [schedmd-slurm-public]
+      # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
+      source_image_family: slurm-gcp-6-9-hpc-rocky-linux-8
+      # You can find size of source image by using following command
+      # gcloud compute images describe-from-family <source_image_family> --project schedmd-slurm-public
+      disk_size: $(vars.disk_size)
+      image_family: $(vars.custom_image.family)
+      state_timeout: 15m
+
+- group: cluster
+  modules:
+  
+  ### Remote Desktop ###
+
+  - id: desktop
+    source: community/modules/remote-desktop/chrome-remote-desktop
+    use:
+    - network
+    - data_bucket
+    - homefs
+    settings:
+      add_deployment_name_before_prefix: true
+      name_prefix: chrome-remote-desktop
+      install_nvidia_driver: true
+      startup_script: |
+        sudo apt-get install dbus-x11
+        wget https://www.ks.uiuc.edu/Research/vmd/alpha/vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
+        tar xvzf vmd-2.0.0a5.bin.LINUXAMD64.tar.gz
+        cd vmd-2.0.*/
+        ./configure
+        cd src/
+        sudo make install
+  
+  - id: compute_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image: $(vars.custom_image)
+
+  - id: compute_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [compute_nodeset]
+    settings:
+      partition_name: compute
+      is_default: true
+
+  - id: g2x1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
+      enable_placement: false
+      node_count_dynamic_max: 16
+      disk_size_gb: $(vars.disk_size)
+      machine_type: g2-standard-16
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image: $(vars.custom_image)
+
+  - id: g2x1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - g2x1_nodeset
+    settings:
+      partition_name: g2x1 
+
+  - id: a2x1_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
+      enable_placement: false
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-1g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image: $(vars.custom_image)
+
+  - id: a2x1_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x1_nodeset
+    settings:
+      partition_name: a2x1 
+
+
+  - id: g2x4_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
+      enable_placement: false
+      node_count_dynamic_max: 16
+      disk_size_gb: $(vars.disk_size)
+      machine_type: g2-standard-48
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image: $(vars.custom_image)
+
+  - id: g2x4_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - g2x4_nodeset
+    settings:
+      partition_name: g2x4 
+
+  - id: a2x4_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      dws_flex:
+        max_run_duration: 3600 # 1 hour
+      enable_placement: false
+      node_count_dynamic_max: 20
+      disk_size_gb: $(vars.disk_size)
+      machine_type: a2-highgpu-4g
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+      instance_image: $(vars.custom_image)
+
+  - id: a2x4_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - a2x4_nodeset
+    settings:
+      partition_name: a2x4 
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [network]
+    settings:
+      name_prefix: login
+      enable_login_public_ips: true
+      machine_type: n2-standard-4
+      disk_size_gb: $(vars.disk_size)
+      instance_image: $(vars.custom_image)
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use:
+    - network
+    - compute_partition
+    - a2x1_partition
+    - g2x1_partition
+    - a2x4_partition
+    - g2x4_partition
+    - data_bucket
+    - homefs
+    - slurm_login
+    settings:
+      enable_controller_public_ips: true
+      disk_size_gb: $(vars.disk_size)
+      login_startup_script: $(startup_login.startup_script)
+      instance_image: $(vars.custom_image)
