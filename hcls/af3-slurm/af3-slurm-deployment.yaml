@@ -26,8 +26,8 @@ vars:
   zone: us-central1-a                # supply zone with C3D-highmem and GPU capacity
 
   # Required buckets for weights and databases
-  modelweights_bucket: ""            # name of your bucket with af3 model weights
-  database_bucket: ""                # name of your bucket with the database files
+  modelweights_bucket: "af3_jrt"            # name of your bucket with af3 model weights
+  database_bucket: "af3_jrt"                # name of your bucket with the database files
 
   # AF3 model - architecture mappings - typically do not need to be modified
   sif_dir: /opt/apps/af3/containers  # default path for the local copy of the container image
@@ -45,8 +45,8 @@ vars:
   save_embeddings: ""
 
   # Choose if you want the AF3 Simple Service daemon started
-  af3service_activate: false
-  af3service_jobbucket: ""           # set to "" if not used
+  af3service_activate: true
+  af3service_jobbucket: "af3_jrt"  # set to "" if not usedf
   af3service_user: af3
 
   # Choose Default Datapipeline Partition
