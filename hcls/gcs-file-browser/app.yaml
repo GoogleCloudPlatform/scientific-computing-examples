@@ -4,4 +4,4 @@ entrypoint: gunicorn -b :$PORT main:app
 # Set an environment variable for the GCS bucket name.
 # This is a best practice for configuration.
 env_variables:
-  GCS_BUCKET_NAME: '<MY_JOBS_BUCKET>' # <-- IMPORTANT: REPLACE THIS
+  GCS_BUCKET_NAME: 'af3_jrt' # <-- IMPORTANT: REPLACE THIS
