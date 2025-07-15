@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>JSON File Browser (GCS)</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
+        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2, h3 { color: #333; }
+        label { display: block; margin-top: 10px; }
+        input[type="file"], input[type="text"], button {
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button { background-color: #007bff; color: white; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .message { padding: 10px; margin-top: 15px; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        ul { list-style-type: none; padding: 0; }
+        li { background-color: #e9ecef; margin-bottom: 5px; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        li a { text-decoration: none; color: #007bff; }
+        li a:hover { text-decoration: underline; }
+        .file-actions a { margin-left: 10px; }
+        pre { background-color: #eee; padding: 10px; border: 1px solid #ccc; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        .breadcrumb { margin-bottom: 15px; }
+        .breadcrumb a, .breadcrumb span { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON File Browser (GCS)</h1>
+        <h3>gsutil Path: {{ gsutil_path }}</h3>
+
+        {% if message %}
+            <div class="message {{ 'success' if success else 'error' }}">{{ message }}</div>
+        {% endif %}
+
+        <div class="breadcrumb">
+            <a href="{{ url_for('browse_path', path='') }}">Root</a>
+            {% for part in breadcrumb_parts %}
+                {% if not loop.last %}
+                    / <a href="{{ url_for('browse_path', path=part.path) }}">{{ part.name }}</a>
+                {% else %}
+                    / <span>{{ part.name }}</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+
+        <h2>Upload JSON File to Current Folder</h2>
+        <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+            <input type="hidden" name="current_prefix" value="{{ current_path_for_upload }}">
+            <label for="file">Choose JSON file:</label>
+            <input type="file" name="file" id="file" accept=".json" required>
+            <br>
+            <label for="subfolder">Optional: Upload to new subfolder within '{{current_path_display or "root"}}' (e.g., new_folder_name):</label>
+            <input type="text" name="subfolder" id="subfolder" placeholder="e.g., data_v2 (no slashes)">
+            <br><br>
+            <button type="submit">Upload File</button>
+        </form>
+
+        <hr style="margin: 30px 0;">
+
+        <h2>Contents</h2>
+
+        {% if parent_path is not none %}
+        <ul>
+            <li>
+                <a href="{{ url_for('browse_path', path=parent_path) }}">⬆️ [.. Go Up]</a>
+            </li>
+        </ul>
+        {% endif %}
+
+        {% if folders %}
+            <h3>Folders:</h3>
+            <ul>
+                {% for folder in folders %}
+                    <li>
+                        <a href="{{ url_for('browse_path', path=folder) }}">📁 {{ folder.replace(current_path_for_upload, '').strip('/') }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if files %}
+            <h3>Files:</h3>
+            <ul>
+                {% for file_obj in files %}
+                    <li>
+                        <span>📄 {{ file_obj.name.replace(current_path_for_upload, '').strip('/') }}</span>
+                        <span class="file-actions">
+                            <a href="{{ url_for('retrieve_file_get', full_path=file_obj.name) }}">View Raw</a>
+                            <a href="{{ url_for('retrieve_file_page', full_path=file_obj.name, current_view_path=current_path_for_upload) }}">View on Page</a>
+                            <a href="{{ url_for('download_file', filename=file_obj.name) }}" target="_blank">Download</a>
+
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            {% if not folders %}
+            <p>No files or folders found in this location.</p>
+            {% endif %}
+        {% endif %}
+
+
+        {% if retrieved_filename and retrieved_content %}
+        <hr style="margin: 30px 0;">
+        <h3>Content of {{ retrieved_filename.split('/')[-1] }}:</h3>
+        <pre>{{ retrieved_content }}</pre>
+        {% elif retrieved_filename and not retrieved_content %}
+        <p class="error">Could not retrieve or file is empty: {{ retrieved_filename.split('/')[-1] }}</p>
+        {% endif %}
+
+    </div>
+</body>
+</html>
