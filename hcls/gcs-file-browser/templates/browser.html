@@ -94,8 +94,8 @@
                         <span>📄 {{ file_obj.name.replace(current_path_for_upload, '').strip('/') }}</span>
                         <span class="file-actions">
                             <a href="{{ url_for('retrieve_file_get', full_path=file_obj.name) }}">View Raw</a>
-                            <a href="{{ url_for('retrieve_file_page', full_path=file_obj.name, current_view_path=current_path_for_upload) }}">View on Page</a>
-                            <a href="{{ url_for('download_file', filename=file_obj.name) }}" target="_blank">Download</a>
+                            <!-- <a href="{{ url_for('retrieve_file_page', full_path=file_obj.name, current_view_path=current_path_for_upload) }}">View on Page</a>
+                            <a href="{{ url_for('download_file', filename=file_obj.name) }}" target="_blank">Download</a> -->
 
                         </span>
                     </li>
