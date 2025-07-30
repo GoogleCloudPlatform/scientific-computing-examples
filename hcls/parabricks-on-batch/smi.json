@@ -14,16 +14,27 @@
               "entrypoint": "/bin/sh",
               "commands": [
                 "-c",
-                "nvidia-smi"
+                "nvidia-smi",
+                "ls /mnt/gcs/share"
               ]
-            },
-            "environment": {
-              "variables": {
-                "BUCKET": "batch-test-bucket"
-              }
             }
           }
-        ]
+        ],
+        "volumes": [
+          {
+            "deviceName": "new-pd",
+            "mountPath": "/mnt/data",
+            "mountOptions": "rw,async"
+          },
+          {
+            "gcs": {
+              "remotePath": "qwiklabs-asl-03-08c0a6f5a770"
+            },
+            "mountPath": "/mnt/gcs/share"
+          }
+        ],
+        "maxRetryCount": 2,
+        "maxRunDuration": "86400s"
       },
       "taskCount": 3
     }
