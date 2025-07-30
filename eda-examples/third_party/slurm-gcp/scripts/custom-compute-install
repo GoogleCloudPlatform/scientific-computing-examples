@@ -1,0 +1,9 @@
+#!/bin/bash
+
+sudo yum -y install \
+  iverilog \
+  tcsh \
+  htop \
+  glibc.i686 \
+  elfutils-libelf-devel \
+  perl-Bit-Vector
