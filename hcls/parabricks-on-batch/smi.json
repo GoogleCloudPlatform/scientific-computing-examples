@@ -6,7 +6,12 @@
           {
             "container": {
               "imageUri": "nvcr.io/nvidia/clara/clara-parabricks:4.4.0-1",
-              "entrypoint": "/bin/bash",
+              "options": "--gpus all",
+              "volumes": [
+                "/mnt/data:/mnt/data",
+                "/mnt/gcs/share:/mnt/gcs/share"
+              ],
+              "entrypoint": "/bin/sh",
               "commands": [
                 "-c",
                 "nvidia-smi"
@@ -24,29 +29,33 @@
     }
   ],
   "allocationPolicy": {
-    "instances": [{
-	"installGpuDrivers": true,
+    "instances": [
+      {
+        "installGpuDrivers": true,
         "installOpsAgent": true,
         "policy": {
-            "machine_type": "a2-highgpu-2g",
-            "disks": [{
-                  "newDisk": {
-                  "sizeGb":1536,
-                  "type": "pd-ssd"
-                        },
-                  "deviceName": "new-pd"
-                      }],
-                  "bootDisk": {
-                     "sizeGb": 300
-                      },
-	    "bootDisk": {
-              "image": "projects/batch-custom-image/global/images/family/batch-debian-11-official"
+          "machine_type": "g2-standard-48",
+          "disks": [
+            {
+              "newDisk": {
+                "sizeGb": 1536,
+                "type": "pd-ssd"
+              },
+              "deviceName": "new-pd"
             }
-            }
-    }],
+          ],
+          "bootDisk": {
+            "sizeGb": 300,
+            "image": "projects/batch-custom-image/global/images/family/batch-debian-11-official"
+          }
+        }
+      }
+    ],
     "location": {
-          "allowedLocations": ["zones/us-central1-a"]
-                }
+      "allowedLocations": [
+        "zones/us-central1-a"
+      ]
+    }
   },
   "logsPolicy": {
     "destination": "CLOUD_LOGGING"
