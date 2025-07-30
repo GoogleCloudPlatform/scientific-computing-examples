@@ -30,3 +30,4 @@ done here!
   [reference architectures](https://cloud.google.com/solutions/hpc/) and 
   [posts](https://cloud.google.com/blog/topics/hpc).
 
+> This collection is pulled from GoogleCloudPlatform/eda-examples
