@@ -1,0 +1,54 @@
+{
+  "taskGroups": [
+    {
+      "taskSpec": {
+        "runnables": [
+          {
+            "container": {
+              "imageUri": "nvcr.io/nvidia/clara/clara-parabricks:4.4.0-1",
+              "entrypoint": "/bin/bash",
+              "commands": [
+                "-c",
+                "nvidia-smi"
+              ]
+            },
+            "environment": {
+              "variables": {
+                "BUCKET": "batch-test-bucket"
+              }
+            }
+          }
+        ]
+      },
+      "taskCount": 3
+    }
+  ],
+  "allocationPolicy": {
+    "instances": [{
+	"installGpuDrivers": true,
+        "installOpsAgent": true,
+        "policy": {
+            "machine_type": "a2-highgpu-2g",
+            "disks": [{
+                  "newDisk": {
+                  "sizeGb":1536,
+                  "type": "pd-ssd"
+                        },
+                  "deviceName": "new-pd"
+                      }],
+                  "bootDisk": {
+                     "sizeGb": 300
+                      },
+	    "bootDisk": {
+              "image": "projects/batch-custom-image/global/images/family/batch-debian-11-official"
+            }
+            }
+    }],
+    "location": {
+          "allowedLocations": ["zones/us-central1-a"]
+                }
+  },
+  "logsPolicy": {
+    "destination": "CLOUD_LOGGING"
+  }
+}

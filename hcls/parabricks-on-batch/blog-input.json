@@ -1,0 +1,87 @@
+{
+	"taskGroups": [
+    {
+		"taskSpec": {
+        	"runnables": [
+          	{
+			"script": {
+        		"text": "distribution=$(. /etc/os-release;echo $ID$VERSION_ID); curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -; curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list; sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit; sudo systemctl restart docker"
+      			}
+    		},
+			{
+			"container": {
+				"imageUri": "nvcr.io/nvidia/clara/clara-parabricks:4.0.0-1",
+				"options": "--gpus all",
+				"volumes": [
+					"/mnt/data:/mnt/data",
+					"/mnt/gcs/share:/mnt/gcs/share"
+					],
+				"entrypoint": "/bin/sh",
+                "commands": [
+                	"-c",
+					"/mnt/gcs/share/parabricks/parabricks-run.sh"
+					]
+                }
+			}
+        	],
+        	"volumes": [
+				{
+            	"deviceName": "new-pd",
+        		"mount_path": "/mnt/data",
+            	"mountOptions": "rw,async"
+          		},
+	  			{
+	    		"gcs": {
+	      			"remotePath": "thomashk-test2"
+	    			},
+	    			"mountPath": "/mnt/gcs/share"
+	  			}
+        	],
+			"maxRetryCount": 8,
+        	"maxRunDuration": "86400s"
+      	},
+      	"taskCount": 1
+    }
+	],
+	"allocationPolicy": {
+		"instances": [
+        	{
+			"install_gpu_drivers": true,
+            "policy": {
+            	"machine_type": "n1-standard-16",
+	    		"disks": [
+            		{
+              		"newDisk": {
+                	"sizeGb":250,
+    				"type": "pd-standard"
+              		},
+              		"deviceName": "new-pd"
+            		}
+          		],
+        		"accelerators": [
+        			{
+        			"type": "nvidia-tesla-t4",
+            		"count": 2
+            		}
+            		]
+    			}
+			}
+    	],
+	"network": {
+        "networkInterfaces": [
+        	{
+    			"network": "projects/host-hpc-project1/global/networks/shared-net",
+			"subnetwork": "projects/host-hpc-project1/regions/us-central1/subnetworks/tier-1",
+            	"noExternalIpAddress": true 
+            }
+        ]
+	}
+  	},
+  	"labels": {
+    	"env": "experimental",
+    	"user": "thomashk"
+	},
+	"logsPolicy": {
+    	"destination": "CLOUD_LOGGING"
+  	}
+}
