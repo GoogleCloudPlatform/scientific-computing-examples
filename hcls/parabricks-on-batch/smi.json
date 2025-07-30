@@ -68,7 +68,9 @@
       ]
     }
   },
-  "logsPolicy": {
-    "destination": "CLOUD_LOGGING"
+  "labels": {
+    "goog-batch-dynamic-workload-scheduler": "true",
+    "env": "experimental",
+    "user": "thomashk"
   }
 }
