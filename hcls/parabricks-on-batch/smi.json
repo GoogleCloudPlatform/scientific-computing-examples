@@ -14,7 +14,7 @@
               "entrypoint": "/bin/sh",
               "commands": [
                 "-c",
-                "nvidia-smi",
+                "nvidia-smi;",
                 "ls /mnt/gcs/share"
               ]
             }
