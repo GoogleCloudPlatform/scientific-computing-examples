@@ -73,5 +73,8 @@
     "goog-batch-dynamic-workload-scheduler": "true",
     "env": "experimental",
     "user": "thomashk"
+  },
+  "logsPolicy": {
+    "destination": "CLOUD_LOGGING"
   }
 }
