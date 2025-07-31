@@ -35,7 +35,7 @@
         "maxRetryCount": 2,
         "maxRunDuration": "86400s"
       },
-      "taskCount": 3
+      "taskCount": 1
     }
   ],
   "allocationPolicy": {
@@ -44,7 +44,7 @@
         "installGpuDrivers": true,
         "installOpsAgent": true,
         "policy": {
-          "machine_type": "g2-standard-48",
+          "machine_type": "g2-standard-16",
           "disks": [
             {
               "newDisk": {
