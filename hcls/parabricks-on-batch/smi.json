@@ -11,11 +11,10 @@
                 "/mnt/data:/mnt/data",
                 "/mnt/gcs/share:/mnt/gcs/share"
               ],
-              "entrypoint": "/bin/sh",
+              "entrypoint": "/bin/bash",
               "commands": [
                 "-c",
-                "nvidia-smi;",
-                "ls /mnt/gcs/share"
+                "nvidia-smi"
               ]
             }
           }
@@ -28,7 +27,7 @@
           },
           {
             "gcs": {
-              "remotePath": "qwiklabs-asl-03-08c0a6f5a770"
+              "remotePath": "qwiklabs-asl-03-189afb5b3869"
             },
             "mountPath": "/mnt/gcs/share"
           }
