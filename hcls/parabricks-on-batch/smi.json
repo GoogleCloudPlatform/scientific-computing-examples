@@ -63,14 +63,9 @@
     ],
     "location": {
       "allowedLocations": [
-        "zones/us-central1-a",
-        "zones/us-central1-b",
-        "zones/us-east1-b",
         "zones/us-east1-c",
         "zones/us-east1-d",
-        "zones/us-east4-a",
-        "zones/us-east4-c",
-        "zones/us-central1-c"
+        "zones/us-east4-a"
       ]
     }
   },
