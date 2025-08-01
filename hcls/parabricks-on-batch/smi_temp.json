@@ -48,7 +48,7 @@
           "disks": [
             {
               "newDisk": {
-                "sizeGb": 1536,
+                "sizeGb": 200,
                 "type": "pd-ssd"
               },
               "deviceName": "new-pd"
