@@ -27,7 +27,7 @@
           },
           {
             "gcs": {
-              "remotePath": "${GSCPATH}"
+              "remotePath": "${GCSPATH}"
             },
             "mountPath": "/mnt/gcs/share"
           }
