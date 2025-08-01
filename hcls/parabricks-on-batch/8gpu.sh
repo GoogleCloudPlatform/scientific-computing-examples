@@ -5,18 +5,6 @@
 # https://docs.nvidia.com/clara/parabricks/v4.4/text/getting_started.html#example-run
 # This script is part of the Cloud Batch parabricks run sample.
 
-#install Google SDK for cloud operations 
-apt-get update
-apt-get install -y curl
-curl https://dl.google.com/dl/cloudsdk/release/google-cloud-sdk.tar.gz > /tmp/google-cloud-sdk.tar.gz
-mkdir -p /usr/local/gcloud
-curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
-echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
-apt-get update && sudo apt-get install google-cloud-cli
-tar -C /usr/local/gcloud -xvf /tmp/google-cloud-sdk.tar.gz 
-/usr/local/gcloud/google-cloud-sdk/install.sh
-bash
-
 cd /mnt/data
 
 pbrun fq2bam --num-gpus 4 \
