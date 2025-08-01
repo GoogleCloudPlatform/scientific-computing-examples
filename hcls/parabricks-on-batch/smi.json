@@ -70,9 +70,7 @@
     }
   },
   "labels": {
-    "goog-batch-dynamic-workload-scheduler": "true",
-    "env": "experimental",
-    "user": "thomashk"
+    "user": "qwiklabs"
   },
   "logsPolicy": {
     "destination": "CLOUD_LOGGING"
