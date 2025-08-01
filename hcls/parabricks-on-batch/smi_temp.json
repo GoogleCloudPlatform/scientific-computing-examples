@@ -44,7 +44,7 @@
         "installGpuDrivers": true,
         "installOpsAgent": true,
         "policy": {
-          "machine_type": "g2-standard-16",
+          "machine_type": "g2-standard-48",
           "disks": [
             {
               "newDisk": {
