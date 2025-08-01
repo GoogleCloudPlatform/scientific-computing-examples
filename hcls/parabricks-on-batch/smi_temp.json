@@ -27,7 +27,7 @@
           },
           {
             "gcs": {
-              "remotePath": "qwiklabs-asl-03-189afb5b3869"
+              "remotePath": "${GSCPATH}"
             },
             "mountPath": "/mnt/gcs/share"
           }
