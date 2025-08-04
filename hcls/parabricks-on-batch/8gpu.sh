@@ -13,15 +13,15 @@ pbrun fq2bam --num-gpus 4 \
     --gpusort \
     --gpuwrite \
     --tmp-dir /mnt/data \
-      --ref /mnt/gcs/share/parabricks/input/Homo_sapiens_assembly38.fasta \
-      --in-fq /mnt/gcs/share/parabricks/input/HG001.novaseq.pcr-free.30x.R1.fastq.gz /mnt/gcs/share/parabricks/input/HG001.novaseq.pcr-free.30x.R2.fastq.gz \
+      --ref /mnt/gcs/share/Homo_sapiens_assembly38.fasta \
+      --in-fq /mnt/gcs/share/HG001.novaseq.pcr-free.30x.R1.fastq.gz /mnt/gcs/share/HG001.novaseq.pcr-free.30x.R2.fastq.gz \
       --out-bam /mnt/data/fq2bam_output.bam
 
 pbrun haplotypecaller --num-gpus 4\
       --num-htvc-threads 8 \
       --run-partition \
       --tmp-dir /mnt/data \
-      --ref /mnt/gcs/share/parabricks/input/Homo_sapiens_assembly38.fasta \
+      --ref /mnt/gcs/share/Homo_sapiens_assembly38.fasta \
       --in-bam /mnt/data/fq2bam_output.bam \
       --out-variants /mnt/data/variants.vcf
 
