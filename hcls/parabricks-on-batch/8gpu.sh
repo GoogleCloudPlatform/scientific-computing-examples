@@ -10,7 +10,7 @@ set -e
 
 cd /mnt/data
 
-pbrun fq2bam 
+pbrun fq2bam \
     --tmp-dir /mnt/data \
       --ref /mnt/gcs/share/Homo_sapiens_assembly38.fasta \
       --in-fq /mnt/gcs/share/HG001.novaseq.pcr-free.30x.R1.fastq.gz /mnt/gcs/share/HG001.novaseq.pcr-free.30x.R2.fastq.gz \
