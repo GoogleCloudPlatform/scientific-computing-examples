@@ -13,4 +13,6 @@ gsutil cp gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38
 gsutil cp gs://deepvariant/benchmarking/fastq/wgs_pcr_free/30x/HG001.novaseq.pcr-free.30x.R1.fastq.gz gs://${GCSPATH}/
 gsutil cp gs://deepvariant/benchmarking/fastq/wgs_pcr_free/30x/HG001.novaseq.pcr-free.30x.R2.fastq.gz gs://${GCSPATH}/
 
+gsutil cp 8gpu.sh gs://${GCSPATH}/
+
 envsubst < smi_temp.json > smi.json

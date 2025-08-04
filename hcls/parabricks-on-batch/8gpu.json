@@ -14,7 +14,7 @@
                     "entrypoint": "/bin/sh",
                     "commands": [
                         "-c",
-			"/mnt/gcs/share/8gpus.sh"
+			"/mnt/gcs/share/8gpu.sh"
                             ]
                              }
                 }

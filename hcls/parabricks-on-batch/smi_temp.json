@@ -14,7 +14,7 @@
               "entrypoint": "/bin/bash",
               "commands": [
                 "-c",
-                "nvidia-smi; cd /mnt/data; ls"
+                "/mnt/gcs/share/8gpu.sh"
               ]
             }
           }

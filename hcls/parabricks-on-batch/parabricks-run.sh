@@ -19,7 +19,7 @@ apt-get install wget
  
 cd /mnt/data
  
-# download the dataset
+# download the dkkkataset
 wget -O parabricks_sample.tar.gz \
 "https://s3.amazonaws.com/parabricks.sample/parabricks_sample.tar.gz"
 tar xvf parabricks_sample.tar.gz
