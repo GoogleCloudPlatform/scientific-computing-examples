@@ -6,7 +6,7 @@ gsutil mb gs://${GCSPATH}
 
 # Use Bucket to bucket transfer, extremely fast. 
 
-gsutil cp gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta gs://${GCSPATH}/
+gsutil cp gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta* gs://${GCSPATH}/
 
 # Input data from https://42basepairs.com/search?query=.fastq&bucket=gs/deepvariant
 
