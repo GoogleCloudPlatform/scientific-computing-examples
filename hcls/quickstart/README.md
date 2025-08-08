@@ -4,6 +4,6 @@
 
 1. Click on Open in Google Cloud Shell button below.
 
-<a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/cluster-toolkitt&cloudshell_workspace=toolkit&cloudshell_tutorial=https://github.com/GoogleCloudPlatform/scientific-computing-examples/blob/parabricks/hcls/quickstart/tutorial.md" target="_new">
+<a href="https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/cluster-toolkit&cloudshell_workspace=toolkit&cloudshell_tutorial=https://github.com/GoogleCloudPlatform/scientific-computing-examples/blob/parabricks/hcls/quickstart/tutorial.md" target="_new">
     <img alt="Open in Cloud Shell" src="https://gstatic.com/cloudssh/images/open-btn.svg">
 </a>
