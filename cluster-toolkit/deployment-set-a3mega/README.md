@@ -1,6 +1,6 @@
 # Click to Deploy A3mega Slurm cluster using Cluster Toolkit
 
-This tutorial guides you through setting up a A3Mega Slurm cluster  using **GCP Cluster Toolkit** to automatically deploy high-performance computing (HPC) environments. We'll use the **Google Cloud Cluster Toolkit** (`gcluster`) to define the infrastructure in YAML files.
+This tutorial guides you through setting up a A3Mega Slurm cluster with the high-performance computing (HPC) environments. We'll use the **Google Cloud Cluster Toolkit** (`gcluster`) to define the infrastructure in YAML files.
 
 Here are some of the material related to this solution:
 * **A3mega deployment instruction**
@@ -10,30 +10,31 @@ Here are some of the material related to this solution:
 
 
 ## Files in this repo / solution
-tutorial.MD - This file offers step-by-step guide to walk through the whole deployment. 
 
-a3mega-lustre-slurm-blueprint.yaml - This file has all the variables necessary as blueprint input.
+- tutorial.MD - This file offers step-by-step guide to walk through the whole deployment. 
 
-a3mega-lustre-slurm-blueprint.yaml - This blueprint creates the following:
- - Slurm cluster with A3mega GPU machines
- - Manged Lustre
- - GCSFuse
- - DWS Flex Partition
+- a3mega-slurm-deployment.yaml- This file has all the variables necessary as blueprint input.
 
-a3mega-lustre-slurm-blueprint-dws-2-partitions.yaml - This blueprint creates the following:
- - Slurm cluster with A3mega GPU machines
- - Manged Lustre
- - GCSFuse
- - DWS Partitions - one for DWS Flex and one for DWS Calendar
+- a3mega-lustre-slurm-blueprint.yaml - This blueprint creates the following:
+  - Slurm cluster with A3mega GPU machines
+  - Manged Lustre
+  - GCSFuse
+  - DWS Flex Partition
+
+- a3mega-lustre-slurm-blueprint-dws-2-partitions.yaml - This blueprint creates the following:
+  - Slurm cluster with A3mega GPU machines
+  - Manged Lustre
+  - GCSFuse
+  - DWS Partitions - one for DWS Flex and one for DWS Calendar
 
 ## Let's get started  
 
-To kick off the demo / tutorial, please click on the link. This will open a new Cloud Shell session for you. 
+To kick off the demo / tutorial, please click on the link below. This will open a new Cloud Shell session for you. 
 https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/cluster-toolkit
 
 Downloading the files here. You can run the following command at the cloud shell session 
 ```bash
-wget https://github.com/thomasnyc/a3mega-deployment-set/archive/refs/heads/main.zip
+wget https://github.com/GooggleCloudPlatform/cluster-toolkit/deployment-set-a3mega/archive/refs/heads/main.zip
 unzip main.zip
 ```
 
