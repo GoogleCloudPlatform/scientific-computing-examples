@@ -71,12 +71,12 @@ Since the deployment and blueprint files are provided by the team, There is no n
 
 **DWS Flex only cluster** - This does not require any reservation / quota request prior. 
 ```bash
-./gcluster deploy -d a3mega-deployment-set-main/a3mega-slurm-deployment-thomashk.yaml a3mega-deployment-set-main/a3mega-lustre-slurm-blueprint.yaml --auto-approve
+./gcluster deploy -d deployment-set-a3mega-main/a3mega-slurm-deployment.yaml deployment-set-a3mega-main/a3mega-lustre-slurm-blueprint.yaml --auto-approve
 ```
 
 **DWS Calendar and Flex cluster** - This requires DWS Calendar reservation done prior.
 ```bash
-./gcluster deploy -d a3mega-deployment-set-main/a3mega-slurm-deployment-thomashk.yaml a3mega-deployment-set-main/a3mega-lustre-slurm-blueprint-dws-2-partitions.yaml --auto-approve
+./gcluster deploy -d deployment-set-a3mega-main/a3mega-slurm-deployment.yaml deployment-set-a3mega-main/a3mega-lustre-slurm-blueprint-dws-2-partitions.yaml --auto-approve
 ```
 
 Note:  
@@ -103,7 +103,7 @@ Delele the clsuter only:
 **Updating the Cluster configuration** - Cluster can be updated live with configuration like number of nodes, size of storage etc.
 
 ```bash
-./gcluster deploy -d a3mega-deployment-set-main/a3mega-slurm-deployment-thomashk.yaml a3mega-deployment-set-main/a3mega-lustre-slurm-blueprint.yaml -w  --only primary,cluster
+./gcluster deploy -d deployment-set-a3mega-main/a3mega-slurm-deployment.yaml deployment-set-a3mega-main/a3mega-lustre-slurm-blueprint.yaml -w  --only primary,cluster
 ```
 
 ---
