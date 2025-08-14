@@ -21,8 +21,8 @@ terraform_backend_defaults:
 vars:
   deployment_name: a3mega-lustre-base
   project_id: # your project ID
-  region: # region in use eg: us-central1
-  zone: # zone in use eg: us-central1-a
+  region: us-central1 # region in use eg: us-central1
+  zone: us-central1-a # zone in use eg: us-central1-a
   network_name_system: a3mega-sys-net
   subnetwork_name_system: a3mega-sys-subnet
   enable_ops_agent: true
