@@ -33,9 +33,11 @@ If not, please update the following in the file:
   zone: # zone in use eg: us-central1-a
 ```
 
+### Other requirements on the Cloud Shell / GCP project: 
 * A **Google Cloud Project** with an active billing account.
 * The **<code>gcloud</code> command-line tool** installed and authenticated (`gcloud auth login`) & (`gcloud auth application-default login`) follow the command below: 
-* A **Git repository** (e.g., on GitHub, GitLab, or Cloud Source Repositories) containing your Cluster Toolkit configuration files. Cloud shell command shall already clone the repository required.
+
+## Follow the following steps to setup the environment
 
 * Set the default GCP project:
     gcloud config set project <user project ID>
@@ -70,7 +72,7 @@ make
 
 ---
 
-## **Step 3: Deploy the Cluster 🎉**
+## Step 3: Deploy the Cluster 🎉
 
 Since the deployment and blueprint files are provided by the team, There is no need to update them. 
 
