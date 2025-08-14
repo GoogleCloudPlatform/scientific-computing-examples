@@ -1,15 +1,15 @@
-# Click to Deploy A3mega Slurm cluster using Cluster Toolkit
+# Click to Deploy! A3mega Slurm cluster using Cluster Toolkit
 
 This tutorial guides you through setting up a A3Mega Slurm cluster with the high-performance computing (HPC) environments. We'll use the **Google Cloud Cluster Toolkit** (`gcluster`) to define the infrastructure in YAML files.
 
-Here are some of the material related to this solution:
+Here are material related to this solution:
 * **A3mega deployment instruction**
   https://cloud.google.com/cluster-toolkit/docs/deploy/deploy-a3-mega-cluster
 * **Google Cloud Cluster Toolkit**
   https://github.com/GoogleCloudPlatform/cluster-toolkit
 
 
-## Files in this repo / solution
+## Files in this repository
 
 - tutorial.MD - This file offers step-by-step guide to walk through the whole deployment. 
 
@@ -29,10 +29,10 @@ Here are some of the material related to this solution:
 
 ## Let's get started  
 
-To kick off the demo / tutorial, please click on the link below. This will open a new Cloud Shell session for you. 
+To kick off the demo / tutorial, please click the link below. This will open a new Cloud Shell session for you. 
 https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://github.com/GoogleCloudPlatform/cluster-toolkit
 
-Downloading the files here. You can run the following command at the cloud shell session 
+Downloading the files from this repository. You can run the following command at the cloud shell session 
 ```bash
 wget https://github.com/GooggleCloudPlatform/cluster-toolkit/deployment-set-a3mega/archive/refs/heads/main.zip
 unzip main.zip
@@ -40,7 +40,7 @@ unzip main.zip
 
 Get the tutorial up in the Cloud Shell session:
 ```bash
-teachme a3mega-deployment-set-main/tutorial.md
+teachme deployment-set-a3mega-main/tutorial.md
 ```
 
 Now you can follow the tutorial at the Cloud Shell session. Happy Computing! 

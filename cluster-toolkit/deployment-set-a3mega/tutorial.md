@@ -15,13 +15,22 @@ gcloud storage buckets create gs://${TF_STATE_BUCKET} \
 gcloud storage buckets update gs://${TF_STATE_BUCKET} --versioning
 ```
 
-After creating the bucket, please update the blueprint file with the terraform state bucket:
+After creating the bucket, please update the a3mega-slurm-deployment file with the terraform state bucket:
 
 ```yaml
 terraform_backend_defaults:
   type: gcs
   configuration:
     bucket: <GCP Bucket Name>
+```
+
+**Updating the deployment yaml** please check the a3mega-slurm-deployment.yaml has your project id and regions set correctly.
+
+If not, please update the following in the file:
+```yaml
+  project_id: # your project ID
+  region: # region in use eg: us-central1
+  zone: # zone in use eg: us-central1-a
 ```
 
 * A **Google Cloud Project** with an active billing account.
@@ -65,8 +74,6 @@ make
 
 Since the deployment and blueprint files are provided by the team, There is no need to update them. 
 
-**Updating the 
-
 **Full Deployment** - This is the single click deployment. If you did not yet create the network and built the image, please run this option, after you've updated the values in a3mega-deployment-set-main/a3mega-slurm-deployment-customer.yaml (including ensuring that the `TF_STATE_BUCKET`, `PROJECT_ID`, and `REGION` variables are updated to reflect what's above and what you plan on setting up in your environment):
 
 **DWS Flex only cluster** - This does not require any reservation / quota request prior. 
@@ -94,7 +101,7 @@ Deploy the cluster only:
   terraform -chdir=a3mega-lustre-base/cluster apply
 ```
 
-Delele the clsuter only:
+Delete the cluster only:
 
 ```bash
   terraform -chdir=a3mega-lustre-base/cluster destroy
