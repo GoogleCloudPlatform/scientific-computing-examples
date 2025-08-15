@@ -1,4 +1,4 @@
-## **Prerequisites and Environment Setup**
+## Step 1: Prerequisites and Environment Setup
 
 Before commencing the deployment process, ensure your environment meets the following prerequisites to guarantee a smooth and successful operation. This tutorial assumes familiarity with Google Cloud Platform (GCP), Terraform, and basic command-line operations.
 
@@ -33,11 +33,27 @@ If not, please update the following in the file:
   zone: # zone in use eg: us-central1-a
 ```
 
+**Cluster size** The default size of the DWS Flex partition is 2 nodes
+
+Please update the a3mega-slurm-deployment.yaml file:
+```yaml
+  a3mega_cluster_size: 2 # supply cluster size
+```
+
+**Optional - Reservation for DWS Calendar mode** If you have the reservation from DWS Calendar mode setup. Please update the a3mega-lustre-slurm-blueprint-dws-2-partitions.yaml with your reservation id.
+
+```yaml
+  a3mega_calendar_reservation_name: "reservation-2025xxxx-0xxxx"
+```
+---
+
+## Step 2: Login and Prep for Cluster Toolkit
+
 ### Other requirements on the Cloud Shell / GCP project: 
 * A **Google Cloud Project** with an active billing account.
 * The **<code>gcloud</code> command-line tool** installed and authenticated (`gcloud auth login`) & (`gcloud auth application-default login`) follow the command below: 
 
-## Follow the following steps to setup the environment
+## Follow the following steps login
 
 * Set the default GCP project:
     gcloud config set project <user project ID>
