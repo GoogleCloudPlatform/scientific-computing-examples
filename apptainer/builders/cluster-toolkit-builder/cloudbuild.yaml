@@ -1,0 +1,46 @@
+# cloudbuild.yaml
+# This Cloud Build pipeline compiles the gcluster tool from the Google Cloud HPC Toolkit
+# and creates a custom builder image.
+
+steps:
+# Step 1: Clone the official HPC Toolkit repository from GitHub.
+- name: 'gcr.io/cloud-builders/git'
+  id: 'Clone HPC Toolkit Repo'
+  args: ['clone', '--depth', '1', 'https://github.com/GoogleCloudPlatform/cluster-toolkit.git']
+
+# Step 2: Compile the gcluster binary using the Go builder.
+- name: 'golang:1.24'
+  id: 'Compile gcluster binary'
+  dir: 'cluster-toolkit' # Run this step inside the cloned repo directory
+  entrypoint: 'make'
+  env:
+    - 'CGO_ENABLED=0'
+    - 'GOOS=linux'
+  waitFor: ['Clone HPC Toolkit Repo']
+
+# Step 3: Build the custom builder image using the compiled binary.
+# This step requires the 'Dockerfile.gcluster' file to be in your repository.
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Build Builder Image'
+  args:
+    - 'build'
+    - '-t'
+    - 'gcr.io/$PROJECT_ID/gcluster-builder:latest' # Renamed the image tag
+    - '-f'
+    - 'cluster-toolkit/tools/cloud-build/images/cluster-toolkit-dockerfile/Dockerfile' 
+    - '.'
+  waitFor: ['Compile gcluster binary']
+
+# [Optional] Step 4: Test the newly created builder image.
+- name: 'gcr.io/$PROJECT_ID/gcluster-builder:latest'
+  id: 'Test Builder Image'
+  entrypoint: 'gcluster'
+  args: ['--version'] # Test the gcluster command
+  waitFor: ['Build Builder Image']
+
+# Push the final builder image to your project's Google Container Registry.
+images:
+- 'gcr.io/$PROJECT_ID/gcluster-builder:latest'
+
+options:
+  machineType: 'E2_HIGHCPU_8'

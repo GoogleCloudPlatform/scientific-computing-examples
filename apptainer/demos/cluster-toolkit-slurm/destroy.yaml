@@ -1,0 +1,33 @@
+# cloudbuild.yaml
+# This pipeline uses the custom gcluster-builder to deploy an HPC cluster.
+
+steps:
+# Step 1: Clone the official HPC Toolkit repository from GitHub.
+- name: 'gcr.io/cloud-builders/git'
+  id: 'Clone HPC Toolkit Repo'
+  args: ['clone', '--depth', '1', 'https://github.com/GoogleCloudPlatform/cluster-toolkit.git']
+
+- name: 'gcr.io/$PROJECT_ID/gcluster-builder:latest'
+  id: 'Create Deployment Directory'
+  entrypoint: '/usr/local/bin/gcluster'
+  args:
+    # The 'create' command tells gcluster to deploy a new cluster.
+    - 'create'
+    - '$_BLUEPRINT_PATH'
+    # Config 
+    - '--vars'
+    - 'project_id=$PROJECT_ID'
+    - '--skip-validators="test_apis_enabled"'
+    - '--vars'
+    - 'deployment_name=$_DEPLOYMENT_NAME'
+    - '--backend-config'
+    - 'bucket=$_BUCKET'
+
+- name: 'gcr.io/$PROJECT_ID/gcluster-builder:latest'
+  id: 'Destroy HPC Cluster'
+  entrypoint: '/usr/local/bin/gcluster'
+  args:
+    # The 'create' command tells gcluster to deploy a new cluster.
+    - 'destroy'
+    - '$_DEPLOYMENT_NAME'
+    - '--auto-approve'
