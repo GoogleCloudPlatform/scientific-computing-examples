@@ -37,7 +37,7 @@ The copied files should look like:
 2.  **Deploy the Cluster:** Use the `ghpc` command to deploy the Symphony cluster:
 
     ```bash
-    ghpc create symphony.yaml --auto-approve
+    ghpc create symphony.yaml -d symphony_deployment.yaml --auto-approve
     ```
 
 3.  **Access the Cluster:** Once the deployment is complete, you can SSH into the master node to manage the Symphony cluster.
