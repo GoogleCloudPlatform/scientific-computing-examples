@@ -195,44 +195,6 @@ def upload_file():
         flash('Invalid file type. Only .json files are allowed.', 'error')
         return redirect(url_for('browse_path', path=redirect_path, error_message="Only .json allowed."))
 
-@app.route('/download/<path:filename>')
-def download_file(filename):
-    """Generates a signed URL and redirects to it for file download."""
-    credentials, project_id = default()
-    bucket = get_bucket()
-    blob = bucket.blob(filename)
-    # signing_credentials = impersonated_credentials.Credentials(
-    #   source_credentials=credentials,
-    #   target_principal="ai-infra-jrt-1@appspot.gserviceaccount.com",
-    #   target_scopes="https://www.googleapis.com/auth/devstorage.read_only",
-    #   lifetime=2,
-    # )
-    # auth_request = Request()
-    # signing_credentials = compute_engine.IDTokenCredentials(
-    #     auth_request, "", 
-    #     service_account_email="ai-infra-jrt-1@appspot.gserviceaccount.com",
-    # )
-    credentials = google.oauth2.credentials.Credentials(TOKEN)
-    signing_credentials = impersonated_credentials.Credentials(
-        source_credentials=credentials,
-        target_principal="ai-infra-jrt-1@appspot.gserviceaccount.com",
-        target_scopes = 'https://www.googleapis.com/auth/devstorage.read_only',
-        lifetime=200)
-
-    print("XXXXXX: " + project_id, file=sys.stderr)
-    print("XXXXXX: " + blob.name, file=sys.stderr)
-    print(credentials.__dict__, file=sys.stderr)
-    print(signing_credentials.__dict__, file=sys.stderr)
-
-    signed_url = blob.generate_signed_url(
-      version="v4",                   # Use the latest, most secure signing process
-      expiration=timedelta(minutes=15), # Component 2: The Expiration Timestamp
-      method="GET",                   # Component 1: The HTTP Method
-      credentials=signing_credentials,
-      response_disposition=f"attachment; filename=\"{blob.name}\"" 
-
-    )
-    return redirect(signed_url)
 
 def access_secret_version(project_id, secret_id, version_id="latest"):
     """

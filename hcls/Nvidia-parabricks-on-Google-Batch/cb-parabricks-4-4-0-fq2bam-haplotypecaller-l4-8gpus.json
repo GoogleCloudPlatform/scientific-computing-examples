@@ -1,0 +1,74 @@
+{
+  "taskGroups": [
+    {
+      "taskSpec": {
+        "runnables": [
+          	{
+		"container": {
+                    "imageUri": "nvcr.io/nvidia/clara/clara-parabricks:4.4.0-1",
+		    "options": "--gpus all",
+		    "volumes": [
+                            "/mnt/data:/mnt/data",
+                            "/mnt/gcs/share:/mnt/gcs/share"
+                               ],
+                    "entrypoint": "/bin/sh",
+                    "commands": [
+                        "-c",
+			"/mnt/gcs/share/parabricks/parabricks-4-4-0-fq2bam-haplotypecaller-8gpus.sh"
+                            ]
+                             }
+                }
+        ],
+	"volumes": [
+        	{
+		"deviceName": "new-pd",
+                "mount_path": "/mnt/data",
+                "mountOptions": "rw,async"
+                },
+		{
+                "gcs": {
+                "remotePath": "thomashk-test2"
+                       },
+                "mountPath": "/mnt/gcs/share"
+                }
+                ],
+        "maxRetryCount": 2,
+        "maxRunDuration": "86400s"
+      },
+      "taskCount": 1
+    }
+  ],
+  "allocationPolicy": {
+    "instances": [{
+	"installGpuDrivers": true,
+        "installOpsAgent": true,
+        "policy": {
+            "machine_type": "g2-standard-96",
+            "disks": [{
+                  "newDisk": {
+                  "sizeGb":1536,
+                  "type": "pd-ssd"
+                        },
+                  "deviceName": "new-pd"
+                      }],
+                  "bootDisk": {
+                     "sizeGb": 300
+                      },
+	    "bootDisk": {
+              "image": "projects/batch-custom-image/global/images/family/batch-debian-11-official"
+            }
+            }
+    }],
+    "location": {
+          "allowedLocations": ["zones/us-central1-a"]
+                }
+  },
+  "labels": {
+    "goog-batch-dynamic-workload-scheduler": "true",
+    "env": "experimental",
+    "user": "thomashk"
+  },
+  "logsPolicy": {
+    "destination": "CLOUD_LOGGING"
+  }
+}
