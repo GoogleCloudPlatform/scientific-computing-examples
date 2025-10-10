@@ -1,4 +1,4 @@
 Flask==2.3.3
 google-cloud-storage==2.10.0
-gunicorn==23.0.0
-Werkzeug==2.3.7 # Pinning Werkzeug as Flask sometimes has issues with latest
+gunicorn==21.2.0
+Werkzeug==3.0.6 # Pinning Werkzeug as Flask sometimes has issues with latest
