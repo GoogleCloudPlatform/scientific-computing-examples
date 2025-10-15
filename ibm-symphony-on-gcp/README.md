@@ -1,7 +1,5 @@
 # IBM Spectrum Symphony on Google Cloud
 
-> ## This deployment is released as alpha. It is not fully tested or guaranteed to work off the shelf.
-
 This project provides a blueprint for deploying an IBM Spectrum Symphony cluster on Google Cloud Platform using the [Google Cloud HPC Toolkit](https://cloud.google.com/hpc-toolkit). The blueprint automates the provisioning of the necessary infrastructure and the installation and configuration of Symphony.
 
 ## Overview
