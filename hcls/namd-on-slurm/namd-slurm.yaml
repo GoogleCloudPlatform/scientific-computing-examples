@@ -27,6 +27,10 @@ vars:
   custom_image:
     family: apptainer-enabled
     project: $(vars.project_id)
+  source_image:
+    # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
+    family: slurm-gcp-6-11-hpc-rocky-linux-8
+    project: schedmd-slurm-public
   disk_size: 64
   bucket_prefix: namd_bucket
   instance_image_custom: true
@@ -145,9 +149,9 @@ deployment_groups:
     - network
     - scripts_for_image
     settings:
-      source_image_project_id: [schedmd-slurm-public]
       # see latest in https://github.com/GoogleCloudPlatform/slurm-gcp/blob/master/docs/images.md#published-image-family
-      source_image_family: slurm-gcp-6-9-hpc-rocky-linux-8
+      source_image_project_id: [$(vars.source_image.project)]
+      source_image_family: $(vars.source_image.family)
       # You can find size of source image by using following command
       # gcloud compute images describe-from-family <source_image_family> --project schedmd-slurm-public
       disk_size: $(vars.disk_size)
