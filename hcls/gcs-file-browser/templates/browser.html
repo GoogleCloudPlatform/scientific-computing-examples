@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>JSON File Browser (GCS)</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; margin: 20px; background-color: #98edfa; }
+        .container { background-color: #98edfa; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         h1, h2, h3 { color: #333; }
         label { display: block; margin-top: 10px; }
         input[type="file"], input[type="text"], button {
@@ -32,8 +32,9 @@
 </head>
 <body>
     <div class="container">
-        <h1>JSON File Browser (GCS)</h1>
-        <h3>gsutil Path: {{ gsutil_path }}</h3>
+        <img src="/static/images/alphafold.jpg" alt="alphafold" height="300">
+        <h1>Alphafold Server File UPLOAD</h1>
+        <h3>Cloud Storage Path: {{ gsutil_path }}</h3>
 
         {% if message %}
             <div class="message {{ 'success' if success else 'error' }}">{{ message }}</div>
@@ -51,14 +52,16 @@
         </div>
 
 
-        <h2>Upload JSON File to Current Folder</h2>
+        <h2>Upload Input JSON File to server</h2>
         <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
             <input type="hidden" name="current_prefix" value="{{ current_path_for_upload }}">
-            <label for="file">Choose JSON file:</label>
+            <label for="file">Choose Input JSON file:</label>
             <input type="file" name="file" id="file" accept=".json" required>
             <br>
+            <!--
             <label for="subfolder">Optional: Upload to new subfolder within '{{current_path_display or "root"}}' (e.g., new_folder_name):</label>
             <input type="text" name="subfolder" id="subfolder" placeholder="e.g., data_v2 (no slashes)">
+            -->
             <br><br>
             <button type="submit">Upload File</button>
         </form>

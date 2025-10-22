@@ -133,67 +133,119 @@ def browse_path(path):
                            retrieved_content=retrieved_content,
                            breadcrumb_parts=breadcrumb_parts)
 
+FIXED_UPLOAD_DIRECTORY = "data_pipeline_toprocess/"
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
         flash('No file part in the request.', 'error')
-        return redirect(url_for('browse_path', path=request.form.get('current_prefix', '')))
+        # Redirect to a relevant path, perhaps the root or a specific browse path
+        return redirect(url_for('browse_path', path=''))
 
     file = request.files['file']
-    current_prefix = request.form.get('current_prefix', '').strip('/')
-    subfolder_input = request.form.get('subfolder', '').strip('/') # New subfolder input
-
-    if current_prefix: # Ensure trailing slash for existing prefix
-        current_prefix += '/'
-
-    if subfolder_input: # If a new subfolder is specified
-        # Basic sanitization for subfolder name
-        safe_subfolder = secure_filename(subfolder_input.replace(" ", "_")).lower()
-        if safe_subfolder: # only proceed if it's not empty after sanitization
-             upload_prefix = os.path.join(current_prefix, safe_subfolder + '/') # Create new full prefix
-        else:
-            upload_prefix = current_prefix # Fallback to current prefix if subfolder is invalid
-    else:
-        upload_prefix = current_prefix # Upload to the current prefix
-
-    redirect_path = upload_prefix.strip('/') # Path for redirecting after upload
 
     if file.filename == '':
         flash('No file selected for uploading.', 'error')
-        return redirect(url_for('browse_path', path=redirect_path, error_message='No file selected.'))
+        return redirect(url_for('browse_path', path=''))
 
     if file and file.filename.lower().endswith('.json'):
         filename = secure_filename(file.filename)
-        # Prepend the prefix to the filename to store it in the "folder"
-        blob_name = os.path.join(upload_prefix, filename).replace("\\", "/") # Ensure forward slashes
+        
+        # Use the fixed directory for the blob name
+        blob_name = os.path.join(FIXED_UPLOAD_DIRECTORY, filename).replace("\\", "/")
 
         try:
             try:
-                json_data = json.load(file)
+                # Validate JSON content before uploading
+                json.load(file)
+                # Reset file pointer to the beginning for upload
                 file.seek(0)
             except json.JSONDecodeError:
                 flash(f"Invalid JSON content in {filename}.", 'error')
-                return redirect(url_for('browse_path', path=redirect_path, error_message=f"Invalid JSON in {filename}."))
+                return redirect(url_for('browse_path', path=''))
 
             bucket = get_bucket()
             if not bucket:
                 flash("GCS Bucket not configured or accessible.", "error")
-                return redirect(url_for('browse_path', path=redirect_path, error_message="GCS Bucket error."))
+                return redirect(url_for('browse_path', path=''))
 
             blob = bucket.blob(blob_name)
             blob.upload_from_file(file, content_type='application/json')
+            
             logging.info(f"File {blob_name} uploaded to {GCS_BUCKET_NAME}.")
-            flash(f"File {filename} uploaded to '{upload_prefix or 'root'}' successfully!", 'success')
-            return redirect(url_for('browse_path', path=redirect_path, success_message=f"Uploaded {filename}."))
+            flash(f"File {filename} uploaded to '{FIXED_UPLOAD_DIRECTORY}' successfully!", 'success')
+            
+            # Redirect to a relevant path after upload
+            return redirect(url_for('browse_path', path=''))
 
         except Exception as e:
             logging.error(f"Failed to upload {blob_name}: {e}")
             flash(f"Failed to upload {filename}: {e}", 'error')
-            return redirect(url_for('browse_path', path=redirect_path, error_message=f"Upload failed for {filename}."))
+            return redirect(url_for('browse_path', path=''))
     else:
         flash('Invalid file type. Only .json files are allowed.', 'error')
-        return redirect(url_for('browse_path', path=redirect_path, error_message="Only .json allowed."))
+        return redirect(url_for('browse_path', path=''))
+
+# @app.route('/upload', methods=['POST'])
+# def upload_file():
+#     if 'file' not in request.files:
+#         flash('No file part in the request.', 'error')
+#         return redirect(url_for('browse_path', path=request.form.get('current_prefix', '')))
+
+#     file = request.files['file']
+#     current_prefix = request.form.get('current_prefix', '').strip('/')
+#     subfolder_input = request.form.get('subfolder', '').strip('/') # New subfolder input
+
+#     if current_prefix: # Ensure trailing slash for existing prefix
+#         current_prefix += '/'
+
+#     if subfolder_input: # If a new subfolder is specified
+#         # Basic sanitization for subfolder name
+#         safe_subfolder = secure_filename(subfolder_input.replace(" ", "_")).lower()
+#         if safe_subfolder: # only proceed if it's not empty after sanitization
+#              upload_prefix = os.path.join(current_prefix, safe_subfolder + '/') # Create new full prefix
+#         else:
+#             upload_prefix = current_prefix # Fallback to current prefix if subfolder is invalid
+#     else:
+#         upload_prefix = current_prefix # Upload to the current prefix
+
+#     redirect_path = upload_prefix.strip('/') # Path for redirecting after upload
+
+#     if file.filename == '':
+#         flash('No file selected for uploading.', 'error')
+#         return redirect(url_for('browse_path', path=redirect_path, error_message='No file selected.'))
+
+#     if file and file.filename.lower().endswith('.json'):
+#         filename = secure_filename(file.filename)
+#         # Prepend the prefix to the filename to store it in the "folder"
+#         blob_name = os.path.join(upload_prefix, filename).replace("\\", "/") # Ensure forward slashes
+
+#         try:
+#             try:
+#                 json_data = json.load(file)
+#                 file.seek(0)
+#             except json.JSONDecodeError:
+#                 flash(f"Invalid JSON content in {filename}.", 'error')
+#                 return redirect(url_for('browse_path', path=redirect_path, error_message=f"Invalid JSON in {filename}."))
+
+#             bucket = get_bucket()
+#             if not bucket:
+#                 flash("GCS Bucket not configured or accessible.", "error")
+#                 return redirect(url_for('browse_path', path=redirect_path, error_message="GCS Bucket error."))
+
+#             blob = bucket.blob(blob_name)
+#             blob.upload_from_file(file, content_type='application/json')
+#             logging.info(f"File {blob_name} uploaded to {GCS_BUCKET_NAME}.")
+#             flash(f"File {filename} uploaded to '{upload_prefix or 'root'}' successfully!", 'success')
+#             return redirect(url_for('browse_path', path=redirect_path, success_message=f"Uploaded {filename}."))
+
+#         except Exception as e:
+#             logging.error(f"Failed to upload {blob_name}: {e}")
+#             flash(f"Failed to upload {filename}: {e}", 'error')
+#             return redirect(url_for('browse_path', path=redirect_path, error_message=f"Upload failed for {filename}."))
+#     else:
+#         flash('Invalid file type. Only .json files are allowed.', 'error')
+#         return redirect(url_for('browse_path', path=redirect_path, error_message="Only .json allowed."))
 
 
 def access_secret_version(project_id, secret_id, version_id="latest"):

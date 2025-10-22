@@ -4,4 +4,16 @@ entrypoint: gunicorn -b :$PORT main:app
 # Set an environment variable for the GCS bucket name.
 # This is a best practice for configuration.
 env_variables:
-  GCS_BUCKET_NAME: '<MY_JOBS_BUCKET>' # <-- IMPORTANT: REPLACE THIS
+  GCS_BUCKET_NAME: 'mybucket_jrt' # <-- IMPORTANT: REPLACE THIS
+
+handlers:
+# This handler serves files from the 'static' directory
+# (e.g., /static/images/my_image.png)
+- url: /static
+  static_dir: static
+
+# This handler serves all other requests to your main application
+# It MUST come AFTER the static handler
+- url: /.*
+  script: auto
+  secure: always
