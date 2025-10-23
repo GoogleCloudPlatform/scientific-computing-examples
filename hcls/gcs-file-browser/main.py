@@ -1,15 +1,13 @@
-import os
-import json
+import datetime
 import google.oauth2.credentials
+import json
 import logging
-import sys
+import os
 from datetime import timedelta
 from flask import Flask, request, render_template, redirect, url_for, Response, flash
-from google.auth import impersonated_credentials
 from google.auth import default
-from google.auth import compute_engine
-from google.auth.transport.requests import Request
 from google.cloud import storage
+from pathlib import Path
 from werkzeug.utils import secure_filename
 
 
@@ -186,67 +184,6 @@ def upload_file():
         flash('Invalid file type. Only .json files are allowed.', 'error')
         return redirect(url_for('browse_path', path=''))
 
-# @app.route('/upload', methods=['POST'])
-# def upload_file():
-#     if 'file' not in request.files:
-#         flash('No file part in the request.', 'error')
-#         return redirect(url_for('browse_path', path=request.form.get('current_prefix', '')))
-
-#     file = request.files['file']
-#     current_prefix = request.form.get('current_prefix', '').strip('/')
-#     subfolder_input = request.form.get('subfolder', '').strip('/') # New subfolder input
-
-#     if current_prefix: # Ensure trailing slash for existing prefix
-#         current_prefix += '/'
-
-#     if subfolder_input: # If a new subfolder is specified
-#         # Basic sanitization for subfolder name
-#         safe_subfolder = secure_filename(subfolder_input.replace(" ", "_")).lower()
-#         if safe_subfolder: # only proceed if it's not empty after sanitization
-#              upload_prefix = os.path.join(current_prefix, safe_subfolder + '/') # Create new full prefix
-#         else:
-#             upload_prefix = current_prefix # Fallback to current prefix if subfolder is invalid
-#     else:
-#         upload_prefix = current_prefix # Upload to the current prefix
-
-#     redirect_path = upload_prefix.strip('/') # Path for redirecting after upload
-
-#     if file.filename == '':
-#         flash('No file selected for uploading.', 'error')
-#         return redirect(url_for('browse_path', path=redirect_path, error_message='No file selected.'))
-
-#     if file and file.filename.lower().endswith('.json'):
-#         filename = secure_filename(file.filename)
-#         # Prepend the prefix to the filename to store it in the "folder"
-#         blob_name = os.path.join(upload_prefix, filename).replace("\\", "/") # Ensure forward slashes
-
-#         try:
-#             try:
-#                 json_data = json.load(file)
-#                 file.seek(0)
-#             except json.JSONDecodeError:
-#                 flash(f"Invalid JSON content in {filename}.", 'error')
-#                 return redirect(url_for('browse_path', path=redirect_path, error_message=f"Invalid JSON in {filename}."))
-
-#             bucket = get_bucket()
-#             if not bucket:
-#                 flash("GCS Bucket not configured or accessible.", "error")
-#                 return redirect(url_for('browse_path', path=redirect_path, error_message="GCS Bucket error."))
-
-#             blob = bucket.blob(blob_name)
-#             blob.upload_from_file(file, content_type='application/json')
-#             logging.info(f"File {blob_name} uploaded to {GCS_BUCKET_NAME}.")
-#             flash(f"File {filename} uploaded to '{upload_prefix or 'root'}' successfully!", 'success')
-#             return redirect(url_for('browse_path', path=redirect_path, success_message=f"Uploaded {filename}."))
-
-#         except Exception as e:
-#             logging.error(f"Failed to upload {blob_name}: {e}")
-#             flash(f"Failed to upload {filename}: {e}", 'error')
-#             return redirect(url_for('browse_path', path=redirect_path, error_message=f"Upload failed for {filename}."))
-#     else:
-#         flash('Invalid file type. Only .json files are allowed.', 'error')
-#         return redirect(url_for('browse_path', path=redirect_path, error_message="Only .json allowed."))
-
 
 def access_secret_version(project_id, secret_id, version_id="latest"):
     """
@@ -326,8 +263,8 @@ def retrieve_file_get(full_path):
         bucket = get_bucket()
         if not bucket:
              return Response("GCS Bucket not configured or accessible.", status=500, mimetype='text/plain')
-
         blob = bucket.blob(full_path) # Use the full path
+
         if blob.exists():
             content = blob.download_as_text()
             logging.info(f"Serving raw file {full_path}.")
@@ -337,6 +274,64 @@ def retrieve_file_get(full_path):
     except Exception as e:
         logging.error(f"Failed to serve raw file {full_path}: {e}")
         return Response(f"Error retrieving file: {e}", status=500, mimetype='text/plain')
+
+
+@app.route('/retrieve_signed_url/<path:full_path>', methods=['GET']) # Use path converter
+def retrieve_signed_url(full_path):
+    """Serves the raw JSON file content, given its full GCS object path."""
+    # full_path is directly from URL, assuming it's already correct from GCS listing.
+    # No need for secure_filename here as it would strip slashes.
+    # Be cautious if this path could be user-manipulated in other ways.
+
+    if not full_path.lower().endswith(('.json', '.cif')):
+        return Response("Invalid filename or not a JSON file.", status=400, mimetype='text/plain')
+
+    try:
+        bucket = get_bucket()
+        if not bucket:
+             return Response("GCS Bucket not configured or accessible.", status=500, mimetype='text/plain')
+        blob = bucket.blob(full_path) # Use the full path
+
+        if blob.exists():
+            signed_url = generate_download_url(bucket, blob)
+            logging.info(f"Serving url file {signed_url}.")
+            file_only_pathlib = Path(blob.name).name
+            download_command = f"!wget -O {file_only_pathlib} '{signed_url}'"
+            return Response(download_command, mimetype='text/plain')
+        else:
+            return Response(f"File {full_path} not found.", status=404, mimetype='text/plain')
+    except Exception as e:
+        logging.error(f"Failed to serve raw file {full_path}: {e}")
+        return Response(f"Error retrieving file: {e}", status=500, mimetype='text/plain')
+
+
+
+def generate_download_url(bucket, blob):
+    """Generates a v4 signed URL for downloading a blob.
+
+    Note: This method requires the service account to have the
+    'Service Account Token Creator' IAM role.
+    """
+    
+    # Initialize the client
+
+    # Set the expiration time for the URL
+    # In this example, the URL will be valid for 1 hour
+    expiration_time = datetime.timedelta(hours=1)
+
+    try:
+        # Generate the signed URL
+        signed_url = blob.generate_signed_url(
+            version="v4",  # Recommended version
+            expiration=expiration_time,
+            method="GET",  # Allow the user to GET (download) the file
+        )
+        
+        return signed_url
+
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
+        return None
 
 
 if __name__ == '__main__':

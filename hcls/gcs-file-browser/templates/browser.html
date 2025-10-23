@@ -97,7 +97,7 @@
                         <span>📄 {{ file_obj.name.replace(current_path_for_upload, '').strip('/') }}</span>
                         <span class="file-actions">
                             <a href="{{ url_for('retrieve_file_get', full_path=file_obj.name) }}">View Raw</a>
-
+                            <a href="{{ url_for('retrieve_signed_url', full_path=file_obj.name) }}">Signed URL</a>
                         </span>
                     </li>
                 {% endfor %}

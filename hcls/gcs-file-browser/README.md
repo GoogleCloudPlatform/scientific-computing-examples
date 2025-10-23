@@ -8,36 +8,49 @@ Return to the Cloud Shell in the incognito browser window. You may likely reach 
 
 Return to the Scientific Computing Examples repository you cloned earlier.
 
-| cd \~/scientific-computing-examples/hcls/gcs-file-browser |
-| :---- |
+```
+cd ~/scientific-computing-examples/hcls/gcs-file-browser
+```
 
-In that directory, edit \`app.yaml\` to replace the line \`\<MY\_JOBS\_BUCKET\>\` with your bucket name that ends in \`\_jobs\`.
+In that directory, edit `app.yaml` to replace the line `<MY_JOBS_BUCKET>` with your bucket name that ends in `_jobs`.
 
-|  GCS\_BUCKET\_NAME: '\<MY\_JOBS\_BUCKET\>' \# \<-- IMPORTANT: REPLACE THIS |
-| :---- |
+```
+GCS_BUCKET_NAME: '<MY_JOBS_BUCKET>' # <-- IMPORTANT: REPLACE THIS
+```
 
-### **Deploy the app**
+### Obtain a credentials file
+
+1. Navigate to the Google Cloud Console page for [Service accounts](https://console.cloud.google.com/iam-admin/serviceaccounts)
+2. Select the default service account and navigate to "Keys"
+3. Generate a JSON key file.
+4. Save that file the same folder where the `app.yaml` file is located.
+
+### Deploy the app
 
 After this change you can deploy the app.
 
-| gcloud app deploy |
-| :---- |
+```
+gcloud app deploy
+```
 
 It is possible you may have to authenticate to Google Cloud. Run this command and follow instructions. Once complete, repeat the command above.
 
-| gcloud auth login |
-| :---- |
+```
+gcloud auth login 
+```
 
 After successfully deploying, the output should be similar to the output below.
 
-| Beginning deployment of service \[default\]... Uploading 2 files to Google Cloud Storage 50% 100% 100% File upload done. Updating service \[default\]...done.                                                                                                         Setting traffic split for service \[default\]...done.                                                                                        Deployed service \[default\] to \[https://qwiklabs-asl-03-c950155fe336.uc.r.appspot.com\] You can stream logs from the command line by running:   $ gcloud app logs tail \-s default To view your application in the web browser run:   $ gcloud app browse |
-| :---- |
+```
+ Beginning deployment of service [default]... Uploading 2 files to Google Cloud Storage 50% 100% 100% File upload done. Updating service [default]...done.                                                                                                         Setting traffic split for service [default]...done.                                                                                        Deployed service [default] to [https://qwiklabs-asl-03-c950155fe336.uc.r.appspot.com] You can stream logs from the command line by running:   $ gcloud app logs tail -s default To view your application in the web browser run:   
+$ gcloud app browse 
+```
 
 You can then view the app by navigating to the App Engine services page in the console.
 
 [https://console.cloud.google.com/appengine/services](https://console.cloud.google.com/appengine/services)
 
-There you can click on the link labeled \`default\`.
+There you can click on the link labeled `default`.
 
 ![][image1]
 
@@ -45,25 +58,25 @@ The UI should then be visible looking something like this.
 
 ![][image2]
 
-To validate this works, you can upload a copy of \`test.json\` used in an earlier step.
+To validate this works, you can upload a copy of `test.json` used in an earlier step.
 
-Upload the file to the subfolder \`data\_pipeline\_toprocess\`.
+Upload the file to the subfolder `data_pipeline_toprocess`.
 
 ![][image3]
 
-While the job is running the \`data\_pipeline\_running\` folder is visible.
+While the job is running the `data_pipeline_running` folder is visible.
 
 ![][image4]
 
-When completed, the run will be visible in the \`inference\_results\` folder.
+When completed, the run will be visible in the `inference_results` folder.
 
 ![][image5]
 
-If you are able to connect to the \`login\` node, there will be a running Slurm job.
+If you are able to connect to the `login` node, there will be a running Slurm job.
 
 ![][image6]
 
-### **Share the URL**
+### Share the URL
 
 The URL in your browser needs to be shared with the Students who will be running through the "user" side of this Qwiklab.  
 

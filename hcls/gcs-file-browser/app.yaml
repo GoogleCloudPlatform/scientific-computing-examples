@@ -5,6 +5,7 @@ entrypoint: gunicorn -b :$PORT main:app
 # This is a best practice for configuration.
 env_variables:
   GCS_BUCKET_NAME: 'mybucket_jrt' # <-- IMPORTANT: REPLACE THIS
+  GOOGLE_APPLICATION_CREDENTIALS: client_secret.json
 
 handlers:
 # This handler serves files from the 'static' directory
