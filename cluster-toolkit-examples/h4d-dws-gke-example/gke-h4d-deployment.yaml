@@ -1,0 +1,190 @@
+# Copyright 2025 "Google LLC"
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+blueprint_name: gke-h4d
+
+vars:
+  # The following variables should be over-written in the deployment.yaml file.
+  # Your GCP Project ID
+  project_id: 
+
+  # This should be unique across all of your Cluster
+  # Toolkit Deployments.
+  deployment_name:
+
+  # The GCP Region used for this deployment.
+  region: us-central1
+
+  # The GCP Zone used for this deployment.
+  zone: us-central1-a
+
+  # Cidr block containing the IP of the machine calling terraform.
+  # To allow all (IAM restrictions still enforced), use 0.0.0.0/0
+  # To allow only your IP address, use <YOUR-IP-ADDRESS>/32
+  authorized_cidr: 0.0.0.0/0
+
+  enable_flex_start: true # Enable DWS Flex Start.
+  enable_queued_provisioning: true
+  kueue_configuration_path: $(ghpc_stage("./dws-queues.yaml.tftpl"))
+  sample_job_path: $(ghpc_stage("./sample-job.yaml"))
+  system_node_pool_disk_size_gb: 400
+  h4d_node_pool_disk_size_gb: 800
+  cpu_nominal_quota: 512
+
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: gke-h4d-net
+    source: modules/network/vpc
+    settings:
+      network_name: $(vars.deployment_name)-net
+      subnetworks:
+      - subnet_name: $(vars.deployment_name)-sub
+        subnet_region: $(vars.region)
+        subnet_ip: 192.168.0.0/24
+      secondary_ranges_list:
+      - subnetwork_name: $(vars.deployment_name)-sub
+        ranges:
+        - range_name: pods
+          ip_cidr_range: 10.4.0.0/14
+        - range_name: services
+          ip_cidr_range: 10.0.32.0/20
+      firewall_rules:
+      - name: $(vars.deployment_name)-internal
+        ranges: [192.168.0.0/24]
+        allow:
+        - protocol: tcp
+          ports: ["0-65535"]
+        - protocol: udp
+          ports: ["0-65535"]
+        - protocol: icmp
+
+  - id: gke-h4d-rdma-net
+    source: modules/network/vpc
+    settings:
+      network_name: $(vars.deployment_name)-rdma-net
+   #   network_profile: https://www.googleapis.com/compute/beta/projects/$(vars.project_id)/global/networkProfiles/$(vars.zone)-vpc-falcon
+      network_routing_mode: REGIONAL
+      enable_cloud_router: true
+      enable_cloud_nat: true
+      subnetworks:
+      - subnet_name: $(vars.deployment_name)-rdma-sub
+        subnet_region: $(vars.region)
+        subnet_ip: 192.168.1.0/24
+        region: $(vars.region)
+
+  - id: node_pool_service_account
+    source: community/modules/project/service-account
+    settings:
+      name: gke-np-sa
+      project_roles:
+      - logging.logWriter
+      - monitoring.metricWriter
+      - monitoring.viewer
+      - stackdriver.resourceMetadata.writer
+      - storage.objectViewer
+      - artifactregistry.reader
+
+  - id: workload_service_account
+    source: community/modules/project/service-account
+    settings:
+      name: gke-wl-sa
+      project_roles:
+      - logging.logWriter
+      - monitoring.metricWriter
+      - monitoring.viewer
+      - stackdriver.resourceMetadata.writer
+      - storage.objectAdmin
+      - artifactregistry.reader
+
+  - id: h4d-cluster
+    source: modules/scheduler/gke-cluster
+    use: [gke-h4d-net, workload_service_account]
+    settings:
+      system_node_pool_machine_type: "e2-standard-16"
+      system_node_pool_disk_size_gb: $(vars.system_node_pool_disk_size_gb)
+      system_node_pool_taints: []
+      enable_multi_networking: true
+      enable_dcgm_monitoring: true
+      enable_gcsfuse_csi: true
+      enable_private_endpoint: false # Allows access from authorized public IPs
+      configure_workload_identity_sa: true
+      master_authorized_networks:
+      - cidr_block: $(vars.authorized_cidr) # Allows your machine to run the kubectl command. Required for multi network setup.
+        display_name: "kubectl-access-network"
+      additional_networks:
+        $(concat(
+          [{
+            network=gke-h4d-rdma-net.network_name,
+            subnetwork=gke-h4d-rdma-net.subnetwork_name,
+            subnetwork_project=vars.project_id,
+            nic_type="IRDMA",
+            queue_count=null,
+            network_ip=null,
+            stack_type=null,
+            access_config=[{nat_ip=null, public_ptr_domain_name=null, network_tier=null}],
+            ipv6_access_config=[],
+            alias_ip_range=[]
+          }]
+        ))
+      # Cluster versions cannot be updated through the toolkit after creation
+      # Please manage cluster version from the Google Cloud Console directly
+      version_prefix: "1.33."
+    outputs: [instructions]
+
+  - id: h4d-pool
+    source: modules/compute/gke-node-pool
+    use: [h4d-cluster, node_pool_service_account]
+    settings:
+      machine_type: h4d-highmem-192-lssd
+      enable_flex_start: $(vars.enable_flex_start) # dws flex-start
+      auto_repair: false # dws flex-start requirement
+      enable_queued_provisioning: $(vars.enable_queued_provisioning) # queued provisioning
+      auto_upgrade: false # queued provisioning requirement
+      autoscaling_total_min_nodes: 0 # queued provisioning requirement
+      zones: [$(vars.zone)]
+      disk_size_gb: $(vars.h4d_node_pool_disk_size_gb)
+      additional_networks:
+        $(concat(
+          [{
+            network=gke-h4d-rdma-net.network_name,
+            subnetwork=gke-h4d-rdma-net.subnetwork_name,
+            subnetwork_project=vars.project_id,
+            nic_type="IRDMA",
+            queue_count=null,
+            network_ip=null,
+            stack_type=null,
+            access_config=[{nat_ip=null, public_ptr_domain_name=null, network_tier=null}],
+            ipv6_access_config=[],
+            alias_ip_range=[]
+          }]
+        ))
+    outputs: [instructions]
+
+  # Install Kueue and Jobset
+  - id: workload-manager-install
+    source: modules/management/kubectl-apply
+    use: [h4d-cluster]
+    settings:
+      kueue:
+        install: true
+        config_path: $(vars.kueue_configuration_path)
+        config_template_vars:
+          num_cpus: $(vars.cpu_nominal_quota)
+      jobset:
+        install: true
+      apply_manifests:
+      - source: $(vars.sample_job_path)
+  #  outputs: [instructions]

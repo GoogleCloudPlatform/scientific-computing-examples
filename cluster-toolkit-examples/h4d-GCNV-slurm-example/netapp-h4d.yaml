@@ -1,0 +1,176 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+blueprint_name: netapp-h4d
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: netapp-h4d
+  region: us-central1
+  zone: us-central1-a
+  rdma_net_range: 192.168.128.0/18
+  pool_service_level: "EXTREME"  # Options: "STANDARD", "PREMIUM", "EXTREME"
+
+deployment_groups:
+- group: primary
+  modules:
+
+  # Source is an embedded module, denoted by "modules/*" without ./, ../, /
+  # as a prefix. To refer to a local module, prefix with ./, ../ or /
+
+  - id: h4d-slurm-net-0
+    source: modules/network/vpc
+
+  - id: h4d-rdma-net
+    source: modules/network/vpc
+    settings:
+      network_name: $(vars.deployment_name)-rdma-net-0
+      mtu: 8896
+      network_profile: https://www.googleapis.com/compute/beta/projects/$(vars.project_id)/global/networkProfiles/$(vars.zone)-vpc-falcon
+      network_routing_mode: REGIONAL
+      enable_cloud_router: false
+      enable_cloud_nat: false
+      enable_internal_traffic: false
+      subnetworks:
+      - subnet_name: $(vars.deployment_name)-rdma-sub-0
+        subnet_region: $(vars.region)
+        subnet_ip: $(vars.rdma_net_range)
+        region: $(vars.region)
+
+  - id: homefs
+    source: modules/file-system/filestore
+    use: [h4d-slurm-net-0]
+    settings:
+      filestore_tier: BASIC_SSD
+      size_gb: 2560
+      filestore_share_name: homeshare
+      local_mount: /home
+
+# Private Service Access (PSA) requires the compute.networkAdmin role which is
+# included in the Owner role, but not Editor.
+# https://cloud.google.com/vpc/docs/configure-private-services-access#permissions
+  - id: private_service_access
+    source: community/modules/network/private-service-access
+    use: [h4d-slurm-net-0]
+    settings:
+      prefix_length: 24
+      service_name: "netapp.servicenetworking.goog"
+      deletion_policy: "ABANDON"
+
+  - id: netapp_pool
+    source: modules/file-system/netapp-storage-pool
+    use: [h4d-slurm-net-0, private_service_access]
+    settings:
+      pool_name: "netapp-pool"
+      network_id: $(h4d-slurm-net-0.network_id)
+      capacity_gib: 2048
+      service_level: $(vars.pool_service_level)
+      region: $(vars.region)
+      # allow_auto_tiering: true
+
+  - id: appsfs
+    source: modules/file-system/netapp-volume
+    use: [netapp_pool]             # Create this pool using the netapp-storage-pool module
+    settings:
+      region: $(vars.region)
+      volume_name: "netappfs"
+      capacity_gib: 2048           # Size up to available capacity in the pool
+      large_capacity: false
+      local_mount: "/netappfs"         # Mount point at client when client uses USE directive
+      # mount_options: "..."       # Use custom mount_options for special use cases. Defaults are sane.
+      protocols: ["NFSV3"]         # List of protocols. ["NFSV3], ["NFSv4] or ["NFSV3, "NFSV4"]
+      unix_permissions: "0777"     # Specify default permissions for root inode owned by root:root
+      # If no export policy is specified, a permissive default policy will be applied, which is:
+      #  allowed_clients = "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" # RFC1918
+      #  has_root_access = true      # no_root_squash enabled
+      #  access_type = "READ_WRITE"
+      # export_policy_rules:
+      # - allowed_clients: "10.10.20.8,10.10.20.9"
+      #   has_root_access: true      # no_root_squash enabled
+      #   access_type: "READ_WRITE"
+      #   nfsv3: true
+      #   nfsv4: false
+      # - allowed_clients: "10.0.0.0/8"
+      #   has_root_access: false     # no_root_squash disabled
+      #   access_type: "READ_WRITE"
+      #   nfsv3: true
+      #   nfsv4: false
+      # tiering_policy:              # Enable auto-tiering. Requires auto-tiering enabled storage pool
+      #   tier_action: "ENABLED"
+      #   cooling_threshold_days: 31 # tier data blocks which have not been touched for 31 days
+      # description: "Shared volume for EDA job"
+      # labels:
+      #   department: eda
+
+  - id: h4d_startup
+    source: modules/scripts/startup-script
+    settings:
+      set_ofi_cloud_rdma_tunables: true
+      local_ssd_filesystem:
+        fs_type: ext4
+        mountpoint: /mnt/lssd
+        permissions: "1777"
+
+  - id: h4d_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [h4d_startup, h4d-slurm-net-0]
+    settings:
+      bandwidth_tier: gvnic_enabled
+      machine_type: h4d-highmem-192-lssd
+      node_count_static: 1
+      node_count_dynamic_max: 0
+      enable_placement: false
+      disk_type: hyperdisk-balanced
+      on_host_maintenance: TERMINATE
+      additional_networks:
+        $(concat(
+          [{
+            network=null,
+            subnetwork=h4d-rdma-net.subnetwork_self_link,
+            subnetwork_project=vars.project_id,
+            nic_type="IRDMA",
+            queue_count=null,
+            network_ip=null,
+            stack_type=null,
+            access_config=null,
+            ipv6_access_config=[],
+            alias_ip_range=[]
+          }]
+        ))
+
+  - id: h4d_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - h4d_nodeset
+    settings:
+      exclusive: false
+      partition_name: h4d
+      is_default: true
+      partition_conf:
+        ResumeTimeout: 900
+        SuspendTimeout: 600
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [h4d-slurm-net-0]
+    settings:
+      machine_type: n2-standard-4
+      enable_login_public_ips: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use: [h4d-slurm-net-0, h4d_partition, slurm_login, homefs, appsfs]
+    settings:
+      enable_controller_public_ips: true
+      cloud_parameters:
+        slurmd_timeout: 900
