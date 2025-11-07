@@ -1,0 +1,10 @@
+SELECT max(labels.name) as label, count(*) as count, 
+
+FROM 
+  `ai-infra-jrt-2.intelligentcontentfilter.filtered_content` as fc,
+  UNNEST(fc.labels) as labels
+
+where labels.name like '%'
+GROUP BY labels.name
+ORDER BY count(*) DESC
+LIMIT 1000
