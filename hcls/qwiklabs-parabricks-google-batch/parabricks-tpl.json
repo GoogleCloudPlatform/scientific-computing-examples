@@ -1,0 +1,80 @@
+{
+  "taskGroups": [
+    {
+      "taskSpec": {
+        "runnables": [
+          {
+            "container": {
+              "imageUri": "nvcr.io/nvidia/clara/clara-parabricks:4.5.1-1",
+              "options": "--gpus all",
+              "volumes": [
+                "/mnt/data:/mnt/data",
+                "/mnt/gcs/share:/mnt/gcs/share"
+              ],
+              "entrypoint": "/bin/sh",
+              "commands": [
+                "-c",
+                "/mnt/gcs/share/parabricks.sh"
+              ]
+            }
+          }
+        ],
+        "volumes": [
+          {
+            "deviceName": "new-pd",
+            "mountPath": "/mnt/data",
+            "mountOptions": "rw,async"
+          },
+          {
+            "gcs": {
+              "remotePath": "${BUCKET_NAME}"
+            },
+            "mountPath": "/mnt/gcs/share"
+          }
+        ],
+        "maxRetryCount": 2,
+        "maxRunDuration": "86400s"
+      },
+      "taskCount": 1
+    }
+  ],
+  "allocationPolicy": {
+    "instances": [
+      {
+        "installGpuDrivers": true,
+        "installOpsAgent": true,
+        "policy": {
+          "provisioningModel": "STANDARD",
+          "reservation": "NO_RESERVATION",
+          "machineType": "a2-highgpu-2g",
+          "disks": [
+            {
+              "newDisk": {
+                "sizeGb": 1536,
+                "type": "pd-ssd"
+              },
+              "deviceName": "new-pd"
+            }
+          ],
+          "bootDisk": {
+            "sizeGb": 300,
+            "image": "projects/batch-custom-image/global/images/family/batch-debian-11-official"
+          }
+        }
+      }
+    ],
+    "location": {
+      "allowedLocations": [
+        "zones/asia-northeast3-b"
+      ]
+    }
+  },
+  "labels": {
+    "goog-batch-dynamic-workload-scheduler": "true",
+    "env": "experimental",
+    "user": "qwiklabs"
+  },
+  "logsPolicy": {
+    "destination": "CLOUD_LOGGING"
+  }
+}
