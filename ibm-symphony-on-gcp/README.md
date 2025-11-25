@@ -32,10 +32,10 @@ The copied files should look like:
 
 1.  **Configure the Blueprint:** Open the `symphony_deployment.yaml` file and edit the variables under the `vars` section to match your environment. At a minimum, you need to set `project_id` and `sym_source_bucket`.
 
-2.  **Deploy the Cluster:** Use the `ghpc` command to deploy the Symphony cluster:
+2.  **Deploy the Cluster:** Use the `gcluster` command to deploy the Symphony cluster:
 
     ```bash
-    ghpc deploy symphony.yaml -d symphony_deployment.yaml --auto-approve
+    gcluster deploy symphony.yaml -d symphony_deployment.yaml --auto-approve
     ```
 
 3.  **Access the Cluster:** Once the deployment is complete, you can SSH into the master node to manage the Symphony cluster.
