@@ -33,11 +33,11 @@ To install the `gcluster` CLI tool, follow these steps:
         gcloud auth login
         ```
 
-3.  **Grant  Credentials**:
-    *   Grant user access credentials to Terraform for authentication:
-        ```bash
-        gcloud auth application-default login
-        ```
+3. **Grant  Credentials**:
+    * Grant user access credentials to Terraform for authentication:
+```bash
+gcloud auth application-default login
+```
 
 5.  **Clone the Cluster Toolkit GitHub repository**:
 
@@ -48,8 +48,7 @@ cd ~
 git clone https://github.com/GoogleCloudPlatform/cluster-toolkit
 ```
 
-6.  **Build the Cluster Toolkit binary**:
-   > Make sure you have `make` installed.
+6.  **Build the Cluster Toolkit binary**: Make sure you have `make` installed.
 
     ```bash
     cd cluster-toolkit
