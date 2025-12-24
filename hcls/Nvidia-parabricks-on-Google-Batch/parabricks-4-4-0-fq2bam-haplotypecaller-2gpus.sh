@@ -38,5 +38,5 @@ pbrun haplotypecaller --num-gpus 2\
       --out-variants /mnt/data/variants.vcf
 
 
-/usr/local/gcloud/google-cloud-sdk/bin/gsutil cp /mnt/data/fq2bam_output.bam gs://thomashk-test2/parabricks/output/a2/
-/usr/local/gcloud/google-cloud-sdk/bin/gsutil cp /mnt/data/variants.vcf gs://thomashk-test2/parabricks/output/a2/
+/usr/local/gcloud/google-cloud-sdk/bin/gcloud storage cp /mnt/data/fq2bam_output.bam gs://thomashk-test2/parabricks/output/a2/
+/usr/local/gcloud/google-cloud-sdk/bin/gcloud storage cp /mnt/data/variants.vcf gs://thomashk-test2/parabricks/output/a2/

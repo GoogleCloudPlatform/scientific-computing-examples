@@ -58,9 +58,9 @@ echo "egoadmin hard nofile 65536" >> /etc/security/limits.conf
  
 # Get installers, etc
 
-/usr/bin/gsutil cp gs://${sym_source_bucket}/${sym_installer} /tmp
-/usr/bin/gsutil cp gs://${sym_source_bucket}/${sym_entitlement} /tmp
-/usr/bin/gsutil cp gs://${sym_source_bucket}/${sym_fixpack} /tmp
+gcloud storage cp gs://${sym_source_bucket}/${sym_installer} /tmp
+gcloud storage cp gs://${sym_source_bucket}/${sym_entitlement} /tmp
+gcloud storage cp gs://${sym_source_bucket}/${sym_fixpack} /tmp
 
 ##### Run installer
 

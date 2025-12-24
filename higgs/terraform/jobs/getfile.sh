@@ -40,7 +40,7 @@ download_data_file() {
   log "downloading..."
   log "  from: $from"
   log "  to: $to"
-  gsutil -m cp $from $to
+  gcloud storage cp $from $to
 }
 
 main() {
