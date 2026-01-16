@@ -16,7 +16,7 @@ This assumes you have run `gcloud config set project ...`
 
 Copy the deepvariant shell script to your bucket.
 '''
-gsutil cp deepvariant.sh gs://<my_bucket>/ 
+gcloud storage cp deepvariant.sh gs://<my_bucket>/ 
 '''
 
 

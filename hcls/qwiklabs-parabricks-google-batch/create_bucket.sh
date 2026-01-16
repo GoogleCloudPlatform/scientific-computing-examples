@@ -19,7 +19,7 @@ BUCKET_UUID_TMP=$(uuid || uuidgen)
 BUCKET_UUID=$(echo ${BUCKET_UUID_TMP} | tr '[:upper:]' '[:lower:]' | cut -c1-8)
 export BUCKET_NAME="parabricks-bucket-${BUCKET_UUID}"
 
-gsutil mb gs://${BUCKET_NAME}
-gsutil cp -r  parabricks.sh gs://${BUCKET_NAME}
+gcloud storage buckets create gs://${BUCKET_NAME}
+gcloud storage cp --recursive  parabricks.sh gs://${BUCKET_NAME}
 
 envsubst < ${TEMPLATE_FILE} > ${OUTPUT_FILE}

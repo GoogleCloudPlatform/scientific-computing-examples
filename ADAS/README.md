@@ -117,7 +117,7 @@ gcloud beta functions list
 
 Use `gsutil` to upload a video from your local directory to the GCS bucket:
 ```
-gsutil cp my_video.mp4 gs://${IV_BUCKET_NAME}
+gcloud storage cp my_video.mp4 gs://${IV_BUCKET_NAME}
 ```
 This will automatically kick off the pipeline.
 
@@ -149,4 +149,3 @@ To find videos with a specific label, update the SQL in this file.
 ```
 bq --project_id ${PROJECT_ID} query < sql_videos_for_label.txt
 ```
-

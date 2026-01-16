@@ -108,7 +108,7 @@ gcloud storage buckets create gs://${MY_NEW_BUCKET_TESTING}  --uniform-bucket-le
 
 ### Copy python script to bucket
 ```
-gsutil cp python_write.py gs://${MY_NEW_BUCKET_TESTING}/python_write.py
+gcloud storage cp python_write.py gs://${MY_NEW_BUCKET_TESTING}/python_write.py
 
 ```
 
@@ -189,9 +189,8 @@ python batch.py --args_file args.toml
 ```
 This will start 48 jobs, each as an indexed job. There will be output on GCS. To view this:
 ```
-gsutil ls gs://${MY_NEW_BUCKET_TESTING}/
+gcloud storage ls gs://${MY_NEW_BUCKET_TESTING}/
 ```
 
 These are the files created by the job.
-
 

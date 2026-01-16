@@ -15,7 +15,7 @@ This assumes you have run `gcloud config set project ...`
 ### Copy cuQuantum Python ciruit simulation file to bucket
 The easiest way to get you python script to the container is to copy it to your bucket. Then the batch script can run it:
 ```
-gsutil cp cuquantum-noise.py gs://<my_bucket>
+gcloud storage cp cuquantum-noise.py gs://<my_bucket>
 ```
 
 ## Step 1, update the YAML file
@@ -39,7 +39,7 @@ python3 ../batch.py  --config_file cuquantum-noise.yaml  --create_job
 ```
 
 ## Look at results
-The easiest way to see the results is with `gsutil`.  But first you need the job name:
+The easiest way to see the results is with `gcloud storage`.  But first you need the job name:
 ```
 python3 ../batch.py  --config_file cuquantum-noise.yaml  --list_jobs 
 ```
@@ -48,7 +48,7 @@ Your job should will be in the list. Something like:
 Listing jobs
 projects/<my_project>/locations/us-central1/jobs/cuquantum-noise-xxxxxxxx       4
 ```
-Then you can use this info to run a gsutil command:
+Then you can use this info to run a gcloud storage command:
 ```
-gsutil cat gs://<my_bucket>/dir_cuquantum-noise-xxxxxxxx/*.out
+gcloud storage cat gs://<my_bucket>/dir_cuquantum-noise-xxxxxxxx/*.out
 ```
