@@ -27,7 +27,7 @@
           },
           {
             "gcs": {
-              "remotePath": "parabricks-bucket-c4cf478c"
+              "remotePath": "parabricks-bucket-8fbed561"
             },
             "mountPath": "/mnt/gcs/share"
           }
