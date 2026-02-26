@@ -161,7 +161,7 @@ Go to the jobs page, [Console for Batch](https://console.cloud.google.com/batch/
 ### View outputs in your Storage bucket
 In this script, output is written to the mounted GCS bucket, which you can [see in the Console], or using the `gsutil` command.
 ```
-gsutil ls gs://<my_bucket_name>
+gcloud storage ls gs://<my_bucket_name>
 ```
 Exploring the bucket you can find your output.
 

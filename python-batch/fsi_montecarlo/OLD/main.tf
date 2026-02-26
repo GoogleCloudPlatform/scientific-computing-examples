@@ -274,7 +274,7 @@ resource "google_storage_bucket" "fsi_bucket" {
 
   public_access_prevention = "enforced"
   provisioner "local-exec" {
-    command = "gsutil cp iteration.sh pubsub_bq.py requirements.txt gs://${var.name_prefix}_bucket_${var.name_suffix}"
+    command = "gcloud storage cp iteration.sh pubsub_bq.py requirements.txt gs://${var.name_prefix}_bucket_${var.name_suffix}"
   }
   depends_on = [
     local_file.python_script

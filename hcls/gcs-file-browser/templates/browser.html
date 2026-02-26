@@ -3,37 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <title>JSON File Browser (GCS)</title>
-    <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1, h2, h3 { color: #333; }
-        label { display: block; margin-top: 10px; }
-        input[type="file"], input[type="text"], button {
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button { background-color: #007bff; color: white; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .message { padding: 10px; margin-top: 15px; border-radius: 4px; }
-        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        ul { list-style-type: none; padding: 0; }
-        li { background-color: #e9ecef; margin-bottom: 5px; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
-        li a { text-decoration: none; color: #007bff; }
-        li a:hover { text-decoration: underline; }
-        .file-actions a { margin-left: 10px; }
-        pre { background-color: #eee; padding: 10px; border: 1px solid #ccc; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
-        .breadcrumb { margin-bottom: 15px; }
-        .breadcrumb a, .breadcrumb span { margin-right: 5px; }
-    </style>
+   <style>
+    /* --- General Body & Typography --- */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+        margin: 0;
+        background-color: #f4f7f6; /* A calmer, light gray background */
+        color: #2d3748; /* Dark gray for better readability */
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 2rem auto; /* Center the container with top/bottom margin */
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    h1, h2, h3 {
+        color: #1a202c;
+        margin-bottom: 1rem;
+    }
+    h1 { font-size: 2.25rem; }
+    h2 { font-size: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.5rem; }
+    h3 { font-size: 1.25rem; color: #4a5568; }
+
+    hr { border: 0; border-top: 1px solid #e2e8f0; }
+    a { color: #2b6cb0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* --- Header & Image --- */
+    .header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .header img {
+        max-width: 250px;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    /* --- Forms & Buttons --- */
+    form { margin-top: 1.5rem; }
+    label { font-weight: 600; display: block; margin-bottom: 0.5rem; }
+    input[type="file"], input[type="text"] {
+        width: 100%;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+        border: 1px solid #cbd5e0;
+        border-radius: 4px;
+        box-sizing: border-box;
+        transition: box-shadow 0.2s;
+    }
+    input[type="file"] {
+      font-size: 0.9rem;
+    }
+    input:focus {
+        outline: none;
+        border-color: #4299e1;
+        box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+    }
+    button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        background-color: #2b6cb0;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    button:hover { background-color: #2c5282; }
+
+    /* --- File & Folder Lists --- */
+    ul { list-style-type: none; padding: 0; }
+    li {
+        margin-bottom: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.2s, box-shadow 0.2s;
+    }
+    li:hover {
+        background-color: #edf2f7;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .file-actions a { margin-left: 1rem; }
+
+    /* --- Breadcrumbs --- */
+    .breadcrumb {
+        font-size: 0.9rem;
+        color: #718096;
+        margin-bottom: 1.5rem;
+    }
+    .breadcrumb a {
+        color: #4a5568;
+        font-weight: 500;
+    }
+</style>
 </head>
 <body>
     <div class="container">
-        <h1>JSON File Browser (GCS)</h1>
-        <h3>gsutil Path: {{ gsutil_path }}</h3>
+        <img src="/static/images/alphafold.jpg" alt="alphafold" height="300">
+        <h1>Alphafold Server File UPLOAD</h1>
 
         {% if message %}
             <div class="message {{ 'success' if success else 'error' }}">{{ message }}</div>
@@ -51,14 +127,16 @@
         </div>
 
 
-        <h2>Upload JSON File to Current Folder</h2>
+        <h2>Upload Input JSON File to server</h2>
         <form method="POST" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
             <input type="hidden" name="current_prefix" value="{{ current_path_for_upload }}">
-            <label for="file">Choose JSON file:</label>
+            <label for="file">Choose Input JSON file:</label>
             <input type="file" name="file" id="file" accept=".json" required>
             <br>
+            <!--
             <label for="subfolder">Optional: Upload to new subfolder within '{{current_path_display or "root"}}' (e.g., new_folder_name):</label>
             <input type="text" name="subfolder" id="subfolder" placeholder="e.g., data_v2 (no slashes)">
+            -->
             <br><br>
             <button type="submit">Upload File</button>
         </form>
@@ -94,7 +172,7 @@
                         <span>📄 {{ file_obj.name.replace(current_path_for_upload, '').strip('/') }}</span>
                         <span class="file-actions">
                             <a href="{{ url_for('retrieve_file_get', full_path=file_obj.name) }}">View Raw</a>
-
+                            <a href="{{ url_for('retrieve_signed_url', full_path=file_obj.name) }}">Signed URL</a>
                         </span>
                     </li>
                 {% endfor %}

@@ -1,0 +1,41 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+
+vars:
+# This should be unique across all of your Cluster
+  # Toolkit Deployments.
+  deployment_name: DEPLOYMENT_NAME
+
+  # Your GCP Project ID
+  project_id: PROJECT_ID
+
+  # The GCP Region used for this deployment.
+  region: COMPUTE_REGION
+
+  # The GCP Zone used for this deployment.
+  zone: COMPUTE_ZONE
+
+  sym_installer: sym-7.3.2.0_x86_64.bin
+  sym_source_bucket: mybucket
+  sym_fixpack: sym-7.3.2.0_x86_64_build601711.tar.gz
+  sym_entitlement: sym_adv_entitlement.dat
+  symphony_install_dir: /opt/ibm/symphony
+  admin_password: admin
+  service_account_email: MYPROJECT_NUMBER-compute@developer.gserviceaccount.com
+  pubsub_subscription: hf-gce-vm-events-sub
+  pubsub_topic: hf-gce-vm-events
+  sink_name: hf-gce-vm-events-sink
