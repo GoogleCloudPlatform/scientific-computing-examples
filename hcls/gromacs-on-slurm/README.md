@@ -102,9 +102,9 @@ the follwing into your Slurm login terminal.
 tee gromacs.job << JOB
 #!/bin/bash
 #SBATCH --job-name=gromacs
-#SBATCH --partition=g2x4
-#SBATCH --output=%3A/out_%a.txt
-#SBATCH --error=%3A/err.txt
+#SBATCH --partition=g4x4
+#SBATCH --output=%3A/out2.txt
+#SBATCH --error=%3A/out1.txt
 #SBATCH --array=0
 #SBATCH --gres=gpu:4 
 #
