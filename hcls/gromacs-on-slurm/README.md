@@ -73,7 +73,6 @@ To run GROMACS, configuration files are required. NVIDIA shares information for 
 ```
 wget https://zenodo.org/record/3893789/files/GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP.tar.gz 
 tar xf GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP.tar.gz 
-cd GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP/stmv
 ```
 
 ## Convert Docker to Apptainer
@@ -124,6 +123,12 @@ The command to submit a job with Slurm is [sbatch](https://slurm.schedmd.com/sba
 Submit the job.
 ```
 sbatch gromacs.job
+```
+
+## See the job in the queue
+
+```
+squeue
 ```
 
 ## Review the output
