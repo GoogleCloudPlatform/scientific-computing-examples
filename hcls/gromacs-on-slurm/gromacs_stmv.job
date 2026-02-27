@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --job-name=gromacs
+#SBATCH --partition=g4x4
+#SBATCH --output=%3A/out2.txt
+#SBATCH --error=%3A/out1.txt
+#SBATCH --array=0
+#SBATCH --gres=gpu:4 
+#
+
+# Build SIF, if it doesn't exist
+
+echo "Running: "  ${dirs[$SLURM_ARRAY_TASK_ID]}
+cd GROMACS_heterogeneous_parallelization_benchmark_info_and_systems_JCP/stmv
+apptainer run --nv ~/gromacs.sif gmx mdrun -ntmpi 8 -ntomp 16 -nb gpu -pme gpu -npme 1 -update gpu -bonded gpu -nsteps 100000 -resetstep 90000 -noconfout -dlb no -nstlist 300 -pin on -v -gpu_id 0123 
