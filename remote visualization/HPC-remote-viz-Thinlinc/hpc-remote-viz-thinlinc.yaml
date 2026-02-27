@@ -1,0 +1,177 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+# See instructions at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/
+
+blueprint_name: rocky8-nvidia-thinlinc
+
+vars:
+  project_id: ## Set GCP Project ID Here ##
+  deployment_name: rocky8-thinlinc
+  region: us-central1
+  zone: us-central1-b
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: network
+    #source: modules/network/pre-existing-vpc
+    #settings:
+    #  project_id: $(vars.project_id)
+    #  region: us-central1
+    #  network_name: custom-network1
+    #  subnetwork_name: us-central1-subnet1-ip4
+    source: modules/network/vpc
+      settings:
+        firewall_rules:
+        - name: ssh-my-machine
+          direction: INGRESS
+          ranges: [<your-ip-address>/32]
+          allow:
+          - protocol: tcp
+              ports: [22]
+  # By default a firewall rule is created to allow inbound SSH access from Identity-Aware Proxy. 
+  #A user must have the IAP-Secured Tunnel User (roles/iap.tunnelResourceAccessor) IAM role to be able to SSH over IAP
+
+  - id: install-nvidia-virtualgl
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+        - type: shell
+          destination: "/tmp/install_nvidia.sh"
+          content: |
+            #!/bin/bash
+            curl -L https://storage.googleapis.com/compute-gpu-installation-us/installer/latest/cuda_installer.pyz --output cuda_installer.pyz
+            python3 cuda_installer.pyz --silent --driver --utilitys
+            python3 cuda_installer.pyz install_cuda
+            dnf groupinstall "Workstation" "Development Tools" -y
+            # Install VirtualGL
+            dnf install -y \
+                mesa-utils \
+                gdm \
+                pkgconf-pkg-config \
+                libglvnd-devel 
+            sudo dnf install -y gcc-toolset-12
+            source /opt/rh/gcc-toolset-12/enable
+            wget -O /tmp/virtualgl-3.1.4.x86_64.rpm https://github.com/VirtualGL/virtualgl/releases/download/3.1.4/virtualgl-3.1.4.x86_64.rpm
+            dnf localinstall -y /tmp/virtualgl-3.1.4.x86_64.rpm
+            # Extract the PCI BusID automatically
+            PCI_ID=`nvidia-xconfig --query-gpu-info | grep "PCI BusID " | head -n 1 | cut -d':' -f2-99 | xargs`
+            # Configure nvidia-xconfig
+            nvidia-xconfig -a --allow-empty-initial-configuration --enable-all-gpus --virtual=1920x1200 --busid=$PCI_ID
+            # Disable HardDPMS in /etc/X11/xorg.conf
+            sed -i '/Section "Device"/a \    Option      "HardDPMS" "false"' /etc/X11/xorg.conf
+            # Configure VirtualGL
+            /opt/VirtualGL/bin/vglserver_config +glx +s +f -t
+            systemctl set-default graphical.target
+            systemctl daemon-reload
+            systemctl enable gdm
+            systemctl start gdm
+            # Install Thinlinc Server
+            wget https://www.cendio.com/downloads/server/tl-4.20.0-server.zip
+            unzip tl-4.20.0-server.zip
+            cd tl-4.20.0-server
+            dnf install packages/thinlinc-server-4.20.0-4392.x86_64.rpm -y
+            echo "Generating ThinLinc setup answers file..."
+            OUTPUT_FILE="/tmp/ANSWER-FILE"
+            cat << 'EOF' > "$OUTPUT_FILE"
+            # ThinLinc tl-setup answers file
+            #
+            # Edit this file to suit your systems and run:
+            #  /opt/thinlinc/sbin/tl-setup -a THIS-FILE
+            # Accept the end user license agreement
+            accept-eula=yes
+            # Configure as master or agent
+            server-type=master
+            # How should old Hiveconf files be handled?
+            migrate-conf=ignore
+            # Install required libraries and binaries?
+            install-required-libs=yes
+            # Install NFS client packages?
+            install-nfs=no
+            # Install OpenSSH server?
+            install-sshd=no
+            # Install GTK+ and PyGObject packages?
+            install-gtk=yes
+            # Install python-ldap packages?
+            install-python-ldap=no
+            # How to determine externally reachable hostname
+            agent-hostname-choice=ip
+            # Externally reachable hostname (only used if manual)
+            #manual-agent-hostname=<hostname>
+            # Send administrative messages to:
+            email-address=thomashk@thomashk.altostrat.com
+            # Password for tlwebadm (generate with "/opt/thinlinc/sbin/tl-gen-auth"):
+            tlwebadm-password=
+            # Set up the thinlocal printing queue?
+            #setup-thinlocal=yes|no
+            # Set up the nearest printing queue?
+            #setup-nearest=yes|no
+            # Configure the local firewall for OpenSSH service?
+            #setup-firewall-ssh=yes|no
+            # Configure the local firewall for ThinLinc Web Access service?
+            #setup-firewall-tlwebaccess=yes|no
+            # Configure the local firewall for ThinLinc Web Administration service?
+            #setup-firewall-tlwebadm=yes|no
+            # Configure the local firewall for ThinLinc master service?
+            #setup-firewall-tlmaster=yes|no
+            # Configure the local firewall for ThinLinc agent service?
+            #setup-firewall-tlagent=yes|no
+            # Set up SELinux policy module?
+            setup-selinux=no
+            # Set up AppArmor configuration?
+            setup-apparmor=no
+            # What should tl-setup do when it encounters a question without a matching answer in the answer file?
+            missing-answer=abort
+            EOF
+            echo "Done! File saved as $OUTPUT_FILE"
+            chmod 600 "$OUTPUT_FILE"
+            /opt/thinlinc/sbin/tl-setup -a "$OUTPUT_FILE"
+            TARGET_HOST="localhost"
+            CONF_FILE="/opt/thinlinc/etc/conf.d/vsmagent.hconf"
+            echo "Updating $CONF_FILE to use $TARGET_HOST..."
+            sed -i \
+                -e "s/^master_hostname=.*/master_hostname=$TARGET_HOST/" \
+                -e "s/^agent_hostname=.*/agent_hostname=$TARGET_HOST/" \
+                "$CONF_FILE"
+            echo "Update complete. Current configuration:"
+            grep -E "master_hostname=|agent_hostname=" "$CONF_FILE"
+            systemctl restart vsmagent
+            gsettings set org.gnome.desktop.screensaver lock-enabled false
+
+          description: "Install Nvidia Thinlinc Server"
+
+  - id: compute
+    source: modules/compute/vm-instance
+    use: 
+    - network
+    - install-nvidia-virtualgl
+    settings:
+      instance_image:
+        family: slurm-gcp-6-11-hpc-rocky-linux-8
+        project: schedmd-slurm-public
+      add_deployment_name_before_prefix: true
+      name_prefix: g4-gpu-vm
+      machine_type: g4-standard-48
+      disk_type: hyperdisk-balanced
+      disable_public_ips: true
+      guest_accelerator:
+      - type: nvidia-rtx-pro-6000-vws
+        count: 1
