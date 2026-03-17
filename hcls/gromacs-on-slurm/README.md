@@ -50,7 +50,15 @@ Clone the tutorial repository. If you used the "Open in Google Cloud Shell" butt
 ```
 ## Run the Cluster Toolkit blueprint
 Execute the `gcluster` command. If the Toolkit is installed in the \$HOME directory, the command is:
+### Choice of DWS or Spot VM provisioning
+There two blueprints provided in this example, one for Spot VMs `gromacs-slurm-spot.yaml and the other for Dynamic Workload Scheduler (DWS)
+`gromacs-slurm.yaml`. Both will function equally well for this example, although some may not 
 
+Spot VMs utilize spare Google Cloud capacity for a high discount, but they are preemptible—Google can reclaim them with only a 30-second notice. These are best for stateless, fault-tolerant batch jobs that can handle frequent interruptions and restarts.
+
+Dynamic Workload Scheduler (DWS) is designed for high-demand resources like GPUs and TPUs, offering guaranteed, uninterrupted access for a fixed duration. Whether using Flex Start (queuing until all resources are available) or Calendar mode (booking future windows), DWS is intended for complex AI training and HPC simulations that require continuous uptime.
+
+### Run the command
 ```
 gcluster deploy gromacs-slurm.yaml \
 --skip-validators="test_apis_enabled"  --auto-approve \
