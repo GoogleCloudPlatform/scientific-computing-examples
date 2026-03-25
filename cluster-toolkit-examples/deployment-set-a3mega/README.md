@@ -34,13 +34,13 @@ https://ssh.cloud.google.com/cloudshell/editor?cloudshell_git_repo=https://githu
 
 Downloading the files from this repository. You can run the following command at the cloud shell session 
 ```bash
-wget https://github.com/GooggleCloudPlatform/cluster-toolkit/deployment-set-a3mega/archive/refs/heads/main.zip
-unzip main.zip
+git clone https://github.com/GoogleCloudPlatform/scientific-computing-examples.git
+cd scientific-computing-examples/cluster-toolkit-examples/deployment-set-a3mega
 ```
 
 Get the tutorial up in the Cloud Shell session:
 ```bash
-teachme deployment-set-a3mega-main/tutorial.md
+teachme tutorial.md
 ```
 
 Now you can follow the tutorial at the Cloud Shell session. Happy Computing! 
