@@ -1,0 +1,38 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": []
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "code",
+      "execution_count": null,
+      "metadata": {
+        "id": "Jr5BcJwpmqeZ"
+      },
+      "outputs": [],
+      "source": [
+        "x=1"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/user/repository/blob/branch/path/to/notebook.ipynb)"
+      ],
+      "metadata": {
+        "id": "iV-xeWcOmrgI"
+      }
+    }
+  ]
+}
