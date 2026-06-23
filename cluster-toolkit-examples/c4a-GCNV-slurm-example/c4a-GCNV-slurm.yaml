@@ -1,0 +1,154 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+blueprint_name: slurm-c4a
+vars:
+  project_id: ## Set GCP Project ID Here ##
+  deployment_name: c4a-gcnv
+  region: us-central1
+  zone: us-central1-a
+  disk_size_gb: 200
+  new_image:
+    family: arm-slurm
+    project: $(vars.project_id)
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+deployment_groups:
+- group: primary
+  modules:
+
+  # Source is an embedded module, denoted by "modules/*" without ./, ../, /
+  # as a prefix. To refer to a local module, prefix with ./, ../ or /
+
+  - id: c4a-slurm-net-0
+    source: modules/network/vpc
+
+  - id: private_service_access
+    source: modules/network/private-service-access
+    use:
+    - c4a-slurm-net-0
+    settings:
+      prefix_length: 24
+      service_name: "netapp.servicenetworking.goog"
+      deletion_policy: "ABANDON"
+
+  - id: netapp_pool
+    source: modules/file-system/netapp-storage-pool
+    use: [c4a-slurm-net-0, private_service_access]
+    settings:
+      pool_name: $(vars.deployment_name)-eda-pool
+      capacity_gib: 20000
+      service_level: "EXTREME"
+      region: $(vars.region)
+
+  - id: homefs
+    source: modules/file-system/netapp-volume
+    use: [netapp_pool]              # Create this pool using the netapp-storage-pool module
+    settings:
+      volume_name: "eda-shared"
+      capacity_gib: 1000           # Size up to available capacity in the pool
+      large_capacity: false
+      local_mount: "/home"        # Mount point at client when client uses USE directive
+      mount_options: "rw"           # Allows customizing mount options for special workloads
+      protocols: ["NFSV3","NFSV4"]  # List of protocols. ["NFSV3], ["NFSv4] or ["NFSV3, "NFSV4"]
+      region: $(vars.region)
+      unix_permissions: "0777"
+
+  - id: script
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - type: shell
+        destination: install-ml-libraries.sh
+        content: |
+          #!/bin/bash
+          # this script is designed to execute on Slurm images published by SchedMD that:
+          # - are based on Debian distribution of Linux
+          # - have NVIDIA drivers pre-installed
+          apt-get update -y
+          apt-get install -y lua-posix
+          set -e -o pipefail
+
+- group: packer
+  modules:
+  - id: custom-image
+    source: modules/packer/custom-image
+    kind: packer
+    use:
+    - c4a-slurm-net-0
+    - script
+    settings:
+      omit_external_ip: false
+      source_image_family: "slurm-gcp-6-11-ubuntu-2204-lts-arm64"  
+      source_image_project_id: ["schedmd-slurm-public"]
+      disk_size: $(vars.disk_size_gb)
+      disk_type: hyperdisk-balanced
+      image_family: $(vars.new_image.family)
+      machine_type: c4a-highmem-1
+      state_timeout: 20m
+
+- group: cluster
+  modules:
+  - id: remotedesktop
+    source: community/modules/remote-desktop/chrome-remote-desktop
+    use: [c4a-slurm-net-0, homefs]
+    settings:
+      install_nvidia_driver: true
+      add_deployment_name_before_prefix: true
+      name_prefix: chrome-remote-desktop
+      guest_accelerator:
+      - type: nvidia-tesla-t4-vws
+        count: 1
+
+  - id: c4a_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [c4a-slurm-net-0]
+    settings:
+      bandwidth_tier: gvnic_enabled
+      machine_type: c4a-standard-4
+      node_count_static: 2
+      node_count_dynamic_max: 0
+      enable_placement: false
+      disk_type: hyperdisk-balanced
+      on_host_maintenance: TERMINATE
+      instance_image: $(vars.new_image)
+      instance_image_custom: true
+
+  - id: c4a_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use:
+    - c4a_nodeset
+    settings:
+      exclusive: false
+      partition_name: c4a
+      is_default: true
+      partition_conf:
+        ResumeTimeout: 900
+        SuspendTimeout: 600
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [c4a-slurm-net-0]
+    settings:
+      machine_type: n2-standard-4
+      enable_login_public_ips: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use: [c4a-slurm-net-0, c4a_partition, slurm_login, homefs]
+    settings:
+      enable_controller_public_ips: true
+      cloud_parameters:
+        slurmd_timeout: 900
