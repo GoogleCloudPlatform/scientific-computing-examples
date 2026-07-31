@@ -7,6 +7,7 @@ This repository provides a collection of examples for running scientific computi
 The repository is organized into the following top-level directories:
 
 - `ADAS`: Scripts for setting up an intelligent content filtering pipeline using serverless tools on GCP.
+- `alphaevolve-hpc`: An open-source, scalable platform for running Google's AlphaEvolve evolutionary algorithm framework on Google Cloud Batch and Vertex AI.
 - `apptainer`: Examples of using Apptainer (formerly Singularity) for containerizing scientific applications.
 - `cluster-toolkit-examples`: Blueprints and scripts for deploying specialized Slurm and GKE clusters (e.g., using A3 Mega, H4D, DWS) with the Google Cloud Cluster Toolkit.
 - `custom-workbenches`: Instructions for creating custom Vertex AI Workbench instances for scientific machine learning.
@@ -36,6 +37,8 @@ Most of the examples use the [Google Cloud HPC Toolkit](https://cloud.google.com
 
 Here is a curated list of examples from different domains:
 
+- **AlphaEvolve HPC:**
+  - [Automated Evolutionary Algorithm Code Discovery & Optimization on Google Cloud Batch](alphaevolve-hpc/README.md)
 - **Apptainer:**
   - [Building Apptainer (SIF) Images on Google Cloud](apptainer/builders/README.md)
   - [Apptainer Enabled Slurm Clusters](apptainer/cluster/README.md)

@@ -1,0 +1,182 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+blueprint_name: alpha-evolve-platform
+
+vars:
+  # === GCP Project & Deployment Infrastructure ===
+  deployment_name: $(vars.infra_deployment_name)
+
+  # === Paths & Build Config (Internal) ===
+  cloud_build_dir: $(ghpc_stage("."))
+
+  # === Messaging (Pub/Sub) ===
+  pubsub_topic: $(vars.infra_deployment_name)-batch-notifications
+
+  # === AlphaEvolve API Config ===
+  location: global
+  base_url: discoveryengine.googleapis.com
+  collection: default_collection
+  engine: $(vars.infra_deployment_name)-experiment-engine # name of AE Discovery Engine
+  assistant: default_assistant # name of the assistant in AlphaEvolve, current default can't be changed.
+
+  # === Colab Enterprise VM Config ===
+  colab_machine_type: n2-standard-4
+  mount_path: "/mnt/disks/share"
+
+  # === Internal Batch Configuration ===
+  controller_batch_config_file: $(ghpc_stage("./infrastructure/batch_configs/controller-batch.yaml"))
+  validation_batch_config_file: $(ghpc_stage("./infrastructure/batch_configs/validation-batch.yaml"))
+
+deployment_groups:
+- group: primary
+  modules:
+  # Enable necessary APIs
+  - id: apis
+    source: community/modules/project/service-enablement
+    settings:
+      gcp_service_list:
+      - compute.googleapis.com
+      - batch.googleapis.com
+      - pubsub.googleapis.com
+      - storage.googleapis.com
+      - artifactregistry.googleapis.com
+      - cloudbuild.googleapis.com
+      - discoveryengine.googleapis.com
+      - serviceusage.googleapis.com
+      - iam.googleapis.com
+      - aiplatform.googleapis.com
+
+  # Create Cloud Batch Service Agent identity
+  - id: create-batch-identity
+    source: ./infrastructure/community/modules/project/service-agent
+    settings:
+      project_id: $(vars.project_id)
+      service: batch.googleapis.com
+
+  # Specialized Service Accounts for Cloud Build and Controller
+  - id: cloud-build-sa
+    source: modules/project/service-account
+    settings:
+      name: "build-sa"
+      project_roles:
+        - artifactregistry.writer
+        - logging.logWriter
+        - storage.objectViewer
+
+  - id: controller-sa
+    source: modules/project/service-account
+    settings:
+      name: "ctrl-sa"
+      project_roles:
+        - batch.jobsEditor
+        - batch.agentReporter
+        - artifactregistry.reader
+        - discoveryengine.editor
+        - logging.logWriter
+
+  - id: bucket-iam
+    source: git::https://github.com/terraform-google-modules/terraform-google-iam.git//modules/storage_buckets_iam
+    settings:
+      storage_buckets:
+        - $(vars.existing_bucket_name)
+      mode: additive
+      bindings:
+        roles/storage.objectUser:
+          - "serviceAccount:$(controller-sa.service_account_email)"
+          - "serviceAccount:$(cloud-build-sa.service_account_email)"
+
+  - id: project-info
+    source: ./infrastructure/community/modules/project/project-info
+    settings:
+      project_id: $(vars.project_id)
+
+# Pub/Sub topic for Batch job notifications
+- group: pubsub-topic
+  modules:
+  - id: pubsubs
+    source: git::https://github.com/terraform-google-modules/terraform-google-pubsub.git
+    settings:
+      project_id: $(vars.project_id)
+      topic: $(vars.pubsub_topic)
+      create_topic: true
+
+# Pub/Sub IAM permissions for Batch service agent
+- group: pubsub-iam
+  modules:
+  - id: pubsub-iam
+    source: git::https://github.com/terraform-google-modules/terraform-google-iam.git//modules/pubsub_topics_iam
+    settings:
+      project: $(vars.project_id)
+      pubsub_topics:
+        - $(pubsubs.topic)
+      mode: additive
+      bindings:
+        roles/pubsub.publisher:
+          - "serviceAccount:service-$(project-info.project_number)@gcp-sa-cloudbatch.iam.gserviceaccount.com"
+
+# Setup AlphaEvolve infrastructure
+- group: alpha-evolve-infra
+  modules:
+  - id: ae-infra-setup
+    source: ./infrastructure/community/modules/alpha-evolve/setup
+    settings:
+      stage: infra
+      project_id: $(vars.project_id)
+      region: $(vars.region)
+      bucket_name: $(vars.existing_bucket_name)
+      deployment_name: $(vars.deployment_name)
+      location: $(vars.location)
+      base_url: $(vars.base_url)
+      collection: $(vars.collection)
+      engine_id: $(vars.engine)
+      assistant_id: $(vars.assistant)
+      env_vars:
+        _PROJECT_ID: $(vars.project_id)
+        _REGION: $(vars.region)
+        _CLOUD_BUCKET_NAME: $(vars.existing_bucket_name)
+        _DEPLOYMENT_NAME: $(vars.deployment_name)
+        _PUBSUB_TOPIC: $(pubsubs.topic)
+        _MOUNT_PATH: $(vars.mount_path)
+        _CONTROLLER_SERVICE_ACCOUNT_EMAIL: $(controller-sa.service_account_email)
+        _LOCATION: $(vars.location)
+        _BASE_URL: $(vars.base_url)
+        _COLLECTION: $(vars.collection)
+        _ENGINE: $(vars.engine)
+        _ASSISTANT: $(vars.assistant)
+
+# Colab Enterprise Notebook
+- group: colab
+  modules:
+  - id: agent-platform-colab
+    source: ./infrastructure/community/modules/agent-platform/colab
+    settings:
+      project_id: $(vars.project_id)
+      region: $(vars.region)
+      deployment_name: $(vars.deployment_name)
+      mount_gcs_bucket: $(vars.existing_bucket_name)
+      mount_path: $(vars.mount_path)
+      colab_machine_type: $(vars.colab_machine_type)
+      environment_variables:
+        _CLOUD_BUCKET_NAME: $(vars.existing_bucket_name)
+        _PROJECT_ID: $(vars.project_id)
+      staged_files:
+        - object_path: config/requirements.txt
+          source_path: $(vars.cloud_build_dir)/infrastructure/requirements.txt
+        - object_path: config/controller-batch.yaml
+          source_path: $(vars.controller_batch_config_file)
+        - object_path: config/validation-batch.yaml
+          source_path: $(vars.validation_batch_config_file)
+        - object_path: notebook/run_notebook.ipynb
+          source_path: $(vars.cloud_build_dir)/google_framework/notebook/run_notebook.ipynb
