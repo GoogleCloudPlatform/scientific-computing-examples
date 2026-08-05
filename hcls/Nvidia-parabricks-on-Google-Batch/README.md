@@ -1,6 +1,6 @@
 # Google Batch Submission for NVIDIA Clara Parabricks Workloads
 
-This guide demonstrates how to submit NVIDIA Clara Parabricks workloads on Google Cloud Platform (GCP) using the GCP Batch service. It is based on the official NVIDIA Clara Parabricks tutorial: [https://docs.nvidia.com/clara/parabricks/4.5.0/tutorials/fq2bam_tutorial.html](https://docs.nvidia.com/clara/parabricks/4.5.0/tutorials/fq2bam_tutorial.html)
+This guide demonstrates how to submit NVIDIA Clara Parabricks workloads on Google Cloud Platform (GCP) using the GCP Batch service. It is based on the official NVIDIA Clara Parabricks tutorial: [https://docs.nvidia.com/clara/parabricks/tutorials/step-by-step-tutorials/fq-2-bam-tutorial](https://docs.nvidia.com/clara/parabricks/tutorials/step-by-step-tutorials/fq-2-bam-tutorial)
 
 This setup involves two key components:
 
