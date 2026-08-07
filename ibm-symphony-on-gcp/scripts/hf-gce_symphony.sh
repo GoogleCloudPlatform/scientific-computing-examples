@@ -21,15 +21,19 @@ export PROJECT_ID=$2
 
 git clone https://github.com/google/symphony-gcp.git
 cd symphony-gcp/hf-provider
-curl -LsSf https://astral.sh/uv/install.sh | sh
+
+curl -LsSf https://astral.sh/uv/0.11.26/install.sh | sh
+
 source /root/.local/bin/env
 uv venv
 source .venv/bin/activate
 uv pip install .
 uv pip install pyinstaller
 PYTHONPATH=src pyinstaller --onefile src/gce_provider/__main__.py --name hf-gce --paths .venv/lib/python3.9/site-packages
+PYTHONPATH=src pyinstaller --onefile src/gce_provider/pubsub.py --name hf-monitor --paths .venv/lib/python3.9/site-packages
 
 cp dist/hf-gce resources/gce_cli/1.2/providerplugins/gcpgce/bin/
+cp dist/hf-monitor resources/gce_cli/1.2/providerplugins/gcpgce/bin/
 cd resources/gce_cli
 
 # Create deployment tar
@@ -40,6 +44,7 @@ source ${EGO_TOP}/profile.platform
 
 # Untar in Hostfactory
 tar -xzf hf-gce.tgz  -C $HF_TOP
+
 
 # Update Config
 

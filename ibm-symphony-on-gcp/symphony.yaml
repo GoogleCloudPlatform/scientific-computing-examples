@@ -36,7 +36,7 @@ vars:
   sym_entitlement: sym_adv_entitlement.dat
   symphony_install_dir: /opt/ibm/symphony
   admin_password: admin
-  service_account_email: 658302879205-compute@developer.gserviceaccount.com
+  service_account_email: $(vars.service_account_email)
   pubsub_subscription: hf-gce-vm-events-sub
   pubsub_topic: hf-gce-vm-events
   sink_name: hf-gce-vm-events-sink
@@ -47,24 +47,30 @@ deployment_groups:
   - id: network
     source: modules/network/vpc
 
-  - id: topic
-    source: ./modules/pubsub_topic
+  - id: pubsub
+    source: git::https://github.com/terraform-google-modules/terraform-google-pubsub.git
     settings:
-      topic_name: $(vars.pubsub_topic)
-  - id: subscription
-    source: ./modules/pubsub_subscription
-    use:
-    - topic
+      project_id: $(vars.project_id)
+      topic: $(vars.pubsub_topic)
+      pull_subscriptions:
+      - name: $(vars.pubsub_subscription)
+  - id: pubsub_iam
+    source: git::https://github.com/terraform-google-modules/terraform-google-iam.git//modules/pubsub_subscriptions_iam
     settings:
-      subscription_name: $(vars.pubsub_subscription)
+      project: $(vars.project_id)
+      pubsub_subscriptions: $(pubsub.subscription_names)
+      bindings:
+        "roles/pubsub.subscriber":
+        - serviceAccount:$(vars.service_account_email)
   - id: sink
-    source: ./modules/logging_sink
-    use:
-    - topic
-    - subscription
+    source: git::https://github.com/terraform-google-modules/terraform-google-log-export.git
     settings:
-      sink_name: $(vars.sink_name)
-      log_filter: |
+      parent_resource_id: $(vars.project_id)
+      parent_resource_type: project
+      destination_uri: pubsub.googleapis.com/$(pubsub.id)
+      log_sink_name: $(vars.sink_name)
+      unique_writer_identity: true
+      filter: |
         logName="projects/$(vars.project_id)/logs/cloudaudit.googleapis.com%2Factivity" 
         resource.type=("gce_instance_group_manager" OR "gce_instance" ) 
         protoPayload.methodName=( 
@@ -132,47 +138,52 @@ deployment_groups:
   ## Create MIG instance templates
   - id: sym-mig-c2-30
     use: 
-    - network
     - sym-compute-script
-    source: ./modules/instance_template
+    source: git::https://github.com/terraform-google-modules/terraform-google-vm.git//modules/instance_template?ref=main
     settings:
-      service_account_email: $(vars.service_account_email)
+      subnetwork: $(network.subnetwork_name)
       source_image_family: $(vars.new_image.family)
       source_image_project: $(vars.new_image.project)
       name_prefix: $(vars.deployment_name)
       machine_type: c2-standard-30
-      advanced_machine_features:
-        threads_per_core: null # Use platform default value
+      threads_per_core: null # Use platform default value
+      service_account:
+        email: $(vars.service_account_email)
 
   - id: sym-mig-c2-4
     use: 
-    - network
     - sym-compute-script
-    source: ./modules/instance_template
+    source: git::https://github.com/terraform-google-modules/terraform-google-vm.git//modules/instance_template?ref=main
     settings:
+      subnetwork: $(network.subnetwork_name)
       source_image_family: $(vars.new_image.family)
       source_image_project: $(vars.new_image.project)
       name_prefix: $(vars.deployment_name)
       machine_type: c2-standard-4
-      advanced_machine_features:
-        threads_per_core: null # Use platform default value
+      threads_per_core: null # Use platform default value
+      service_account:
+        email: $(vars.service_account_email)
 
   ## Create MIGs
   - id: sym-mig-4
     source: community/modules/compute/mig
     settings:
       name: sym-mig-c2-4
+      base_instance_name: $(vars.deployment_name)-c2-4
       versions:
       - name: sym-mig-c2-4
         instance_template: $(sym-mig-c2-4.self_link)
+      target_size: 0
 
   - id: sym-mig-30
     source: community/modules/compute/mig
     settings:
       name: sym-mig-c2-30
+      base_instance_name: $(vars.deployment_name)-c2-30
       versions:
       - name: sym-mig-c2-30
         instance_template: $(sym-mig-c2-30.self_link)
+      target_size: 0
 
 - group: deploy-vms
   modules:
