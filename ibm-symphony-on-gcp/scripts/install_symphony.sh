@@ -22,6 +22,14 @@ export sym_entitlement=$3
 export symphony_install_dir=$4
 export sym_source_bucket=$5
 
+# 1. Remove the stale Berkeley DB (BDB) environment files
+rm -f /var/lib/rpm/__db*
+
+# 2. Rebuild the RPM database index
+rpm --rebuilddb
+
+# 3. Clean package manager caches to ensure a fresh state
+yum clean all
 ##### Update some packages
 
 yum install -y \
