@@ -2,7 +2,7 @@
 
 AlphaEvolve is an agentic capability created by Google that leverages Large Language Models (LLMs like Gemini) to programmatically discover and optimize code. By wrapping targeted functions or classes in your code, AlphaEvolve discovers faster, more accurate, or more resource-efficient implementations through an evolutionary loop.
 
-The **AlphaEvolve Solution** uses Google's Cluster Toolkit to deploy the necessary infrastructure for running scalable, automated, evolutionary code optimization experiments on Google Cloud. It helps you create a container to set up the adequate environment for your code to run in, choose the right VM family, and to run experiments at scale using Google Cloud Batch. The solution uses the AlphaEvolve API of Gemini Enterprise.
+The **AlphaEvolve HPC solution** uses Google's Cluster Toolkit to deploy the necessary infrastructure for running scalable, automated, evolutionary code optimization experiments on Google Cloud. It helps you create a container to set up the adequate environment for your code to run in, choose the right VM family, and to run experiments at scale using Google Cloud Batch. The solution uses the AlphaEvolve API of Gemini Enterprise.
 
 ---
 
@@ -27,7 +27,7 @@ Once you configure and deploy the solution, the actual AlphaEvolve optimization 
 
 ![Alpha Evolve Execution Workflow](https://services.google.com/fh/files/misc/ae_execution_workflow.png)
 
-### The crux of the AlphaEvolve Solution: Defining your problem and evaluation function
+### The crux of the AlphaEvolve HPC solution: Defining your problem and evaluation function
 
 To run your own optimization, you need to provide a starting program and an evaluation function (along with any dependencies required to run them). The solution comes with pre-defined examples of optimization problems and their evaluation functions. For detailed instructions, see the user guide section [Create your own optimization](#create-your-own-optimization).
 
