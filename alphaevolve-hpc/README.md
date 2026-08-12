@@ -1,4 +1,4 @@
-# AlphaEvolve Solution
+# AlphaEvolve HPC solution
 
 AlphaEvolve is an agentic capability created by Google that leverages Large Language Models (LLMs like Gemini) to programmatically discover and optimize code. By wrapping targeted functions or classes in your code, AlphaEvolve discovers faster, more accurate, or more resource-efficient implementations through an evolutionary loop.
 
