@@ -1,0 +1,42 @@
+# Cluster Toolkit Blueprint Skeleton (YAML)
+# This skeleton serves as a structural baseline. Always refer to your ingested
+# examples/ and references/ files for exact module schemas and syntax.
+
+blueprint_name: hpc-slurm-cluster
+
+vars:
+  project_id: my-gcp-project-id
+  deployment_name: hpc-slurm
+  region: us-central1
+  zone: us-central1-a
+
+# Deployment groups contain modules that are deployed together (usually maps to one Terraform deployment)
+deployment_groups:
+  - group: primary
+    modules:
+      # Network Module
+      - source: modules/network/vpc
+        id: hpc-vpc
+        settings:
+          network_name: $((vars.deployment_name))-net
+          subnets:
+            - subnet_name: $((vars.deployment_name))-subnet
+              subnet_region: $((vars.region))
+              subnet_ip: 10.10.0.0/16
+
+      # Slurm Controller (Head Node) Module
+      - source: community/modules/scheduler/schedmd-slurm-gcp-v5-controller
+        id: slurm-controller
+        use: [hpc-vpc]
+        settings:
+          machine_type: n2-standard-4
+          boot_disk_size_gb: 100
+
+      # Slurm Compute Partition Module
+      - source: community/modules/scheduler/schedmd-slurm-gcp-v5-partition
+        id: slurm-compute-partition
+        use: [hpc-vpc, slurm-controller]
+        settings:
+          partition_name: compute
+          max_node_count: 10
+          machine_type: c2-standard-4
