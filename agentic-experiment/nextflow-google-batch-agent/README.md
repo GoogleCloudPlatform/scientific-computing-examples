@@ -1,8 +1,8 @@
-# Google Cloud Nextflow Infrastructure & Hardware Optimizer (with QA Audit)
+# Google Cloud Batch w Nextflow Infrastructure optimizer web application
 
-The **Google Cloud Nextflow Infrastructure & Hardware Optimizer** is an enterprise-grade, GUI-driven application designed to analyze complex Nextflow bioinformatics pipelines (such as `main.nf` and its sub-directory modules) and programmatically compile optimized, cost-efficient, and GCP Batch-ready `nextflow.config` files.
+The **Google Cloud Batch w Nextflow Infrastructure Optimizer** is an GUI-driven web application designed to analyze complex Nextflow bioinformatics pipelines (such as `main.nf` and its sub-directory modules) and programmatically compile optimized, cost-efficient, and GCP Batch-ready `nextflow.config` files.
 
-Equipped with a built-in automated **QA & Validation Agent**, the application acts as an active gatekeeper to ensure compiled configurations strictly align with Google Cloud hardware compatibilities, resource limitations, and organizational standards before code is deployed.
+We allow user to pick different cost tier per bioinformatics process. Equipped with a built-in automated **QA & Validation Agent**, the application acts as an active gatekeeper to ensure compiled configurations strictly align with Google Cloud hardware compatibilities, resource limitations, and organizational standards before code is deployed.
 
 ---
 
@@ -11,7 +11,12 @@ Equipped with a built-in automated **QA & Validation Agent**, the application ac
 
 This repository hosts a dual-agent workflow system designed to solve the complexity of deploying genomic pipelines at scale. It bridges the gap between Bioinformatics Research and Cloud Infrastructure Engineering.
 
-1. **The Infrastructure & Hardware Optimizer**: Parses bioinformatics pipelines, auto-profiles scale requirements, and helps DevOps engineers map processes to optimized hardware tiers with real-time GCP cost visibility.
+AI Studio creates a full Web GUI for "main.nf" and "nextflow.config" ingestion.
+After user select the cost tiers, it will generate the Google Batch ready Nextflow config file.
+
+Behind the scene, there are two agents:
+
+1. **The Infrastructure & Hardware Optimizer**: Parses bioinformatics pipelines, auto-profiles scale requirements, and helps DevOps engineers map processes to optimized hardware tiers with real-time GCP cost visibility. Web-GUI allows user to adjust the cost tier dynamically.
 2. **The QA & Validation Agent (Audit Gatekeeper)**: Programmatically evaluates configuration outputs across five distinct technical vectors to guarantee deployment stability and compliance with zero-tolerance cloud hardware constraints.
 
 ---

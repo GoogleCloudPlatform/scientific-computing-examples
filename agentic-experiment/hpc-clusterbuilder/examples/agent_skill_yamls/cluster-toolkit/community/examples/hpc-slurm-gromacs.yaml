@@ -1,0 +1,140 @@
+# Source: https://github.com/GoogleCloudPlatform/cluster-toolkit/blob/main/community/examples/hpc-slurm-gromacs.yaml
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+
+blueprint_name: hpc-slurm-gromacs
+
+vars:
+  # Set to true to enable the secure Slurm Native Authentication standard.
+  # Default fallback remains false (MUNGE) to guarantee zero regression risk on upgrades.
+  enable_slurm_auth: true
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: hpc-slurm-gromacs
+  region: us-central1
+  zone: us-central1-c
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: network
+    source: modules/network/vpc
+
+  # Private Service Access (PSA) requires the compute.networkAdmin role which is
+  # included in the Owner role, but not Editor.
+  # PSA is a best practice for Filestore instances, but can be optionally
+  # removed by deleting the private_service_access module and any references to
+  # the module by Filestore modules.
+  # https://cloud.google.com/vpc/docs/configure-private-services-access#permissions
+  - id: private_service_access
+    source: modules/network/private-service-access
+    use: [network]
+
+  ## Filesystems
+  - id: appsfs
+    source: modules/file-system/filestore
+    use: [network, private_service_access]
+    settings:
+      local_mount: /sw
+
+  - id: homefs
+    source: modules/file-system/filestore
+    use: [network, private_service_access]
+    settings:
+      local_mount: /home
+
+  ## Install Scripts
+  - id: spack-setup
+    source: community/modules/scripts/spack-setup
+    settings:
+      install_dir: /sw/spack
+      spack_ref: v0.20.0
+
+  - id: spack-execute
+    source: community/modules/scripts/spack-execute
+    use: [spack-setup]
+    settings:
+      log_file: /var/log/spack.log
+      data_files:
+      - destination: /tmp/projections-config.yaml
+        content: |
+          modules:
+            default:
+              tcl:
+                hash_length: 0
+                all:
+                  conflict:
+                    - '{name}'
+                projections:
+                  all: '{name}/{version}-{compiler.name}-{compiler.version}'
+      commands: |
+        ## Un-comment and update mirror_url to install from spack cache
+        ## if ! spack mirror list | grep -q gcs_cache; then
+        ##   spack mirror add --scope site gcs_cache gs://optionally_set_spack_cache_bucket
+        ## fi
+        ## spack buildcache keys --install --trust
+
+        spack config --scope defaults add config:build_stage:/sw/spack/spack-stage
+        spack config --scope defaults add -f /tmp/projections-config.yaml
+
+        spack install gcc@13.1.0 target=x86_64
+        spack load gcc@13.1.0 target=x86_64
+        spack compiler find --scope site
+
+        spack install intel-oneapi-mpi@2021.9.0%gcc@13.1.0
+        spack install gromacs@2020.6 %gcc@13.1.0 ^intel-oneapi-mpi@2021.9.0
+
+  - id: script
+    source: modules/scripts/startup-script
+    settings:
+      runners:
+      - $(spack-execute.spack_runner)
+
+  - id: compute_nodeset
+    source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+    use: [network]
+    settings:
+      node_count_dynamic_max: 20
+      bandwidth_tier: gvnic_enabled
+      allow_automatic_updates: false
+
+  - id: compute_partition
+    source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+    use: [compute_nodeset]
+    settings:
+      partition_name: compute
+      is_default: true
+
+  - id: slurm_login
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-login
+    use: [network]
+    settings:
+      enable_login_public_ips: true
+
+  - id: slurm_controller
+    source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+    use:
+    - network
+    - compute_partition
+    - slurm_login
+    - homefs
+    - appsfs
+    settings:
+      enable_controller_public_ips: true
+      login_startup_script: $(script.startup_script)
+      login_startup_scripts_timeout: 21600
