@@ -11,8 +11,6 @@ This guide provides instructions for running the Nextflow [`rnaseq-nf`](https://
 
 <img src="img/nextflow-w-batch-reference.png" alt="Nextflow on Google Cloud Batch" width="800">
 
-
-
 ## Prerequisites
 
 1.  **Install Nextflow:**
