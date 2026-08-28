@@ -32,7 +32,15 @@ This guide provides instructions for running the Nextflow [`rnaseq-nf`](https://
 
 User can leverage the `nextflow.config` file in this repo to configure Nextflow to use Google Batch as the executor
 
-*Be sure to replace `<YOUR-BUCKET-NAME>` with the name of your actual GCS bucket.*
+Please make sure updating the following parameters according to your GCP setup.
+
+```bash
+params.bucketname  = '<your bucket name>'
+params.gcp_project = '<your gcp project>'
+params.network_name = 'default'
+params.subnet_name = 'default'
+params.location = 'us-central1'
+```
 
 ## Clone the sample rnaseq-nf git
 
