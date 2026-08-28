@@ -60,46 +60,33 @@ DNS is another important part of the network  setup. In order to have the on-pre
 ## Set up Cloud Cluster Toolkit
 
 1. To clone the Cloud Cluster Toolkit, from Cloud Shell run the following command to clone the GitHub repository.
-    <ql-code-block language="bash" templated>
+```bash
     git clone https://github.com/GoogleCloudPlatform/cluster-toolkit.git
-    </ql-code-block>
+```
 
 2. Go to the main working directory.
-    <ql-code-block language="bash" templated>
+```bash
     cd cluster-toolkit/
-    </ql-code-block>
+```
 
 3. To build the Cloud Cluster Toolkit binary from source, from Cloud Shell run the following command.
-    <ql-code-block language="bash" templated>
+```bash
     make
-    </ql-code-block>
+```
 
 4. To verify the build, from Cloud Shell run the following command.
-    <ql-code-block language="bash" templated>
+```bash
     ./gcluster --version
-    </ql-code-block>
+```
 
-5. Enable GCS API - storage.googleapis.com
-    <ql-code-block language="bash" templated>
-    gcloud services enable storage.googleapis.com
-    </ql-code-block>
-
-6. Enable subnetwork Private Google Access for Filestore:
-    <ql-code-block language="bash" templated>
-    gcloud compute networks subnets update default \
-    --region=us-central1 \
-    --enable-private-ip-google-access
-    </ql-code-block
-
-7. Authentication with the user account provided with the Qwiklab.
-    <ql-code-block language="bash" templated>
+5. Authentication with the user account provided with the Qwiklab.
+```bash
     gcloud auth login
     gcloud auth application-default login
-    </ql-code-block>
+```
 
-   <ql-infobox>
    The output shows you the version of the Cloud Cluster Toolkit that you are using.
-   </ql-infobox>
+
 
 ## Create the cluster cluster 
 
@@ -111,21 +98,20 @@ Once the instance deployment has been finalized :
 
     Update the project id in the cluster.yaml file to the GCP project id.
 
-    <ql-code-block language="bash" templated>
+```bash
     vi cluster.yaml
-    </ql-code-block>
+```
 
-    Deploy the Cloud cluster:
+3. Deploy the Cloud cluster:
 
-    <ql-code-block language="bash" templated>
+```bash
     ./gcluster deploy cluster.yaml --auto-approve
-    </ql-code-block>
+```
 
-    Note: You will be asked to install terraform 1.12.2 and packer
+Note: You will be asked to install terraform 1.12.2 and packer
+Wait for about 15 mins, Cloud cluster should be completed.
 
-    Wait for about 15 mins, Cloud cluster should be completed.
-
-3. SSH into both controllers of Cloud Cluster A and On-premise Cluster B.
+4. SSH into both controllers of Cloud Cluster A and On-premise Cluster B.
 
     On the __Products & Services__ menu, click __Compute Engine__  and then select __VM instances__.  
     Or use this link: [https://console.cloud.google.com/compute/instances](https://console.cloud.google.com/compute/instances)
@@ -143,14 +129,13 @@ Once the instance deployment has been finalized :
     In the Cloud ClusterA-controller window:
     Run the following commands to set up the munge.key.multi at Cloud ClusterA.
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo dd if=/dev/urandom bs=1 count=1024 | sudo tee /etc/munge/munge.key.multi > /dev/null
     sudo chmod 400 /etc/munge/munge.key.multi
     sudo chown munge:munge /etc/munge/munge.key.multi
-    </ql-code-block>
+```
 
-    Copy the key to the On-premise ClusterB controller
-
+Copy the key to the On-premise ClusterB controller
 
 2. Setup the munge.key.multi at On-premise ClusterB 
 
@@ -159,51 +144,50 @@ Once the instance deployment has been finalized :
 
     copy the munge.key.multi to /etc/munge/munge.key.multi
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo chown munge:munge /etc/munge/munge.key.multi
     sudo chmod 400 /etc/munge/munge.key.multi
-    </ql-code-block>
+```
 
 3. Tell both controllers to use the same munge keys for authentication:
 
     Run the following command at BOTH Cloud ClusterA and On-premise ClusterB controllers
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo munged --socket=/var/run/munge/munge.socket.multi \
        --key-file=/etc/munge/munge.key.multi \
        --pid-file=/var/run/munge/munged.multi.pid
-    </ql-code-block>
+```
 
 4. Create the file munge-multi.service at BOTH Cloud ClusterA and On-premise Cluster B controllers:
 
     Run the following command at BOTH Cloud ClusterA and On-premise ClusterB controllers
 
-    <ql-code-block language="bash" templated>
+```bash
     cd ~
     gcloud storage cp gs://{{{project_0.project_id}}}-student-assets/munge-multi-service munge-multi.service
     sudo cp munge-multi.service /etc/systemd/system/munge-multi.service
-    </ql-code-block>
+```
 
 5. Restart the munge service:
 
     Run the following command at BOTH Cloud ClusterA and On-premise ClusterB controllers
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo systemctl daemon-reload
     sudo systemctl enable --now munge-multi
-    </ql-code-block>
+```
 
 6. Configure the Cloud Clustera-controller
 
     Update the 2 files on Cloud ClusterA :
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo vi /etc/slurm/slurm.conf
-    </ql-code-block>
+```
+Update the content as shown below accordingly, DO NOT COPY and PASTE, since duplicated parameters will trigger errors.
 
-    Update the content as shown below accordingly, DO NOT COPY and PASTE, since duplicated parameters will trigger errors.
-
-    <ql-code-block language="bash" templated>
+```bash
     #Updating this line:
     AccountingStorageHost=localhost
 
@@ -211,15 +195,15 @@ Once the instance deployment has been finalized :
     AccountingStoragePort=6819
     AccountingStorageExternalHost=clusterb-controller:6819
     AccountingStoragePass=/var/run/munge/munge.socket.multi
-    </ql-code-block>
+```
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo vi /etc/slurm/slurmdbd.conf
-    </ql-code-block>
+```
 
-    Update the content as shown below accordingly, DO NOT COPY and PASTE, since duplicated parameters will trigger errors.
+Update the content as shown below accordingly, DO NOT COPY and PASTE, since duplicated parameters will trigger errors.
 
-    <ql-code-block language="bash" templated>
+```bash
     AuthType=auth/munge
     #Adding the following line:
     AuthInfo=socket=/var/run/munge/munge.socket.multi
@@ -228,17 +212,17 @@ Once the instance deployment has been finalized :
     #Adding the following lines:
     DbdPort=6819
     StorageLoc=slurm_acct_db
-    </ql-code-block>
+```
 
 7. Configure the On-premise ClusterB 
 
     Update the 2 files on On-premise Clusterb_controller :
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo vi /etc/slurm/slurm.conf
-    </ql-code-block>
-
-    <ql-code-block language="bash" templated>
+```
+Here is the content to be updated:
+```bash
     AccountingStorageType=accounting_storage/slurmdbd
     #Update the following line:
     AccountingStorageHost=localhost
@@ -247,13 +231,16 @@ Once the instance deployment has been finalized :
     AccountingStoragePort=6819
     AccountingStorageExternalHost=clustera-controller:6819
     AccountingStoragePass=/var/run/munge/munge.socket.multi
-    </ql-code-block>
+```
 
-    <ql-code-block language="bash" templated>
+Let's update teh slurmdbd.conf file:
+
+```bash
     sudo vi /etc/slurm/slurmdbd.conf
-    </ql-code-block>
+```
+Here is the content to be updated:
 
-    <ql-code-block language="bash" templated>   
+```bash
     AuthType=auth/munge
     #Adding the following line:
     AuthInfo=socket=/var/run/munge/munge.socket.multi
@@ -266,47 +253,47 @@ Once the instance deployment has been finalized :
     StorageHost=localhost
     #Adding the following line:
     StorageLoc=slurm_acct_db
-    </ql-code-block>
+```
 
 8. Restart the Service on BOTH Cloud ClusterA and On-premise ClusterB
 
     Run the following command at BOTH ClusterA and ClusterB controllers
 
-    <ql-code-block language="bash" templated>
+```bash
     sudo systemctl restart slurmdbd
     sleep 5
     sudo /usr/local/bin/scontrol reconfigure
-    </ql-code-block>
+```
 
 ## Task 4: Verify Multi-Cluster Slurm Cross-Registration
 
 1. Show the clusters:
     Run the following command on ClusterA controller:
 
-    <ql-code-block language="bash" templated>
+```bash
     sacctmgr show cluster
-    </ql-code-block>
+```
 
-    Sample Output:\
+Sample Output:\
     clustera       127.0.0.1         6820 11264\
     clusterb         x.x.x.x         6820 11264
 
-    Run the following command on ClusterB controller:
+Run the following command on ClusterB controller:
 
-    <ql-code-block language="bash" templated>
+```bash
     sacctmgr show cluster
-    </ql-code-block>
+```
 
-    Sample Output:\
+Sample Output:\
     clustera       127.0.0.1         6820 11264\
     clusterb       x.x.x.x           6820 11264
 
-    Run the following command on ClusterA controller:
-    <ql-code-block language="bash" templated>
+Run the following command on ClusterA controller:
+```bash
     sinfo -M clusterb
-    </ql-code-block>
+```
 
-    Sample Output:\
+Sample Output:\
     CLUSTER: clusterb\
     PARTITION AVAIL  TIMELIMIT  NODES  STATE NODELIST\
     clusterb*    up   infinite      4  idle~ clusterb-debugbnodeset-[0-3]\
@@ -314,14 +301,13 @@ Once the instance deployment has been finalized :
 
 2. Submit a job from Cloud ClusterA to On-premise ClusterB:
 
-    Run the following command on Cloud ClusterA controller:
-
+    Run the following command on Cloud ClusterA controller,
     Use the sample testjob.sh file as a sample.
-    <ql-code-block language="bash" templated>
+```bash
     sbatch -M clusterb testjob.sh
-    </ql-code-block>
+```
 
-    After about 5 mins, you will see slurmtest_*.out file in the directory. This job runs on on-premise ClusterB.
+After about 5 mins, you will see slurmtest_*.out file in the directory. This job runs on on-premise ClusterB.
 
 ## Congratulations!
 
