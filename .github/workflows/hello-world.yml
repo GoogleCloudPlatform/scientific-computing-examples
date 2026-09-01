@@ -1,0 +1,28 @@
+# The name of the workflow as it will appear in the GitHub Actions tab
+name: Standard CI Pipeline
+
+# 1. Triggers: Define what events start this workflow
+on:
+  push:
+    branches: [ "main" ] # Runs whenever code is pushed to the main branch
+  pull_request:
+    branches: [ "main" ] # Runs whenever a PR is opened against the main branch
+
+# 2. Jobs: A workflow is made up of one or more jobs that run in parallel by default
+jobs:
+  say-hello:
+    # The type of virtual machine runner this job will execute on
+    runs-on: ubuntu-latest
+
+    # 3. Steps: A sequence of tasks executed inside the job
+    steps:
+      # Step 1: Check out the repository code onto the runner
+      - name: Checkout Code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      # Step 2: Run a shell command on the host
+      - name: Run Greeting
+        run: echo "Hello, world! Your first GitHub workflow is successfully running."
+
