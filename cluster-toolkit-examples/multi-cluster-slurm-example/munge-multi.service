@@ -1,0 +1,14 @@
+[Unit]
+Description=Munge Multi-Cluster Authentication
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/sbin/munged --socket=/var/run/munge/munge.socket.multi \
+    --key-file=/etc/munge/munge.key.multi \
+    --pid-file=/var/run/munge/munged.multi.pid
+User=munge
+Group=munge
+
+[Install]
+WantedBy=multi-user.target
