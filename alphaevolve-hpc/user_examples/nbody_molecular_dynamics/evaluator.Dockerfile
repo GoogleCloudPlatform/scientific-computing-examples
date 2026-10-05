@@ -17,12 +17,16 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Configure passwordless SSH daemon (required for permissiveSsh: true)
-RUN mkdir /var/run/sshd \
-    && mkdir -p /root/.ssh \
-    && ssh-keygen -t rsa -f /root/.ssh/id_rsa -N "" \
-    && cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys \
-    && echo "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile /dev/null" > /root/.ssh/config
+# Create evaluser and configure passwordless SSH for non-root execution
+RUN useradd -m -u 1000 evaluser \
+    && mkdir -p /var/run/sshd /home/evaluser/.ssh /root/.ssh \
+    && ssh-keygen -t rsa -f /home/evaluser/.ssh/id_rsa -N "" \
+    && cp /home/evaluser/.ssh/id_rsa.pub /home/evaluser/.ssh/authorized_keys \
+    && cp /home/evaluser/.ssh/id_rsa.pub /root/.ssh/authorized_keys \
+    && echo "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile /dev/null" > /home/evaluser/.ssh/config \
+    && chmod 700 /home/evaluser/.ssh \
+    && chmod 600 /home/evaluser/.ssh/id_rsa /home/evaluser/.ssh/authorized_keys /home/evaluser/.ssh/config \
+    && chown -R evaluser:evaluser /home/evaluser/.ssh
 
 # Copy and install core platform requirements with secure hash verification
 COPY infrastructure/requirements.txt /app/requirements.txt
@@ -35,15 +39,13 @@ COPY google_framework/alpha_evolve /app/src/alpha_evolve
 # Copy the experiment code
 COPY user_examples/nbody_molecular_dynamics/ /app/experiment/
 RUN chmod +x /app/experiment/run-ssh.sh
-
-RUN useradd -m -u 1000 evaluser
 RUN chown -R evaluser:evaluser /app/experiment
 USER evaluser
 
 # Set the entrypoint using bash
 ENTRYPOINT ["/bin/bash", "-c", "\
     echo \"[BATCH DEBUG] Container started for Program ID: $_CANDIDATE_PROGRAM_ID\" && \
-    mkdir -p $_MOUNT_PATH/logs && \
+    mkdir -p ${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/logs 2>/dev/null || true; \
     if [ -f \"/app/experiment/Makefile\" ]; then \
       echo \"[BATCH DEBUG] Found Makefile under directory: /app/experiment\"; \
       echo \"[BATCH DEBUG] Copying generated C++ code from $_CANDIDATE_DIR to /app/experiment...\"; \
