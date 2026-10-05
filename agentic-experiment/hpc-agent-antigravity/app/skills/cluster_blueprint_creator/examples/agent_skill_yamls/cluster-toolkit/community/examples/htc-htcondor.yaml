@@ -1,0 +1,142 @@
+# Source: https://github.com/GoogleCloudPlatform/cluster-toolkit/blob/main/community/examples/htc-htcondor.yaml
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+blueprint_name: htc-htcondor
+
+vars:
+  project_id:  ## Set GCP Project ID Here ##
+  deployment_name: htcondor-pool
+  region: us-central1
+  zone: us-central1-c
+  zones:
+  - $(vars.zone)
+  - us-central1-f
+  disk_size_gb: 100
+  new_image:
+    family: htcondor-10x
+    project: $(vars.project_id)
+  enable_shielded_vm: true
+
+# Documentation for each of the modules used below can be found at
+# https://github.com/GoogleCloudPlatform/hpc-toolkit/blob/main/modules/README.md
+
+deployment_groups:
+- group: primary
+  modules:
+  - id: network1
+    source: modules/network/vpc
+    outputs:
+    - network_name
+
+  - id: htcondor_install
+    source: community/modules/scripts/htcondor-install
+
+  - id: htcondor_install_script
+    source: modules/scripts/startup-script
+    use:
+    - htcondor_install
+
+- group: packer
+  modules:
+  - id: custom-image
+    source: modules/packer/custom-image
+    kind: packer
+    use:
+    - network1
+    - htcondor_install_script
+    settings:
+      disk_size: $(vars.disk_size_gb)
+      source_image_family: hpc-rocky-linux-8
+      image_family: $(vars.new_image.family)
+
+- group: pool
+  modules:
+  - id: htcondor_service_accounts
+    source: community/modules/scheduler/htcondor-service-accounts
+
+  - id: htcondor_setup
+    source: community/modules/scheduler/htcondor-setup
+    use:
+    - network1
+    - htcondor_service_accounts
+
+  - id: htcondor_secrets
+    source: community/modules/scheduler/htcondor-pool-secrets
+    use:
+    - htcondor_service_accounts
+
+  - id: htcondor_cm
+    source: community/modules/scheduler/htcondor-central-manager
+    use:
+    - network1
+    - htcondor_secrets
+    - htcondor_service_accounts
+    - htcondor_setup
+    settings:
+      instance_image: $(vars.new_image)
+    outputs:
+    - central_manager_name
+
+  # the HTCondor modules support up to 2 execute points per blueprint
+  # if using 1, it may use Spot or On-demand pricing
+  # if using 2, one must use Spot and the other must use On-demand (default)
+  - id: htcondor_execute_point
+    source: community/modules/compute/htcondor-execute-point
+    use:
+    - network1
+    - htcondor_secrets
+    - htcondor_service_accounts
+    - htcondor_setup
+    - htcondor_cm
+    settings:
+      name_prefix: grp1
+      instance_image: $(vars.new_image)
+      min_idle: 2
+      allow_automatic_updates: false
+
+  - id: htcondor_execute_point_spot
+    source: community/modules/compute/htcondor-execute-point
+    use:
+    - network1
+    - htcondor_secrets
+    - htcondor_service_accounts
+    - htcondor_setup
+    - htcondor_cm
+    settings:
+      name_prefix: spot
+      instance_image: $(vars.new_image)
+      spot: true
+      allow_automatic_updates: false
+
+  - id: htcondor_access
+    source: community/modules/scheduler/htcondor-access-point
+    use:
+    - network1
+    - htcondor_secrets
+    - htcondor_service_accounts
+    - htcondor_setup
+    - htcondor_cm
+    - htcondor_execute_point
+    - htcondor_execute_point_spot
+    settings:
+      default_mig_id: $(htcondor_execute_point.mig_id)
+      enable_public_ips: true
+      instance_image: $(vars.new_image)
+      enable_high_availability: true
+      spool_disk_size_gb: 200 # required for regional HA
+    outputs:
+    - access_point_ips
+    - access_point_name
