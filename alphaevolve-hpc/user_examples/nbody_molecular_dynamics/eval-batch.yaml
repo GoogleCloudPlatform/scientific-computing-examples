@@ -23,7 +23,7 @@ taskGroups:
         volumes:
         - /etc/ssh:/etc/ssh
         - /var/tmp:/var/tmp
-        options: "-td --network host --uts=host"
+        options: "-u 0 -td --network host --uts=host"
       background: true
     - script:
         text: "until [ -f /etc/ssh/started ]; do sleep 1; done; echo sshd started on $(hostname)"
@@ -33,6 +33,9 @@ taskGroups:
         text: |
           mkdir -p ${_MOUNT_PATH}
           chown -f -R 1000:1000 ${_MOUNT_PATH} || true
+          if [ -f /etc/cloudbatch-taskgroup-hosts ]; then
+            cat /etc/cloudbatch-taskgroup-hosts >> /etc/hosts 2>/dev/null || true
+          fi
     - container:
         imageUri: "${_EVALUATOR_IMAGE_URI}"
         volumes:
