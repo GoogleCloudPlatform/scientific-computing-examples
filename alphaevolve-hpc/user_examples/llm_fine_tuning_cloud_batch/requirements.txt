@@ -298,9 +298,9 @@ click==8.4.1 \
     # via
     #   huggingface-hub
     #   typer
-datasets==5.0.0 \
-    --hash=sha256:7dd34927a0fd7046e98aad5cb9430e699c373238a15befa7b9bf22b991a7fee6 \
-    --hash=sha256:83dbbbdb07a33b82192b8c419deb18739b138ee2ce1a322d55ce6b100954ec1a
+datasets==5.0.1 \
+    --hash=sha256:9fbf73688f8c18f7529b4fe592abd04015f81d1e58001e4bac73ffb2b39d7cc4 \
+    --hash=sha256:ce22bb851efd7494f08aad33b940803784434f6e77763d00679a0dc45fcf686a
     # via
     #   -r requirements.in
     #   trl
