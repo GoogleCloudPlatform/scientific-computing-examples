@@ -15,6 +15,8 @@ hpc-agent-antigravity/
 ├── plugin.json                                     # Plugin manifest
 ├── agents/
 │   └── hpc-agent-antigravity.md                    # Primary agent definition
+├── rules/                                          # Plugin rules
+│   └── credentials-and-project.md                  # Mandatory credential & project onboarding
 ├── skills/                                         # 5 packed skills for selection
 │   ├── vm-availability-checker/                    # Live & dry-run instance testing
 │   │   └── SKILL.md
@@ -37,6 +39,18 @@ hpc-agent-antigravity/
 ├── pyproject.toml
 └── README.md
 ```
+
+---
+
+## 🔒 Mandatory Session Initialization (Onboarding)
+
+To ensure cloud actions and billing are never directed to the wrong environment, the plugin enforces a **mandatory pre-flight gate at the start of every new conversation**:
+
+1. **Credential / Account Selection**: The agent asks which Google Cloud account / credential to use.
+2. **Target GCP Project ID**: The agent asks which GCP Project ID to target.
+3. **Target GCP Region**: The agent asks which specific GCP region (e.g., `us-central1`, `us-east4`, `europe-west4`) should be targeted.
+
+The agent will **not** execute any `gcloud`, quota inspection, Cluster Toolkit, or Slurm commands until these parameters are confirmed and the active session context is set.
 
 ---
 
