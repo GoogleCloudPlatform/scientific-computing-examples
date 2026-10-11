@@ -1,93 +1,161 @@
-# HPC Orchestrator Agent
+# HPC Orchestrator Agent & Plugin (`hpc-agent-antigravity`)
 
-This project is an AI agent built using the **Google Agent Development Kit (ADK)**. It acts as a specialized orchestrator for managing High-Performance Computing (HPC) environments, infrastructure deployment, and batch workloads on Google Cloud.
+This project is a standalone **Antigravity Plugin** and AI agent built for managing High-Performance Computing (HPC) environments, infrastructure provisioning, and batch workloads on Google Cloud Platform.
 
-## 🧠 Integrated Skills
-The agent utilizes specialized skills ported from the [GoogleCloudPlatform/scientific-computing-examples](https://github.com/GoogleCloudPlatform/scientific-computing-examples) repository:
+It packages a specialized agent persona alongside 5 modular skills for automated capacity validation, quota inspection, Cluster Toolkit blueprint management, Slurm orchestration, and Nextflow optimization.
 
-1. **HPC Cluster Toolkit (`hpc-clusterbuilder`)**: Allows the agent to interpret architectural blueprints and manage the full lifecycle of complex HPC environments using Terraform.
-2. **Slurm & Quota Management (`hpc-dfo-agent`)**: Gives the agent the ability to check Google Cloud machine capacities, manage Slurm queues, and submit batch jobs over SSH.
-3. **Google Cloud Batch (`nextflow-google-batch-agent`)**: Integrates cloud-native batch scheduling capabilities for scalable, containerized scientific workloads.
+---
 
-*(Note: The raw skill source code is located in the `app/skills/` directory for reference.)*
+## 🧩 Plugin Structure
 
-## 🛠️ Tools
-To interact with the cloud environment, the agent is equipped with the following functional tools (implemented in `app/tools.py`):
+`hpc-agent-antigravity` is self-contained and structured as an Antigravity plugin:
 
-### Infrastructure Provisioning
-* **`check_vm_availability(machine_type, zone)`**: Performs dry-runs to verify if Google Cloud has the requested machine type (e.g., GPUs) available in the target zone before attempting deployment.
-* **`deploy_cluster(blueprint_path)`**: Wraps the `gcluster` (Google Cloud HPC Toolkit) CLI to generate Terraform code from a blueprint and applies it automatically.
-* **`destroy_cluster(deployment_dir)`**: Safely tears down the HPC environment using Terraform when jobs are completed to minimize costs.
+```text
+hpc-agent-antigravity/
+├── plugin.json                                     # Plugin manifest
+├── agents/
+│   └── hpc-agent-antigravity.md                    # Primary agent definition
+├── skills/                                         # 5 packed skills for selection
+│   ├── vm-availability-checker/                    # Live & dry-run instance testing
+│   │   └── SKILL.md
+│   ├── compute-quota-checker/                      # CPU & storage quota inspection
+│   │   └── SKILL.md
+│   ├── storage-quota-checker/                      # Filestore & Managed Lustre capacity
+│   │   └── SKILL.md
+│   ├── nextflow-batch-optimizer/                   # Nextflow GCP Batch config optimizer
+│   │   └── SKILL.md
+│   └── cluster-toolkit-blueprint-creator/          # HPC Toolkit blueprints & schemas
+│       ├── SKILL.md
+│       ├── examples/
+│       ├── reference/
+│       ├── resources/
+│       └── scripts/
+├── app/                                            # Python ADK backend implementation
+│   ├── agent.py
+│   ├── sub_agents.py
+│   └── tools.py
+├── pyproject.toml
+└── README.md
+```
 
-### Slurm Workload Management
-* **`get_cluster_status(login_node_name, zone)`**: Connects via SSH to the Slurm login node and runs `sinfo` to report node health, allocations, and idle capacity.
-* **`submit_slurm_job(login_node_name, zone, job_script_path)`**: Submits scientific workloads directly to the cluster using `sbatch`.
-* **`get_job_status(login_node_name, zone, job_id)`**: Queries `squeue` and `sacct` to provide real-time updates on job execution states.
+---
 
-## 📋 Prerequisites
-Because the agent uses subprocesses to manage real infrastructure, the host machine running the agent must have the following installed and authenticated:
+## 🧠 Packed Skills
+
+When activated in Antigravity, the agent can autonomously select and execute these packed skills:
+
+1. **`cluster-toolkit-blueprint-creator`**: Generates and validates Google Cloud HPC Cluster Toolkit (`gcluster`/`ghpc`) YAML blueprints for Slurm and GKE clusters.
+2. **`vm-availability-checker`**: Performs dry-run capacity checks and rapid-cleanup live deployment tests for HPC VM families (`C2`, `C2D`, `N2`, `C3`, `C4`, `C4D`, `N4`, `H4D`, and GPUs).
+3. **`compute-quota-checker`**: Inspects Standard vs. Spot CPU quotas and identifies disk architecture constraints (Hyperdisk for `N4`/`H4D` vs. Persistent Disk).
+4. **`storage-quota-checker`**: Analyzes capacity headroom and performance tiers for Filestore Zonal, Filestore Regional/Enterprise, and Google Cloud Managed Lustre.
+5. **`nextflow-batch-optimizer`**: Parses `main.nf` workflows, maps bioinformatics processes to GCP hardware tiers, and generates production-ready `nextflow.config` files for Google Cloud Batch.
+
+---
+
+## 🚀 How to Install and Use This Plugin in Antigravity
+
+You can install this plugin either **globally** (accessible across all workspaces) or **locally** for a specific project.
+
+### Method 1: Global Installation (Recommended)
+
+Link or copy this directory into your global Antigravity plugins directory (`~/.gemini/config/plugins/`):
+
+```bash
+# Option A: Symlink for active development (recommended)
+mkdir -p ~/.gemini/config/plugins
+ln -s "$(pwd)" ~/.gemini/config/plugins/hpc-agent-antigravity
+
+# Option B: Direct copy
+mkdir -p ~/.gemini/config/plugins
+cp -r /path/to/hpc-agent-antigravity ~/.gemini/config/plugins/
+```
+
+### Method 2: Project-Level Installation
+
+To use this plugin only within a specific project repository, place it inside `.agents/plugins/` at the repository root:
+
+```bash
+# In the target project repository root:
+mkdir -p .agents/plugins
+cp -r /path/to/hpc-agent-antigravity .agents/plugins/
+```
+
+Or declare it via `.agents/plugins.json`:
+
+```json
+{
+  "entries": [
+    { "path": "path/to/hpc-agent-antigravity" }
+  ]
+}
+```
+
+---
+
+## 🔍 Validating the Plugin
+
+To verify that Antigravity properly recognizes the plugin manifest, agent, and packed skills, run:
+
+```bash
+agy plugin validate .
+```
+
+Expected output:
+```text
+  [ok]    .
+          ✔ skills      : 5 processed
+          ✔ agents      : 1 processed
+          - commands    : skipped (not found)
+          - mcpServers  : skipped (not found)
+          - hooks       : skipped (not found)
+```
+
+---
+
+## 💬 Running the Agent
+
+Once installed, you can use the agent in two ways:
+
+### 1. In Antigravity IDE
+Open the chat interface, click the **Agent Selector** dropdown, and choose **`hpc-agent-antigravity`**.
+
+### 2. In Antigravity CLI (`agy`)
+Launch a dedicated terminal session with the agent:
+
+```bash
+agy --agent hpc-agent-antigravity
+```
+
+Verify available agents:
+```bash
+agy agents
+```
+
+---
+
+## 📋 Prerequisites for Execution
+
+When running HPC management operations, the host environment should have:
 * [Google Cloud CLI (`gcloud`)](https://cloud.google.com/sdk/docs/install) - Authenticated with `gcloud auth login` and `gcloud auth application-default login`.
-* [Google Cloud HPC Toolkit (`gcluster`)](https://cloud.google.com/hpc-toolkit/docs/setup/install)
+* [Google Cloud HPC Toolkit (`ghpc`)](https://cloud.google.com/hpc-toolkit/docs/setup/install)
 * [Terraform](https://developer.hashicorp.com/terraform/install)
+* **`gcp-ssh` MCP Server** (configured in Antigravity for remote Slurm commands over SSH).
 
-## 🚀 Getting Started
+---
 
-Ensure you have [uv](https://docs.astral.sh/uv/) installed.
+## 🧪 Local ADK Development (Optional)
 
-**1. Install Dependencies**
-```bash
-uv sync
-```
+If developing or testing the underlying Python ADK agent locally:
 
-**2. Run the Interactive Playground**
-To test the agent locally, run the ADK Playground:
-```bash
-uv run agents-cli playground
-```
-
-**3. Example Prompts to Try**
-* *"Can you check if a2-highgpu-1g machines are available in us-central1-a?"*
-* *"Deploy a cluster using the blueprint at app/skills/cluster_blueprint_creator/examples/hpc-slurm.yaml"*
-* *"Connect to the login node `slurm-login` in `us-central1-a` and tell me if any nodes are idle."*
-* *"Submit the job script located at `/home/user/job.sh` on `slurm-login`."*
-
-## 🛸 Running with Antigravity
-
-If you are using **Antigravity** as your runtime/execution environment for this agent, follow these steps to integrate and deploy:
-
-**1. Install the Antigravity CLI/Tools**
-Ensure that the Antigravity toolset is installed and accessible in your environment:
-```bash
-# Example installation (update with the exact package name/source if needed)
-pip install antigravity-cli
-```
-
-**2. Configure the Environment**
-Set the required environment variables for Antigravity to interface with Google Cloud and the ADK Agent:
-```bash
-export ANTIGRAVITY_PROJECT_ID="your-gcp-project-id"
-export ANTIGRAVITY_LOCATION="global"
-```
-
-**3. Run the Agent (CLI)**
-Launch the HPC agent within the Antigravity runtime in your terminal:
-```bash
-# Standard command to serve or run the agent via Antigravity
-antigravity run --agent-dir app/
-```
-
-**4. Using Antigravity Web**
-If you prefer a graphical interface, you can launch the **Antigravity Web** UI to interact with your HPC agent:
-```bash
-# Start the web interface
-antigravity web --agent-dir app/ --port 8080
-```
-*Once started, open your browser and navigate to `http://localhost:8080` to access the chat interface and dashboard.*
-
-*(Note: Please adjust the exact `antigravity` CLI commands above depending on your specific version and configuration of the Antigravity platform.)*
-
-## 📦 Deployment
-This agent is currently configured as a **Prototype**. Once you are ready to deploy it to Google Cloud (e.g., Cloud Run or Agent Runtime), use the ADK CLI to enhance the project:
-```bash
-uv run agents-cli scaffold enhance . --deployment-target agent_runtime
-```
+1. Install dependencies:
+   ```bash
+   uv sync
+   ```
+2. Start the interactive ADK playground:
+   ```bash
+   uv run agents-cli playground
+   ```
+3. Run tests:
+   ```bash
+   uv run pytest tests/unit tests/integration
+   ```
