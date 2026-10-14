@@ -1,0 +1,48 @@
+blueprint_name: c3-general-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: c3-general-cluster
+    region: us-central1
+    zone: us-central1-a
+
+  deployment_groups:
+    - group: primary
+      modules:
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        - id: shared_storage
+          source: modules/file-system/filestore
+          settings:
+            filestore_tier: BASIC_HDD
+            size_gb: 1024
+            file_share_name: nfsshare
+            local_mount: /apps
+            network: $(network.network_name)
+
+        - id: c3_partition
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+          settings:
+            partition_name: c3-general
+            machine_type: c3-standard-88
+            max_node_count: 32
+            zone: $(vars.zone)
+            is_default: true
+            spot: true
+
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            login_nodes:
+              - machine_type: e2-standard-4
+                zone: $(vars.zone)
+                count: 1
+            nodeset:
+              - $(c3_partition)

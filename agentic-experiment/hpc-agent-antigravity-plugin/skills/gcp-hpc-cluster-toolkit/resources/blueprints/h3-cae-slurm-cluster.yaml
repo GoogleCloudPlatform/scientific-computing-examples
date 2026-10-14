@@ -1,0 +1,69 @@
+blueprint_name: h3-cae-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: h3-cae-cluster
+    region: us-central1
+    zone: us-central1-a
+
+  deployment_groups:
+    - group: primary
+      modules:
+        # VPC Network with Tier 1 gVNIC
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        # Compact Placement Policy for lowest inter-node MPI latency
+        - id: compact_placement
+          source: community/modules/compute/placement-policy
+          settings:
+            policy_type: COMPACT
+            vm_count: 32
+            region: $(vars.region)
+            zone: $(vars.zone)
+
+        # Filestore High Scale NFS for shared apps and homedirs
+        - id: shared_storage
+          source: modules/file-system/filestore
+          settings:
+            filestore_tier: HIGH_SCALE_SSD
+            size_gb: 2560
+            file_share_name: nfsshare
+            local_mount: /apps
+            network: $(network.network_name)
+
+        # Spack package manager for installing CAE/CFD software
+        - id: spack_setup
+          source: community/modules/scripts/spack-setup
+          settings:
+            install_dir: /apps/spack
+
+        # H3 Compute Partition (Intel Sapphire Rapids 88-core, 1:1 physical core, DDR5 8-channel)
+        - id: h3_partition
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+          settings:
+            partition_name: h3-cae
+            machine_type: h3-standard-88
+            max_node_count: 32
+            zone: $(vars.zone)
+            is_default: true
+            bandwidth_tier: TIER_1
+            enable_placement: true
+            placement_policy: $(compact_placement.placement_policy_self_link)
+
+        # Slurm Controller
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            login_nodes:
+              - machine_type: n2-standard-4
+                zone: $(vars.zone)
+                count: 1
+            nodeset:
+              - $(h3_partition)
