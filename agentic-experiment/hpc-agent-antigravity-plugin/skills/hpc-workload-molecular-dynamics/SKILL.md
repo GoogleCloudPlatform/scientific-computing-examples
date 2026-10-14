@@ -1,15 +1,17 @@
 ---
 name: hpc-workload-molecular-dynamics
-description: Domain expert skill for Molecular Dynamics (MD), Protein Structure Prediction, 3D Molecular Visualization with VMD, Nextflow pipelines on Google Cloud Batch, and High-Throughput Virtual Screening on Google Cloud. Use when building, running, optimizing, or troubleshooting GROMACS, LAMMPS, NAMD, AMBER, OpenMM, AlphaFold2/3, ColabFold, AutoDock Vina, DiffDock, and Nextflow on Slurm or Cloud Batch, visualizing trajectories in VMD (ThinLinc, noVNC, Cloud Run VPC egress), and chaining DeepMind Science Skills (AFDB pLDDT/PAE, ChEMBL, PubChem, UniProt, PDB, Foldseek, AlphaGenome, ClinVar, gnomAD, PyMOL) and Google Skills (GCS FUSE, Cloud Run, Filestore, GKE Batch). Covers GPU offload scaling (A4/B200, A4X/GB200, A3 Ultra/H200, A3/H100, G2/L4), Local SSD DB caching, dynamic Nextflow profiling with QA audit, and two-pass FFmpeg GIF compilation.
+description: Domain expert skill for Molecular Dynamics (MD), Protein Structure Prediction, 3D Molecular Visualization with VMD, Nextflow pipelines on Google Cloud Batch, and High-Throughput Virtual Screening on Google Cloud. Use when building, running, optimizing, or troubleshooting GROMACS, LAMMPS, NAMD, AMBER, OpenMM, AlphaFold2/3, ColabFold, AutoDock Vina, DiffDock, and Nextflow on Slurm or Cloud Batch, visualizing trajectories in VMD (ThinLinc, noVNC, Cloud Run VPC egress), and chaining gce-instance-selector, gce-flexibility, DeepMind Science Skills (AFDB pLDDT/PAE, ChEMBL, PubChem, UniProt, PDB, Foldseek, AlphaGenome, ClinVar, gnomAD, PyMOL), and Google Skills (GCS FUSE, Cloud Run, Filestore, GKE Batch). Covers GPU offload scaling (A4/B200, A4X/GB200, A3 Ultra/H200, A3/H100, G2/L4), Local SSD DB caching, dynamic Nextflow profiling with QA audit, and two-pass FFmpeg GIF compilation.
 ---
 
 # Molecular Dynamics, VMD Visualization & Nextflow Solution Skill
 
-This skill provides domain intelligence, parameter calculators, Nextflow Google Cloud Batch optimizers with built-in QA audit gatekeepers, Slurm execution blueprints, **VMD (Visual Molecular Dynamics)** visualization pipelines, and **DeepMind Science Skills + Google Skills integration (`science_skills_bridge.py`)** for running computational biology, molecular dynamics, and drug discovery workloads on Google Cloud.
+This skill provides domain intelligence, parameter calculators, Nextflow Google Cloud Batch optimizers with built-in QA audit gatekeepers, Slurm execution blueprints, **VMD (Visual Molecular Dynamics)** visualization pipelines, and **`gce-instance-selector` + `gce-flexibility` + DeepMind Science Skills + Google Skills integration (`science_skills_bridge.py` & `nextflow_batch_optimizer.py`)** for running computational biology, molecular dynamics, and drug discovery workloads on Google Cloud.
 
 --------------------------------------------------------------------------------
 
-## 1. Quick Decision & Accelerator Tuning Matrix
+## 1. Quick Decision & Accelerator Tuning Matrix (`gce-instance-selector` + `gce-flexibility`)
+
+Always chain **`gce-instance-selector`** (`resources/instances.json`, displaying the mandatory `_metadata.createdAt` & `us-central1` pricing notice, ranking Gen 4 -> Gen 3 -> Gen 2, and sizing `hyperdisk-balanced` / `hyperdisk-ml` / Local SSD scratch) into **`gce-flexibility`** (`bulkInsert`, MIGs, and Cloud Batch `instanceFlexibilityPolicy` via `nextflow_batch_optimizer.py --emit-flexibility-json`):
 
 | Application | Target Hardware | Recommended Execution Pattern | Storage & Memory Strategy |
 | :--- | :--- | :--- | :--- |

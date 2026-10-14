@@ -50,6 +50,10 @@ When performing specialized operations, activate and follow the corresponding sk
    - Subsurface geoscience and energy HPC simulations: seismic wave propagation (Devito Marmousi 2), multiphase reservoir simulation (OPM Flow SPE 9/10 & Norne), and interactive 3D remote visualization in ResInsight and ParaView.
 9. **`hpc-workload-molecular-dynamics`**:
    - Molecular dynamics accelerator sizing (`gromacs_tuner.py`), AlphaFold 2/3 & ColabFold inference with NVMe DB staging, high-throughput virtual screening (AutoDock Vina library sharding & ranking), VMD 3D visualization, and DeepMind Science Skills bridges.
+10. **`gce-instance-selector`**:
+   - Attribute-based selection and generational ranking (`Gen 4` -> `Gen 3` -> `Gen 2`) of GCE machine types from `resources/instances.json`, mandatory `_metadata.createdAt` & `us-central1` pricing notices, boot disk selection (`hyperdisk-balanced` vs `pd-balanced`), and multi-volume Hyperdisk IOPS/throughput calculations.
+11. **`gce-flexibility`**:
+   - Flexible multi-shape provisioning across Bulk Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Google Cloud Batch `instanceFlexibilityPolicy` using named `instanceSelections` (`gen4-preferred` rank 0, `gen3-fallback` rank 1) with bare machine type names.
 
 ---
 

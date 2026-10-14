@@ -3,7 +3,20 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from blueprint_generator import generate_blueprint, generate_batch_flexibility_policy, MACHINE_SPECS
+from blueprint_generator import (
+    MACHINE_SPECS,
+    build_named_instance_selections,
+    calculate_hyperdisk_volumes,
+    format_catalog_notice,
+    generate_batch_flexibility_policy,
+    generate_blueprint,
+    generate_bulk_insert_flexibility_payload,
+    generate_cloud_batch_flexibility_job,
+    generate_mig_flexibility_payload,
+    load_instances_catalog,
+    recommend_boot_disk,
+    select_instances,
+)
 
 class TestBlueprintGenerator(unittest.TestCase):
     def test_h3_generation(self):
@@ -185,6 +198,109 @@ class TestBlueprintGenerator(unittest.TestCase):
         self.assertIsNotNone(lustre)
         self.assertEqual(lustre["source"], "modules/file-system/managed-lustre")
         self.assertEqual(lustre["settings"]["local_mount"], "/scratch")
+
+    def test_gce_instance_selector_catalog_and_ranking(self):
+        catalog = load_instances_catalog()
+        self.assertIn("createdAt", catalog["metadata"])
+        self.assertGreater(len(catalog["instances"]), 100)
+
+        notice = format_catalog_notice(catalog["metadata"])
+        self.assertIn("Catalog date:", notice)
+        self.assertIn("us-central1", notice)
+
+        res = select_instances(
+            min_vcpus=16,
+            max_vcpus=64,
+            min_ram_gib=64,
+            architecture="X86_64",
+            compute_type="cpu",
+            include_local_ssd=False,
+            limit=10,
+        )
+        self.assertGreater(len(res["candidates"]), 0)
+        first = res["candidates"][0]
+        self.assertEqual(first["generation"], "Gen 4")
+        self.assertEqual(first["recommendedBootDisk"]["bootDiskType"], "hyperdisk-balanced")
+        self.assertTrue(all("-lssd" not in c["name"] for c in res["candidates"]))
+
+        # Gen 2 boot disk check
+        self.assertEqual(recommend_boot_disk("Gen 2")["bootDiskType"], "pd-balanced")
+        self.assertEqual(recommend_boot_disk("n2-standard-16")["bootDiskType"], "pd-balanced")
+        self.assertEqual(recommend_boot_disk("c4d-standard-384")["bootDiskType"], "hyperdisk-balanced")
+
+    def test_hyperdisk_multi_volume_scaling_calculator(self):
+        # Single volume hyperdisk-balanced (<= 2400 MiB/s)
+        plan_single = calculate_hyperdisk_volumes(
+            storage_type="hyperdisk-balanced",
+            required_throughput_mbps=2000,
+            required_iops=50000,
+        )
+        self.assertEqual(plan_single["recommendedVolumes"], 1)
+
+        # Multi-volume hyperdisk-balanced (4000 MiB/s requires 2 volumes since per-vol cap is 2400 MiB/s)
+        plan_multi = calculate_hyperdisk_volumes(
+            storage_type="hyperdisk-balanced",
+            required_throughput_mbps=4000,
+            required_iops=200000,
+        )
+        self.assertEqual(plan_multi["recommendedVolumes"], 2)
+        self.assertIn("half-duplex", plan_multi["duplexNote"])
+
+        # hyperdisk-throughput scales at 90 MiB/s per TiB (2400 MiB/s requires >= 27 TiB = 27648 GiB)
+        plan_tput = calculate_hyperdisk_volumes(
+            storage_type="hyperdisk-throughput",
+            required_throughput_mbps=2400,
+        )
+        self.assertEqual(plan_tput["recommendedVolumes"], 1)
+        self.assertEqual(plan_tput["minVolumeSizeGiB"], 27 * 1024)
+
+    def test_gce_flexibility_payload_generators(self):
+        # Verify bare machine type names and named selection buckets
+        selections = build_named_instance_selections([
+            "zones/us-central1-a/machineTypes/c4-standard-16",
+            "c4d-standard-16",
+            "c3-standard-22",
+            "n2-standard-16",
+        ])
+        self.assertIn("gen4-preferred", selections)
+        self.assertEqual(selections["gen4-preferred"]["rank"], 0)
+        self.assertIn("c4-standard-16", selections["gen4-preferred"]["machineTypes"])
+        self.assertIn("gen3-fallback", selections)
+        self.assertEqual(selections["gen3-fallback"]["rank"], 1)
+        self.assertIn("gen2-fallback", selections)
+        self.assertEqual(selections["gen2-fallback"]["rank"], 2)
+
+        # Regional vs Zonal bulkInsert
+        reg_bulk = generate_bulk_insert_flexibility_payload(
+            ["c4-standard-16", "c3-standard-22"], count=8, region="us-central1"
+        )
+        self.assertIn("locationPolicy", reg_bulk)
+        self.assertEqual(reg_bulk["locationPolicy"]["targetShape"], "BALANCED")
+        self.assertEqual(
+            reg_bulk["instanceProperties"]["disks"][0]["initializeParams"]["diskType"],
+            "hyperdisk-balanced",
+        )
+
+        zonal_bulk = generate_bulk_insert_flexibility_payload(
+            ["c4-standard-16", "c3-standard-22"], count=8, region="us-central1", zone="us-central1-a"
+        )
+        self.assertNotIn("locationPolicy", zonal_bulk)
+
+        # Regional vs Zonal MIG
+        reg_mig = generate_mig_flexibility_payload(
+            ["c4-standard-16", "c3-standard-22"], target_size=12, region="us-central1"
+        )
+        self.assertEqual(reg_mig["updatePolicy"]["instanceRedistributionType"], "NONE")
+        self.assertEqual(reg_mig["distributionPolicy"]["targetShape"], "ANY")
+
+        # Cloud Batch v1alpha job
+        batch_job = generate_cloud_batch_flexibility_job(
+            ["c4-standard-16", "c3-standard-22"], task_count=10, region="us-central1", use_spot=True
+        )
+        alloc = batch_job["allocationPolicy"]
+        self.assertIn("gen4-preferred", alloc["instanceFlexibilityPolicy"]["instanceSelections"])
+        self.assertEqual(alloc["instances"][0]["policy"]["provisioningModel"], "SPOT")
+        self.assertEqual(alloc["instances"][0]["policy"]["bootDisk"]["type"], "hyperdisk-balanced")
 
 if __name__ == "__main__":
     unittest.main()

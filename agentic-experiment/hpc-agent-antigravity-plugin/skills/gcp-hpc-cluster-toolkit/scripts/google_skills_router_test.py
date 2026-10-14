@@ -49,6 +49,17 @@ class TestGoogleSkillsRouterStandalone(unittest.TestCase):
             by_name["retrieving-developer-knowledge"]["entrypoint"],
             "skills/developers/retrieving-developer-knowledge/SKILL.md",
         )
+        self.assertIn("gce-instance-selector", by_name)
+        self.assertIn("gce-flexibility", by_name)
+
+        flex_plan = recommend_skills(
+            query="instance selector machine type hyperdisk iops bulkinsert mig instanceflexibilitypolicy",
+            domain="cluster",
+            top_k=5,
+        )
+        flex_names = [m["name"] for m in flex_plan["all_matches"]]
+        self.assertIn("gce-instance-selector", flex_names)
+        self.assertIn("gce-flexibility", flex_names)
 
     def test_validate_index_payload(self):
         ok, _ = validate_index_payload(

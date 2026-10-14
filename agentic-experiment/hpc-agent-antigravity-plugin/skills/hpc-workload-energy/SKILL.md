@@ -1,15 +1,17 @@
 ---
 name: hpc-workload-energy
-description: Domain expert skill for Energy & Subsurface Geoscience High-Performance Computing (HPC) on Google Cloud. Covers Seismic Exploration simulation (Acoustic/Elastic Wave Propagation, Reverse Time Migration [RTM], and Full Waveform Inversion [FWI] with Devito and Madagascar) and Reservoir Simulation (Multiphase Darcy flow, ECLIPSE input decks, Black-Oil and Compositional modeling with OPM Flow and GEOSX). Features GCE Gen 4/3 instance selection rules (C4D Turin Zen 5, H4D, C4N, C4, H3, A3, A4), memory-bandwidth and cache tuning, benchmark dataset ingestion (Marmousi 2, Equinor Norne Field, SPE 10, SPE 9), automated simulation execution, pure sbatch workload management, solver convergence tracking, interactive 3D equal-scale remote visualization in Ceetron/OPM ResInsight, ParaView, and ThinLinc, and integration with Google Skills (github.com/google/skills) and DeepMind Science Skills (github.com/google-deepmind/science-skills).
+description: Domain expert skill for Energy & Subsurface Geoscience High-Performance Computing (HPC) on Google Cloud. Covers Seismic Exploration simulation (Acoustic/Elastic Wave Propagation, Reverse Time Migration [RTM], and Full Waveform Inversion [FWI] with Devito and Madagascar) and Reservoir Simulation (Multiphase Darcy flow, ECLIPSE input decks, Black-Oil and Compositional modeling with OPM Flow and GEOSX). Features GCE Gen 4/3 instance selection rules via gce-instance-selector and gce-flexibility (C4D Turin Zen 5, H4D, C4N, C4, H3, A3, A4), memory-bandwidth and cache tuning, benchmark dataset ingestion (Marmousi 2, Equinor Norne Field, SPE 10, SPE 9), automated simulation execution, pure sbatch workload management, solver convergence tracking, interactive 3D equal-scale remote visualization in Ceetron/OPM ResInsight, ParaView, and ThinLinc, and integration with Google Skills (github.com/google/skills) and DeepMind Science Skills (github.com/google-deepmind/science-skills).
 ---
 
 # Energy & Subsurface Geoscience HPC Solution Skill
 
-This skill provides domain expertise, cluster infrastructure blueprints, simulation engines, and scientific visualization pipelines for running **Seismic Exploration** and **Reservoir Simulation** workloads on Google Cloud, integrated with **[Google Skills](https://github.com/google/skills)** and **[DeepMind Science Skills](https://github.com/google-deepmind/science-skills)**.
+This skill provides domain expertise, cluster infrastructure blueprints, simulation engines, and scientific visualization pipelines for running **Seismic Exploration** and **Reservoir Simulation** workloads on Google Cloud, integrated with **`gce-instance-selector`**, **`gce-flexibility`**, **[Google Skills](https://github.com/google/skills)**, and **[DeepMind Science Skills](https://github.com/google-deepmind/science-skills)**.
 
 --------------------------------------------------------------------------------
 
-## 1. Quick Decision & Hardware Tuning Matrix
+## 1. Quick Decision & Hardware Tuning Matrix (`gce-instance-selector` + `gce-flexibility`)
+
+Always chain **`gce-instance-selector`** (`resources/instances.json`, displaying the mandatory `_metadata.createdAt` & `us-central1` pricing notice, ranking Gen 4 -> Gen 3 -> Gen 2, and sizing multi-volume `hyperdisk-balanced` / `hyperdisk-throughput` scratch for seismic gathers and reservoir restarts) into **`gce-flexibility`** (`bulkInsert`, MIGs, and Cloud Batch `instanceFlexibilityPolicy` with named `instanceSelections`):
 
 | Solver / Workload | Primary HPC Bottlenecks | Recommended GCP Instance | Optimal Core Binding & Solver Configuration |
 | :--- | :--- | :--- | :--- |

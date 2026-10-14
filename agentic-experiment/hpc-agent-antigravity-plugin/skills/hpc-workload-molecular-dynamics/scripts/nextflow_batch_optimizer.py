@@ -227,6 +227,149 @@ class NextflowBatchOptimizer:
                 return f"c3-highmem-{highmem_vcpu}"
             return f"c3-standard-{target_vcpu}"
 
+    def _resolve_instances_catalog_path(self, catalog_path: str = None) -> str:
+        """Resolves path to the gce-instance-selector instances.json catalog."""
+        if catalog_path and os.path.isfile(catalog_path):
+            return catalog_path
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        skills_root = os.path.dirname(os.path.dirname(script_dir))
+        candidates = [
+            os.path.join(skills_root, "gce-instance-selector", "resources", "instances.json"),
+            os.path.join(skills_root, "gce_instance_selector", "resources", "instances.json"),
+            os.path.join(skills_root, "gcp-hpc-cluster-toolkit", "resources", "instances.json"),
+            os.path.join(skills_root, "gcp_hpc_cluster_toolkit", "resources", "instances.json"),
+            "/google/src/files/head/depot/google3/cloud/octo/skills/gce_instance_selector/resources/instances.json",
+        ]
+        for path in candidates:
+            if os.path.isfile(path):
+                return path
+        raise FileNotFoundError("Could not locate gce-instance-selector resources/instances.json")
+
+    def select_from_instance_catalog(
+        self,
+        min_vcpus: int,
+        min_ram_gib: float,
+        include_local_ssd: bool = False,
+        limit: int = 8,
+        catalog_path: str = None,
+    ) -> Dict[str, Any]:
+        """Queries gce-instance-selector instances.json for bioinformatics processes.
+
+        Enforces gce-instance-selector rules:
+        - Displays _metadata.createdAt and us-central1 pricing notice.
+        - Excludes -lssd / localSSDGiB > 0 shapes by default.
+        - Ranks newest generation to oldest (Gen 4 -> Gen 3 -> Gen 2).
+        - Recommends hyperdisk-balanced for Gen 3+ and pd-balanced for Gen 1/2.
+        """
+        resolved = self._resolve_instances_catalog_path(catalog_path)
+        with open(resolved, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        metadata = data.get("_metadata", {})
+        created_at = metadata.get("createdAt", "Unknown")
+        notice = (
+            f"Catalog date: {created_at} (source: gce-instance-selector instances.json). "
+            "Pricing Notice: All prices are list prices from the us-central1 region "
+            "and may vary in other regions or with custom enterprise discounts."
+        )
+
+        ranked = []
+        for key, item in data.items():
+            if key == "_metadata" or not isinstance(item, dict):
+                continue
+            mtype = item.get("machineType") or key
+            if item.get("computeType") != "cpu":
+                continue
+            if (item.get("architecture") or "").upper() != "X86_64":
+                continue
+            vcpus = item.get("vCPUs") or 0
+            ram_gib = item.get("ramGiB") or 0
+            local_ssd = item.get("localSSDGiB") or 0
+            if vcpus < min_vcpus or ram_gib < min_ram_gib:
+                continue
+            if not include_local_ssd and ("-lssd" in mtype or local_ssd > 0):
+                continue
+            gen_num = int(item.get("generation", 3))
+            gen_rank = max(0, 4 - gen_num) if gen_num <= 4 else 0
+            pricing = (item.get("pricing") or {}).get("us-central1", {})
+            ondemand = pricing.get("onDemandMonthlyUSD")
+            sort_price = ondemand if ondemand is not None else float("inf")
+            boot_disk = "hyperdisk-balanced" if gen_num >= 3 else "pd-balanced"
+            ranked.append((
+                gen_rank,
+                sort_price,
+                vcpus,
+                mtype,
+                {
+                    "machineType": mtype,
+                    "family": item.get("family"),
+                    "generation": f"Gen {gen_num}",
+                    "generationRank": gen_rank,
+                    "vCPUs": vcpus,
+                    "ramGiB": ram_gib,
+                    "bootDiskType": boot_disk,
+                    "pricingUSD": pricing,
+                },
+            ))
+        ranked.sort(key=lambda r: (r[0], r[1], r[2], r[3]))
+        return {
+            "notice": notice,
+            "metadata": metadata,
+            "candidates": [r[4] for r in ranked[:limit]],
+        }
+
+    def generate_gce_flexibility_batch_policy(
+        self,
+        process_name: str,
+        region: str = "us-central1",
+        spot: bool = False,
+        catalog_path: str = None,
+    ) -> Dict[str, Any]:
+        """Generates a gce-flexibility Cloud Batch v1alpha allocationPolicy for a Nextflow process.
+
+        Chains gce-instance-selector -> gce-flexibility (references/cloud_batch.md):
+        - Groups ranked bare machine types into named instanceSelections ('gen4-preferred', 'gen3-fallback').
+        - Sets bootDisk.type to hyperdisk-balanced for Gen 3+ or pd-balanced for Gen 2.
+        """
+        profile = self.classify_process(process_name)
+        min_vcpus = profile["vcpus"]
+        min_ram = max(profile["memory_gb"], profile.get("min_memory_gb", 0))
+        sel = self.select_from_instance_catalog(
+            min_vcpus=min_vcpus, min_ram_gib=min_ram, limit=12, catalog_path=catalog_path
+        )
+        gen4 = [c["machineType"] for c in sel["candidates"] if c["generationRank"] == 0][:4]
+        gen3 = [c["machineType"] for c in sel["candidates"] if c["generationRank"] == 1][:4]
+        if not gen3:
+            fallback_mtype = self.select_machine_type("business", min_vcpus, min_ram, process_name)
+            gen3 = [fallback_mtype]
+        instance_selections = {}
+        if gen4:
+            instance_selections["gen4-preferred"] = {"machineTypes": gen4, "rank": 0}
+        if gen3:
+            instance_selections["gen3-fallback"] = {"machineTypes": gen3, "rank": 1}
+
+        primary_boot = sel["candidates"][0]["bootDiskType"] if sel["candidates"] else "hyperdisk-balanced"
+        return {
+            "process": process_name,
+            "notice": sel["notice"],
+            "allocationPolicy": {
+                "location": {"allowedLocations": [f"regions/{region}"]},
+                "instances": [
+                    {
+                        "policy": {
+                            "provisioningModel": "SPOT" if spot else "STANDARD",
+                            "bootDisk": {
+                                "type": primary_boot,
+                                "sizeGb": profile.get("disk_gb", 100),
+                            },
+                        }
+                    }
+                ],
+                "instanceFlexibilityPolicy": {
+                    "instanceSelections": instance_selections,
+                },
+            },
+        }
+
     def generate_nextflow_config_profile(
         self,
         processes: List[str],
@@ -463,6 +606,7 @@ def main():
     parser.add_argument("--transcriptome", default="gs://my-bucket/ref/transcriptome.fa", help="GCS reference transcriptome path")
     parser.add_argument("--multiqc", default="gs://my-bucket/multiqc", help="GCS MultiQC output path")
     parser.add_argument("--audit-only", action="store_true", help="Perform audit on existing config without generating new profile")
+    parser.add_argument("--emit-flexibility-json", default="", help="Optional path to emit gce-flexibility Cloud Batch instanceFlexibilityPolicy JSON per process")
     parser.add_argument("--output", "-o", default="", help="Output config path")
 
     args = parser.parse_args()
@@ -535,6 +679,17 @@ def main():
         with open(args.output, "w") as f:
             f.write(generated_profile)
         print(f"\n[+] Saved profile to {args.output}")
+
+    if args.emit_flexibility_json:
+        flex_bundle = {
+            proc: optimizer.generate_gce_flexibility_batch_policy(
+                proc, region=args.region, spot=args.spot
+            )
+            for proc in processes
+        }
+        with open(args.emit_flexibility_json, "w", encoding="utf-8") as ff:
+            json.dump(flex_bundle, ff, indent=2)
+        print(f"[+] Saved gce-flexibility Cloud Batch policies to {args.emit_flexibility_json}")
 
 if __name__ == "__main__":
     main()

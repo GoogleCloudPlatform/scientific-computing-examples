@@ -1,15 +1,17 @@
 ---
 name: hpc-workload-cae
-description: Domain expert skill for Computer-Aided Engineering (CAE), Computational Fluid Dynamics (CFD), Finite Element Analysis (FEA), and ParaView 3D Visualization on Google Cloud. Use when building, deploying, running, visualizing, optimizing, or troubleshooting simulations with OpenFOAM, ParaView, ANSYS Fluent, ANSYS Mechanical, SIMULIA Abaqus, Siemens STAR-CCM+, and LS-DYNA on Slurm clusters or Google Batch. Covers mesh decomposition for Gen 4 (C4, H4D, C4D, C4N) and Gen 3 (H3, C3) compute shapes, NUMA/memory-bandwidth tuning, ISV licensing (FlexLM/RLM/SALT), solver convergence monitoring, headless/noVNC ParaView remote visualization, high-FPS VTK animation pre-baking, and integration with Google Skills (github.com/google/skills) and DeepMind Science Skills (github.com/google-deepmind/science-skills).
+description: Domain expert skill for Computer-Aided Engineering (CAE), Computational Fluid Dynamics (CFD), Finite Element Analysis (FEA), and ParaView 3D Visualization on Google Cloud. Use when building, deploying, running, visualizing, optimizing, or troubleshooting simulations with OpenFOAM, ParaView, ANSYS Fluent, ANSYS Mechanical, SIMULIA Abaqus, Siemens STAR-CCM+, and LS-DYNA on Slurm clusters or Google Batch. Covers mesh decomposition for Gen 4 (C4, H4D, C4D, C4N) and Gen 3 (H3, C3) compute shapes, NUMA/memory-bandwidth tuning, ISV licensing (FlexLM/RLM/SALT), solver convergence monitoring, headless/noVNC ParaView remote visualization, high-FPS VTK animation pre-baking, and integration with gce-instance-selector, gce-flexibility, Google Skills (github.com/google/skills), and DeepMind Science Skills (github.com/google-deepmind/science-skills).
 ---
 
 # Computer-Aided Engineering (CAE), CFD & ParaView Visualization Skill
 
-This skill provides domain knowledge, submission templates, decomposition calculators, license diagnostic tools, ParaView remote visualization suites, and optimization guides for running CAE workloads on Google Cloud, integrated with **[Google Skills](https://github.com/google/skills)** and **[DeepMind Science Skills](https://github.com/google-deepmind/science-skills)**.
+This skill provides domain knowledge, submission templates, decomposition calculators, license diagnostic tools, ParaView remote visualization suites, and optimization guides for running CAE workloads on Google Cloud, integrated with **`gce-instance-selector`**, **`gce-flexibility`**, **[Google Skills](https://github.com/google/skills)**, and **[DeepMind Science Skills](https://github.com/google-deepmind/science-skills)**.
 
 --------------------------------------------------------------------------------
 
-## 1. Quick Decision & Hardware Tuning Matrix
+## 1. Quick Decision & Hardware Tuning Matrix (`gce-instance-selector` + `gce-flexibility`)
+
+Always chain **`gce-instance-selector`** (`resources/instances.json`, displaying the mandatory `_metadata.createdAt` & `us-central1` pricing notice, ranking Gen 4 -> Gen 3 -> Gen 2, and sizing multi-volume `hyperdisk-balanced` / `hyperdisk-throughput` scratch) into **`gce-flexibility`** (`bulkInsert`, MIGs, and Cloud Batch `instanceFlexibilityPolicy` with named `instanceSelections`):
 
 | Solver / Workload | Primary Bottleneck | Recommended GCP Instance | Optimal Core Binding & Decomposition |
 | :--- | :--- | :--- | :--- |

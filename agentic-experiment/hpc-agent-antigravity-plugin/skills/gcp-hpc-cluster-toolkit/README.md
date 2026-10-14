@@ -3,8 +3,9 @@
 Comprehensive toolkit, pre-flight capacity verification, and blueprints for building, scaling, and optimizing Slurm clusters on Google Cloud.
 
 ## Modules & Scripts
-- `scripts/blueprint_generator.py`: Generates production-ready ghpc deployment blueprints, supports dedicated login node modules, and creates Cloud Batch flexibility policies.
-- `scripts/blueprint_generator_test.py`: Unit tests for blueprint generator, dedicated login module, and batch flexibility rules.
+- `scripts/blueprint_generator.py`: Generates production-ready ghpc deployment blueprints, queries the `gce-instance-selector` (`resources/instances.json`) catalog with multi-volume Hyperdisk scaling and `us-central1` pricing notices, supports dedicated login node modules, and creates `gce-flexibility` payloads for Bulk Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Cloud Batch.
+- `scripts/blueprint_generator_test.py`: Unit tests for blueprint generator, `gce-instance-selector` catalog ranking/Hyperdisk scaling, dedicated login module, and `gce-flexibility` (`bulkInsert`, MIG, Cloud Batch) rules.
+- `resources/instances.json`: Bundled GCE hardware capability and monthly pricing catalog (`gce-instance-selector` / `google-octo/gcp_instance_gen`).
 - `scripts/canary_capacity_check.py`: Real-time canary VM deployment and rapid deletion (within 30-60s) for hardware stockout detection, coupled with CPU (Standard vs. Spot) and storage (PD vs. Hyperdisk, Filestore/Lustre) quota headroom auditing.
 - `scripts/canary_capacity_check_test.py`: Unit tests for canary deployment, stockout detection, and storage quota bottleneck analysis.
 - `scripts/validate_blueprint.sh`: Automated YAML blueprint schema and syntax validator using `ghpc`/`gcluster` with fallback parser.

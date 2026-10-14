@@ -223,6 +223,24 @@ CURATED_GOOGLE_SKILLS: List[Dict[str, Any]] = [
         "keywords": ["cost", "spot", "preemptible", "autoscale", "finops", "waf"],
         "hpc_integration": "Pair with Slurm autoscaling (`suspend_time: 300`), Spot partitions (`--enable-spot`), and Nextflow `--max_forks` budgeting.",
     },
+    {
+        "name": "gce-instance-selector",
+        "repo": "google-octo/gce-instance-selector",
+        "description": "Select and rank Google Cloud Compute Engine (GCE) machine types, boot disks (hyperdisk-balanced vs pd-balanced), multi-volume Hyperdisk IOPS/throughput, Tier 1 networking, and us-central1 pricing (On-Demand, Spot, CUD, DWS) from resources/instances.json.",
+        "entrypoint": "gce-instance-selector/SKILL.md",
+        "domains": ["all", "cluster", "storage", "gke", "cae", "md", "energy"],
+        "keywords": ["instance selector", "machine type", "instances.json", "hyperdisk", "iops", "throughput", "pricing", "cud", "dws", "gen 4", "c4", "c4d", "h4d", "n4", "sizing"],
+        "hpc_integration": "Always invoke first (via `blueprint_generator.py --select-instances` or `gce-instance-selector/SKILL.md`) to translate workload vCPU/RAM/network/Hyperdisk requirements into ranked Gen 4 -> Gen 3 -> Gen 2 machine types and display the mandatory `_metadata.createdAt` + `us-central1` pricing notice.",
+    },
+    {
+        "name": "gce-flexibility",
+        "repo": "google-octo/gce-flexibility",
+        "description": "Deploy and manage flexible Google Cloud Compute Engine (GCE) workloads across ranked machine types using Bulk Insert (bulkInsert), Managed Instance Groups (MIGs), and Google Cloud Batch instanceFlexibilityPolicy to mitigate stockouts and optimize Spot/Standard capacity.",
+        "entrypoint": "gce-flexibility/SKILL.md",
+        "domains": ["all", "cluster", "gke", "cae", "md", "energy"],
+        "keywords": ["flexibility", "instanceflexibilitypolicy", "instanceselections", "bulkinsert", "bulk insert", "mig", "managed instance group", "cloud batch", "stockout", "fallback", "rank"],
+        "hpc_integration": "Chain directly after `gce-instance-selector` (or via `blueprint_generator.py --emit-flexibility-target {bulk-insert,mig,batch-job}`) to generate named `instanceSelections` (`gen4-preferred` rank 0, `gen3-fallback` rank 1) with bare machine type names and generation-matched boot disks.",
+    },
 ]
 
 # Complete catalog of all 40 DeepMind Science Skills (https://github.com/google-deepmind/science-skills)

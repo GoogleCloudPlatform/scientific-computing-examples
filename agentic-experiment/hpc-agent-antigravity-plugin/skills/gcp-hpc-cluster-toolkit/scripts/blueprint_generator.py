@@ -8,8 +8,399 @@ Tier 1 networking, and compact placement).
 
 import argparse
 import json
+import math
+import os
 import sys
 import yaml
+
+# Instance Generation Ranking (Lower is Newer / Higher Priority)
+# Incorporates rules from gce-instance-selector & gce-flexibility skills
+MACHINE_GENERATION_RANK = {
+    # Gen 4 (Rank 0 - Highest Priority)
+    "h4d": 0,
+    "c4": 0,
+    "c4d": 0,
+    "c4n": 0,
+    "c4a": 0,
+    "n4": 0,
+    "n4a": 0,
+    "n4d": 0,
+    "m4": 0,
+    "x4": 0,
+    "z3": 0,
+    "g4": 0,
+    "a4": 0,
+    "a4x": 0,
+    # Gen 3 (Rank 1)
+    "h3": 1,
+    "c3": 1,
+    "c3d": 1,
+    "m3": 1,
+    "a3": 1,
+    "g2": 1,
+    # Gen 2 (Rank 2)
+    "c2": 2,
+    "c2d": 2,
+    "n2": 2,
+    "n2d": 2,
+    "t2d": 2,
+    "t2a": 2,
+    "m2": 2,
+    "a2": 2,
+    "e2": 2,
+    # Gen 1 (Rank 3)
+    "n1": 3,
+    "m1": 3,
+}
+
+CATALOG_GENERATION_RANK = {
+    "Gen 4": 0,
+    "Gen 3": 1,
+    "Gen 2": 2,
+    "Gen 1": 3,
+}
+
+# Hyperdisk Per-Volume Scaling Specifications (from gce-instance-selector SKILL.md)
+HYPERDISK_VOLUME_SPECS = {
+    "hyperdisk-balanced": {
+        "min_gib": 4,
+        "max_gib": 64 * 1024,
+        "max_iops_per_vol": 160000,
+        "max_throughput_mbps_per_vol": 2400,
+        "max_volumes": 32,
+        "iops_per_gib": 500,
+    },
+    "hyperdisk-balanced-ha": {
+        "min_gib": 4,
+        "max_gib": 64 * 1024,
+        "max_iops_per_vol": 100000,
+        "max_throughput_mbps_per_vol": 2400,
+        "max_volumes": 32,
+        "iops_per_gib": 500,
+    },
+    "hyperdisk-extreme": {
+        "min_gib": 64,
+        "max_gib": 64 * 1024,
+        "max_iops_per_vol": 350000,
+        "max_throughput_mbps_per_vol": 5000,
+        "max_volumes": 8,
+        "iops_per_gib": 1200,
+    },
+    "hyperdisk-throughput": {
+        "min_gib": 2 * 1024,
+        "max_gib": 32 * 1024,
+        "max_iops_per_vol": 9600,
+        "max_throughput_mbps_per_vol": 2400,
+        "max_volumes": 64,
+        "mbps_per_tib": 90,
+        "min_gib_for_max_throughput": 27 * 1024,
+    },
+    "hyperdisk-ml": {
+        "min_gib": 4,
+        "max_gib": 64 * 1024,
+        "max_iops_per_vol": 33554432,
+        "max_throughput_mbps_per_vol": 2097152,
+        "max_volumes": 64,
+    },
+}
+
+
+def get_machine_family(machine_type: str) -> str:
+    """Extracts the machine series/family prefix (e.g. 'c4d-standard-384' -> 'c4d')."""
+    if not machine_type:
+        return ""
+    return machine_type.strip().lower().split("-")[0]
+
+
+def _resolve_instances_catalog_path(catalog_path: str = None) -> str:
+    """Resolves the path to the gce-instance-selector instances.json catalog."""
+    if catalog_path and os.path.isfile(catalog_path):
+        return catalog_path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    skill_root = os.path.dirname(script_dir)
+    candidates = [
+        os.path.join(skill_root, "resources", "instances.json"),
+        os.path.join(os.path.dirname(skill_root), "gce-instance-selector", "resources", "instances.json"),
+        os.path.join(os.path.dirname(skill_root), "gce_instance_selector", "resources", "instances.json"),
+        "/google/src/files/head/depot/google3/cloud/octo/skills/gce_instance_selector/resources/instances.json",
+    ]
+    for path in candidates:
+        if os.path.isfile(path):
+            return path
+    raise FileNotFoundError(
+        "Could not locate gce-instance-selector resources/instances.json catalog."
+    )
+
+
+def load_instances_catalog(catalog_path: str = None) -> dict:
+    """Loads the gce-instance-selector instances.json catalog and metadata."""
+    resolved = _resolve_instances_catalog_path(catalog_path)
+    with open(resolved, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    metadata = data.get("_metadata", {})
+    if isinstance(data.get("instances"), list):
+        raw_instances = data["instances"]
+    else:
+        raw_instances = [
+            v for k, v in data.items() if k != "_metadata" and isinstance(v, dict)
+        ]
+    normalized = []
+    for item in raw_instances:
+        entry = dict(item)
+        mtype = entry.get("machineType") or entry.get("name") or ""
+        entry["machineType"] = mtype
+        entry["name"] = mtype
+        fam = entry.get("family") or entry.get("series") or get_machine_family(mtype)
+        entry["family"] = fam
+        entry["series"] = fam
+        gen_raw = entry.get("generation", 3)
+        if isinstance(gen_raw, int):
+            entry["generationNum"] = gen_raw
+            entry["generationLabel"] = f"Gen {gen_raw}"
+        else:
+            gen_str = str(gen_raw).strip()
+            num = int(gen_str.replace("Gen", "").strip()) if any(c.isdigit() for c in gen_str) else 3
+            entry["generationNum"] = num
+            entry["generationLabel"] = f"Gen {num}"
+        pricing_raw = entry.get("pricing") or {}
+        if "us-central1" in pricing_raw and isinstance(pricing_raw["us-central1"], dict):
+            entry["pricingUSD"] = pricing_raw["us-central1"]
+        else:
+            entry["pricingUSD"] = pricing_raw
+        normalized.append(entry)
+    return {
+        "catalog_path": resolved,
+        "metadata": metadata,
+        "instances": normalized,
+    }
+
+
+def format_catalog_notice(metadata: dict) -> str:
+    """Formats the mandatory gce-instance-selector catalog date and pricing notice."""
+    created_at = metadata.get("createdAt", "Unknown")
+    return (
+        f"Catalog date: {created_at} (source: gce-instance-selector instances.json). "
+        "Pricing Notice: All prices are list prices from the us-central1 region "
+        "and may vary in other regions or with custom enterprise discounts."
+    )
+
+
+def recommend_boot_disk(generation_or_machine_type, size_gb: int = 50) -> dict:
+    """Recommends boot disk type per gce-instance-selector & gce-flexibility rules.
+
+    Gen 3+ instances use hyperdisk-balanced; Gen 1 & Gen 2 use pd-balanced.
+    """
+    if isinstance(generation_or_machine_type, int):
+        disk_type = "hyperdisk-balanced" if generation_or_machine_type >= 3 else "pd-balanced"
+        return {"bootDiskType": disk_type, "sizeGb": size_gb}
+    val = str(generation_or_machine_type or "").strip()
+    if val in ("Gen 4", "Gen 3", "4", "3", "Gen 5", "Gen 6", "Gen 7"):
+        disk_type = "hyperdisk-balanced"
+    elif val in ("Gen 2", "Gen 1", "2", "1"):
+        disk_type = "pd-balanced"
+    else:
+        family = get_machine_family(val)
+        rank = MACHINE_GENERATION_RANK.get(family, 1)
+        disk_type = "hyperdisk-balanced" if rank <= 1 else "pd-balanced"
+    return {
+        "bootDiskType": disk_type,
+        "sizeGb": size_gb,
+    }
+
+
+def calculate_hyperdisk_volumes(
+    storage_type: str,
+    required_throughput_mbps: int = 0,
+    required_iops: int = 0,
+    instance_storage_caps: dict = None,
+) -> dict:
+    """Calculates single-volume vs. multi-volume Hyperdisk layout per gce-instance-selector.
+
+    Accounts for per-volume caps (e.g. 2,400 MiB/s and 160,000 IOPS for hyperdisk-balanced;
+    27 TiB minimum per volume to achieve 2,400 MiB/s on hyperdisk-throughput) and reminds
+    users that instance storage performance limits are half-duplex (read + write).
+    """
+    spec = HYPERDISK_VOLUME_SPECS.get(storage_type)
+    if not spec:
+        raise ValueError(f"Unsupported Hyperdisk type: {storage_type}")
+
+    vols_for_tput = (
+        math.ceil(required_throughput_mbps / spec["max_throughput_mbps_per_vol"])
+        if required_throughput_mbps > 0
+        else 1
+    )
+    vols_for_iops = (
+        math.ceil(required_iops / spec["max_iops_per_vol"])
+        if required_iops > 0
+        else 1
+    )
+    recommended_volumes = max(1, vols_for_tput, vols_for_iops)
+    per_vol_tput = (
+        math.ceil(required_throughput_mbps / recommended_volumes)
+        if required_throughput_mbps > 0
+        else 0
+    )
+    per_vol_iops = (
+        math.ceil(required_iops / recommended_volumes)
+        if required_iops > 0
+        else 0
+    )
+
+    min_vol_gib = spec["min_gib"]
+    if storage_type == "hyperdisk-throughput" and per_vol_tput > 0:
+        min_tib = math.ceil(per_vol_tput / spec["mbps_per_tib"])
+        min_vol_gib = max(min_vol_gib, min_tib * 1024)
+    elif "iops_per_gib" in spec and per_vol_iops > 0:
+        needed_iops = max(0, per_vol_iops - (3000 if "balanced" in storage_type else 0))
+        if needed_iops > 0:
+            min_vol_gib = max(min_vol_gib, math.ceil(needed_iops / spec["iops_per_gib"]))
+
+    exceeds_instance_cap = False
+    instance_cap_warning = None
+    if instance_storage_caps:
+        cap_caps = instance_storage_caps.get(storage_type, {})
+        max_inst_tput = cap_caps.get("maxThroughputMBps") or 0
+        max_inst_iops = cap_caps.get("maxIOPS") or 0
+        if (required_throughput_mbps > max_inst_tput and max_inst_tput > 0) or (
+            required_iops > max_inst_iops and max_inst_iops > 0
+        ):
+            exceeds_instance_cap = True
+            instance_cap_warning = (
+                f"Requested {required_throughput_mbps} MiB/s / {required_iops} IOPS "
+                f"exceeds instance ceiling ({max_inst_tput} MiB/s / {max_inst_iops} IOPS)."
+            )
+
+    return {
+        "storageType": storage_type,
+        "recommendedVolumes": recommended_volumes,
+        "perVolumeThroughputMBps": per_vol_tput,
+        "perVolumeIOPS": per_vol_iops,
+        "minVolumeSizeGiB": min_vol_gib,
+        "exceedsInstanceCap": exceeds_instance_cap,
+        "instanceCapWarning": instance_cap_warning,
+        "duplexNote": (
+            "Instance-level storage performance limits on GCE are half-duplex "
+            "(the maximum applies to combined read + write traffic)."
+        ),
+    }
+
+
+def select_instances(
+    min_vcpus: int = None,
+    max_vcpus: int = None,
+    min_ram_gib: float = None,
+    max_ram_gib: float = None,
+    architecture: str = None,
+    cpu_platform: str = None,
+    compute_type: str = "cpu",
+    gpu_model: str = None,
+    min_gpus: int = None,
+    min_egress_gbps: float = None,
+    use_tier1_networking: bool = False,
+    storage_type: str = "hyperdisk-balanced",
+    min_storage_iops: int = None,
+    min_storage_throughput_mbps: int = None,
+    include_local_ssd: bool = False,
+    series_allowlist: list = None,
+    limit: int = 15,
+    catalog_path: str = None,
+) -> dict:
+    """Queries the gce-instance-selector catalog and ranks GCE machine types.
+
+    Enforces gce-instance-selector rules:
+    1. Filters by vCPUs, RAM, architecture, cpuPlatform, computeType, GPUs,
+       networking (default or Tier 1), and Hyperdisk storage IOPS/throughput.
+    2. Deprioritizes/excludes Local SSD (-lssd) variants unless include_local_ssd=True.
+    3. Ranks newest generation to oldest (Gen 4 -> Gen 3 -> Gen 2 -> Gen 1),
+       then by on-demand monthly USD and vCPUs.
+    4. Attaches boot disk recommendations and multi-volume Hyperdisk calculations.
+    """
+    catalog = load_instances_catalog(catalog_path)
+    notice = format_catalog_notice(catalog["metadata"])
+    matches = []
+
+    for inst in catalog["instances"]:
+        name = inst.get("name", "")
+        if series_allowlist and inst.get("series") not in series_allowlist:
+            continue
+        if compute_type and inst.get("computeType") != compute_type:
+            continue
+        if architecture and (inst.get("architecture") or "").upper() != architecture.upper():
+            continue
+        if cpu_platform and cpu_platform.lower() not in (inst.get("cpuPlatform") or "").lower():
+            continue
+
+        vcpus = inst.get("vCPUs") or 0
+        if min_vcpus is not None and vcpus < min_vcpus:
+            continue
+        if max_vcpus is not None and vcpus > max_vcpus:
+            continue
+
+        ram_gib = inst.get("ramGiB") or 0
+        if min_ram_gib is not None and ram_gib < min_ram_gib:
+            continue
+        if max_ram_gib is not None and ram_gib > max_ram_gib:
+            continue
+
+        local_ssd_gib = inst.get("localSSDGiB") or 0
+        if not include_local_ssd and ("-lssd" in name or (compute_type == "cpu" and local_ssd_gib > 0)):
+            continue
+
+        if gpu_model or min_gpus:
+            gpus = inst.get("gpus") or {}
+            if gpu_model and gpu_model.lower() not in (gpus.get("model") or "").lower():
+                continue
+            if min_gpus and (gpus.get("count") or 0) < min_gpus:
+                continue
+
+        if min_egress_gbps is not None:
+            net = inst.get("networking") or {}
+            egress = (
+                net.get("tier1MaxEgressGbps") or net.get("defaultMaxEgressGbps") or 0
+                if use_tier1_networking
+                else net.get("defaultMaxEgressGbps") or 0
+            )
+            if egress < min_egress_gbps:
+                continue
+
+        storage_caps = inst.get("storage") or {}
+        if min_storage_iops is not None or min_storage_throughput_mbps is not None:
+            st_cap = storage_caps.get(storage_type) or {}
+            max_iops = st_cap.get("maxIOPS") or 0
+            max_tput = st_cap.get("maxThroughputMBps") or 0
+            if min_storage_iops is not None and max_iops < min_storage_iops:
+                continue
+            if min_storage_throughput_mbps is not None and max_tput < min_storage_throughput_mbps:
+                continue
+
+        gen_num = inst.get("generationNum", 3)
+        gen_rank = max(0, 4 - gen_num) if gen_num <= 4 else 0
+        pricing = inst.get("pricingUSD") or {}
+        ondemand_usd = pricing.get("onDemandMonthlyUSD")
+        sort_price = ondemand_usd if ondemand_usd is not None else float("inf")
+        lssd_penalty = 1 if local_ssd_gib > 0 else 0
+
+        enriched = dict(inst)
+        enriched["generation"] = inst.get("generationLabel", f"Gen {gen_num}")
+        enriched["generationRank"] = gen_rank
+        enriched["recommendedBootDisk"] = recommend_boot_disk(gen_num)
+        if min_storage_iops or min_storage_throughput_mbps:
+            enriched["hyperdiskVolumePlan"] = calculate_hyperdisk_volumes(
+                storage_type=storage_type,
+                required_throughput_mbps=min_storage_throughput_mbps or 0,
+                required_iops=min_storage_iops or 0,
+                instance_storage_caps=storage_caps,
+            )
+        matches.append((gen_rank, lssd_penalty, sort_price, vcpus, name, enriched))
+
+    matches.sort(key=lambda item: (item[0], item[1], item[2], item[3], item[4]))
+    selected = [item[5] for item in matches[:limit]]
+    return {
+        "notice": notice,
+        "metadata": catalog["metadata"],
+        "totalMatches": len(matches),
+        "candidates": selected,
+    }
 
 MACHINE_SPECS = {
     # Gen 4 Compute-Optimized & HPC
@@ -467,9 +858,232 @@ def generate_batch_flexibility_policy(workload_type: str = "cae-cfd") -> dict:
             ]
         }
 
+
+def build_named_instance_selections(machine_types: list) -> dict:
+    """Builds a named instanceSelections map compliant with the gce-flexibility skill.
+
+    Groups bare machine type names (stripping any URLs) by generation into
+    named keys ('gen4-preferred', 'gen3-fallback', 'gen2-fallback', 'gen1-fallback')
+    ranked 0 (highest priority) to 3.
+    """
+    buckets = {}
+    label_map = {
+        0: "gen4-preferred",
+        1: "gen3-fallback",
+        2: "gen2-fallback",
+        3: "gen1-fallback",
+    }
+    for mtype in machine_types or []:
+        bare_name = mtype.strip().split("/")[-1]
+        if not bare_name:
+            continue
+        family = get_machine_family(bare_name)
+        rank = MACHINE_GENERATION_RANK.get(family, 1)
+        buckets.setdefault(rank, [])
+        if bare_name not in buckets[rank]:
+            buckets[rank].append(bare_name)
+
+    selections = {}
+    for rank in sorted(buckets.keys()):
+        key = label_map.get(rank, f"rank-{rank}")
+        selections[key] = {
+            "machineTypes": buckets[rank],
+            "rank": rank,
+        }
+    return selections
+
+
+def generate_bulk_insert_flexibility_payload(
+    machine_types: list,
+    count: int = 10,
+    min_count: int = None,
+    name_pattern: str = "hpc-flex-vm-###",
+    region: str = "us-central1",
+    zone: str = None,
+    network: str = "default",
+    subnetwork: str = "default",
+    target_shape: str = "BALANCED",
+    use_spot: bool = False,
+    boot_disk_size_gb: int = 50,
+    source_image: str = "projects/debian-cloud/global/images/family/debian-12",
+) -> dict:
+    """Generates a gce-flexibility Beta bulkInsert REST payload (references/bulk_insert.md).
+
+    Enforces:
+    - Bare machine type names in instanceFlexibilityPolicy.instanceSelections.
+    - Boot disk compatibility (hyperdisk-balanced for Gen 3+, pd-balanced for Gen 1/2;
+      if mixing Gen 3+ and Gen 2 in a single bulkInsert, warns or defaults to compatible disk).
+    - Includes locationPolicy.targetShape for regional bulkInsert; omits locationPolicy for zonal.
+    """
+    selections = build_named_instance_selections(machine_types)
+    ranks_present = [v["rank"] for v in selections.values()]
+    has_gen2_or_older = any(r >= 2 for r in ranks_present)
+    primary_mtype = (machine_types[0] if machine_types else "c4-standard-192").split("/")[-1]
+    boot_disk = (
+        {"bootDiskType": "pd-balanced", "sizeGb": boot_disk_size_gb}
+        if has_gen2_or_older and len(ranks_present) == 1
+        else recommend_boot_disk(primary_mtype, size_gb=boot_disk_size_gb)
+    )
+
+    payload = {
+        "count": count,
+        "minCount": min_count if min_count is not None else count,
+        "namePattern": name_pattern,
+        "instanceProperties": {
+            "disks": [
+                {
+                    "boot": True,
+                    "autoDelete": True,
+                    "initializeParams": {
+                        "sourceImage": source_image,
+                        "diskType": boot_disk["bootDiskType"],
+                        "diskSizeGb": str(boot_disk["sizeGb"]),
+                    },
+                }
+            ],
+            "networkInterfaces": [
+                {
+                    "network": f"global/networks/{network}",
+                    "subnetwork": f"regions/{region}/subnetworks/{subnetwork}",
+                }
+            ],
+            "scheduling": {
+                "provisioningModel": "SPOT" if use_spot else "STANDARD",
+            },
+        },
+        "instanceFlexibilityPolicy": {
+            "instanceSelections": selections,
+        },
+    }
+    if use_spot:
+        payload["instanceProperties"]["scheduling"]["instanceTerminationAction"] = "DELETE"
+    if not zone:
+        payload["locationPolicy"] = {"targetShape": target_shape}
+    return payload
+
+
+def generate_mig_flexibility_payload(
+    machine_types: list,
+    target_size: int = 10,
+    mig_name: str = "hpc-flex-mig",
+    instance_template_url: str = "global/instanceTemplates/hpc-base-template",
+    region: str = "us-central1",
+    zone: str = None,
+    target_shape: str = None,
+) -> dict:
+    """Generates a gce-flexibility Beta MIG REST payload (references/mig_flexibility.md).
+
+    Enforces:
+    - updatePolicy.instanceRedistributionType = 'NONE' for regional MIGs.
+    - distributionPolicy.targetShape = 'ANY' (regional default) or 'ANY_SINGLE_ZONE' (zonal / HPC).
+    - Bare machine type names in instanceFlexibilityPolicy.instanceSelections.
+    """
+    selections = build_named_instance_selections(machine_types)
+    resolved_shape = target_shape or ("ANY_SINGLE_ZONE" if zone else "ANY")
+    payload = {
+        "name": mig_name,
+        "baseInstanceName": mig_name,
+        "instanceTemplate": instance_template_url,
+        "targetSize": target_size,
+        "instanceFlexibilityPolicy": {
+            "instanceSelections": selections,
+        },
+        "distributionPolicy": {
+            "targetShape": resolved_shape,
+        },
+    }
+    if not zone:
+        payload["updatePolicy"] = {
+            "instanceRedistributionType": "NONE",
+        }
+    return payload
+
+
+def generate_cloud_batch_flexibility_job(
+    machine_types: list,
+    task_count: int = 10,
+    parallelism: int = 10,
+    container_image: str = "gcr.io/google-containers/busybox",
+    commands: list = None,
+    cpu_milli: int = 4000,
+    memory_mib: int = 8192,
+    max_run_duration: str = "3600s",
+    region: str = "us-central1",
+    network: str = None,
+    subnetwork: str = None,
+    use_spot: bool = False,
+    boot_disk_size_gb: int = 50,
+) -> dict:
+    """Generates a gce-flexibility v1alpha Cloud Batch job payload (references/cloud_batch.md).
+
+    Enforces:
+    - allocationPolicy.instanceFlexibilityPolicy.instanceSelections with named keys and bare machineTypes.
+    - allocationPolicy.instances[0].policy.bootDisk with hyperdisk-balanced (Gen 3+) or pd-balanced (Gen 2).
+    """
+    selections = build_named_instance_selections(machine_types)
+    primary_mtype = (machine_types[0] if machine_types else "c4-standard-192").split("/")[-1]
+    boot_disk = recommend_boot_disk(primary_mtype, size_gb=boot_disk_size_gb)
+
+    job = {
+        "taskGroups": [
+            {
+                "taskSpec": {
+                    "runnables": [
+                        {
+                            "container": {
+                                "imageUri": container_image,
+                                "commands": commands or ["/bin/sh", "-c", "echo Hello HPC Batch"],
+                            }
+                        }
+                    ],
+                    "computeResource": {
+                        "cpuMilli": cpu_milli,
+                        "memoryMib": memory_mib,
+                    },
+                    "maxRunDuration": max_run_duration,
+                },
+                "taskCount": task_count,
+                "parallelism": parallelism,
+            }
+        ],
+        "allocationPolicy": {
+            "location": {
+                "allowedLocations": [f"regions/{region}"],
+            },
+            "instances": [
+                {
+                    "policy": {
+                        "provisioningModel": "SPOT" if use_spot else "STANDARD",
+                        "bootDisk": {
+                            "type": boot_disk["bootDiskType"],
+                            "sizeGb": boot_disk["sizeGb"],
+                        },
+                    }
+                }
+            ],
+            "instanceFlexibilityPolicy": {
+                "instanceSelections": selections,
+            },
+        },
+        "logsPolicy": {
+            "destination": "CLOUD_LOGGING",
+        },
+    }
+    if network and subnetwork:
+        job["allocationPolicy"]["network"] = {
+            "networkInterfaces": [
+                {
+                    "network": f"global/networks/{network}",
+                    "subnetwork": f"regions/{region}/subnetworks/{subnetwork}",
+                }
+            ]
+        }
+    return job
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Generate GCP Cluster Toolkit Blueprint & Batch Flexibility Policies")
-    parser.add_argument("--project-id", required=True, help="GCP Project ID")
+    parser = argparse.ArgumentParser(description="Generate GCP Cluster Toolkit Blueprint & GCE Instance Selector / Flexibility Policies")
+    parser.add_argument("--project-id", required=False, default="hpc-project", help="GCP Project ID")
     parser.add_argument("--region", default="us-central1", help="GCP Region")
     parser.add_argument("--zone", default="us-central1-a", help="GCP Zone")
     parser.add_argument("--cluster-name", default="hpc-slurm", help="Cluster Name")
@@ -485,8 +1099,75 @@ def main():
     parser.add_argument("--dedicated-login", action="store_true", default=False, help="Use dedicated Slurm login node module (community/modules/compute/schedmd-slurm-gcp-v6-login)")
     parser.add_argument("--output", "-o", default="deployment.yaml", help="Output YAML path")
     parser.add_argument("--emit-batch-policy", action="store_true", help="Also emit Cloud Batch instanceFlexibilityPolicy JSON")
-    
+    # gce-instance-selector CLI flags
+    parser.add_argument("--select-instances", action="store_true", help="Query the gce-instance-selector instances.json catalog by hardware attributes")
+    parser.add_argument("--min-vcpus", type=int, default=None, help="Minimum vCPUs for gce-instance-selector")
+    parser.add_argument("--max-vcpus", type=int, default=None, help="Maximum vCPUs for gce-instance-selector")
+    parser.add_argument("--min-ram-gib", type=float, default=None, help="Minimum RAM (GiB) for gce-instance-selector")
+    parser.add_argument("--arch", default=None, choices=["X86_64", "ARM64"], help="CPU architecture filter")
+    parser.add_argument("--compute-type", default="cpu", choices=["cpu", "gpu", "tpu"], help="Compute type filter (cpu, gpu, tpu)")
+    parser.add_argument("--gpu-model", default=None, help="GPU model filter (e.g. NVIDIA H100, NVIDIA B200, NVIDIA L4)")
+    parser.add_argument("--min-gpus", type=int, default=None, help="Minimum GPU count")
+    parser.add_argument("--min-egress-gbps", type=float, default=None, help="Minimum network egress bandwidth (Gbps)")
+    parser.add_argument("--tier1", action="store_true", help="Evaluate Tier 1 networking bandwidth limits")
+    parser.add_argument("--hyperdisk-type", default="hyperdisk-balanced", choices=list(HYPERDISK_VOLUME_SPECS.keys()), help="Hyperdisk type for IOPS/throughput filtering")
+    parser.add_argument("--min-hyperdisk-iops", type=int, default=None, help="Minimum Hyperdisk IOPS required")
+    parser.add_argument("--min-hyperdisk-mbps", type=int, default=None, help="Minimum Hyperdisk throughput (MiB/s) required")
+    parser.add_argument("--include-local-ssd", action="store_true", help="Include Local SSD (-lssd) variants in selection")
+    parser.add_argument("--emit-flexibility-target", default=None, choices=["bulk-insert", "mig", "batch-job"], help="Generate a gce-flexibility REST payload (bulk-insert, mig, or batch-job)")
+
     args = parser.parse_args()
+
+    if args.select_instances:
+        sel = select_instances(
+            min_vcpus=args.min_vcpus,
+            max_vcpus=args.max_vcpus,
+            min_ram_gib=args.min_ram_gib,
+            architecture=args.arch,
+            compute_type=args.compute_type,
+            gpu_model=args.gpu_model,
+            min_gpus=args.min_gpus,
+            min_egress_gbps=args.min_egress_gbps,
+            use_tier1_networking=args.tier1,
+            storage_type=args.hyperdisk_type,
+            min_storage_iops=args.min_hyperdisk_iops,
+            min_storage_throughput_mbps=args.min_hyperdisk_mbps,
+            include_local_ssd=args.include_local_ssd,
+        )
+        print(f"[*] {sel['notice']}")
+        print(f"[*] Total matching instances: {sel['totalMatches']} (showing top {len(sel['candidates'])})")
+        for idx, cand in enumerate(sel["candidates"], start=1):
+            pricing = cand.get("pricingUSD") or cand.get("pricing") or {}
+            net = cand.get("networking") or {}
+            print(
+                f"  {idx}. {cand['name']} ({cand.get('generation')}, {cand.get('cpuPlatform')}) | "
+                f"vCPUs: {cand.get('vCPUs')}, RAM: {cand.get('ramGiB')} GiB | "
+                f"Net: {net.get('defaultMaxEgressGbps')}/{net.get('tier1MaxEgressGbps')} Gbps | "
+                f"Boot: {cand['recommendedBootDisk']['bootDiskType']} | "
+                f"OnDemand: ${pricing.get('onDemandMonthlyUSD')}/mo, Spot: ${pricing.get('spotMonthlyUSD')}/mo"
+            )
+            if "hyperdiskVolumePlan" in cand:
+                vp = cand["hyperdiskVolumePlan"]
+                print(
+                    f"     -> Storage Plan ({vp['storageType']}): {vp['recommendedVolumes']} volume(s), "
+                    f"min {vp['minVolumeSizeGiB']} GiB/vol ({vp['perVolumeThroughputMBps']} MiB/s, {vp['perVolumeIOPS']} IOPS/vol)"
+                )
+        if args.emit_flexibility_target and sel["candidates"]:
+            mtypes = [c["name"] for c in sel["candidates"][:6]]
+            if args.emit_flexibility_target == "bulk-insert":
+                flex_payload = generate_bulk_insert_flexibility_payload(
+                    mtypes, count=args.max_nodes, region=args.region, use_spot=args.enable_spot
+                )
+            elif args.emit_flexibility_target == "mig":
+                flex_payload = generate_mig_flexibility_payload(
+                    mtypes, target_size=args.max_nodes, region=args.region
+                )
+            else:
+                flex_payload = generate_cloud_batch_flexibility_job(
+                    mtypes, task_count=args.max_nodes, region=args.region, use_spot=args.enable_spot
+                )
+            print(json.dumps(flex_payload, indent=2))
+        return
     
     bp = generate_blueprint(
         project_id=args.project_id,

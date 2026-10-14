@@ -1,0 +1,46 @@
+The `gce-flexibility` skill orchestrates multi-VM deployments using flexible
+instance policies (`instanceFlexibilityPolicy`) across Compute Engine Bulk
+Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Google Cloud Batch.
+
+## Example Use Cases & Prompts
+
+Users can leverage the `gce-flexibility` skill for multi-VM provisioning,
+failure-tolerant cluster setup, and flexible workload deployment:
+
+-   **Bulk VM Provisioning (`bulkInsert`):**
+
+    -   *"Deploy 50 VMs of type x86 in gcp with at least 12 vCPUs in us-central1
+        using Bulk APIs, preferring C3 instances with N2 as fallback."*
+    -   *"Provision 20 Debian-12 VMs, each with at least 8 vCPUs, named
+        'worker-###' across a balanced spread of zones in europe-west4, using
+        flexible machine shapes and bulk APIs."*
+
+-   **Managed Instance Groups (MIGs):**
+
+    -   *"Create a regional Managed Instance Group of 15 VMs in gcp in us-east4
+        with auto-healing, prioritizing c3-standard-8 with any other 8 vCPUs x86
+        VMs as fallbacks."*
+    -   *"Configure an instance flexibility policy with a MIG in gcp in
+        us-east4-a and allow fallback to n2d-standard-16 if c3-standard-16 has
+        limited capacity."*
+
+-   **Google Cloud Batch Jobs:**
+
+    -   *"Submit a Cloud Batch job in gcp running 100 tasks on flexible Spot VMs
+        in us-central1, accepting any 2-vCPU instance shape. The command to run
+        will be to print out the VM[s hostname and how many vCPUs it has."*
+    -   *"Set up an HPC batch pipeline on Google Cloud Batch that prefers Gen 3
+        compute-optimized shapes with Gen 2 fallbacks."*
+
+-   **Pre-flight & Quota Verification:**
+
+    -   *"Check if the gcp region us-central1 has sufficient vCPU quota and
+        subnet availability before launching a flexible 50-VM cluster of x86
+        machines with 32 vCPUs."*
+
+-   **Cross region deployment:**
+
+    -   Using bulk APIs in gcp, deploy 10 VMs with hyperdisk-balanced throughput
+        of at least 1GB/s, equally spread across us-west1 and us-west4.
+
+Please contact hildebrand@google.com for access, feature requests, etc.

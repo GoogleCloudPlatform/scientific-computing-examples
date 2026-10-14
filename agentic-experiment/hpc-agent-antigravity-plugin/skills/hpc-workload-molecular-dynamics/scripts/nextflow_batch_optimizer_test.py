@@ -211,5 +211,23 @@ class TestNextflowBatchOptimizer(unittest.TestCase):
         self.assertFalse(audit_res["passed"])
         self.assertTrue(any("Unbalanced curly braces" in v for v in audit_res["violations"]))
 
+    def test_gce_instance_selector_and_flexibility_batch_policy(self):
+        sel = self.optimizer.select_from_instance_catalog(min_vcpus=16, min_ram_gib=64)
+        self.assertIn("Catalog date:", sel["notice"])
+        self.assertIn("us-central1", sel["notice"])
+        self.assertGreater(len(sel["candidates"]), 0)
+        self.assertEqual(sel["candidates"][0]["generation"], "Gen 4")
+        self.assertEqual(sel["candidates"][0]["bootDiskType"], "hyperdisk-balanced")
+
+        flex_policy = self.optimizer.generate_gce_flexibility_batch_policy(
+            "STAR_ALIGN", region="us-central1", spot=True
+        )
+        alloc = flex_policy["allocationPolicy"]
+        self.assertEqual(alloc["instances"][0]["policy"]["provisioningModel"], "SPOT")
+        self.assertEqual(alloc["instances"][0]["policy"]["bootDisk"]["type"], "hyperdisk-balanced")
+        selections = alloc["instanceFlexibilityPolicy"]["instanceSelections"]
+        self.assertIn("gen4-preferred", selections)
+        self.assertEqual(selections["gen4-preferred"]["rank"], 0)
+
 if __name__ == "__main__":
     unittest.main()
