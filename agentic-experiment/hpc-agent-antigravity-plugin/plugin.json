@@ -1,7 +1,12 @@
 {
   "name": "hpc-agent-antigravity",
-  "version": "1.0.0",
-  "description": "Standalone HPC Orchestrator Plugin: infrastructure provisioning with Cloud HPC Toolkit, VM availability checks, quota analysis, Nextflow batch optimization, and Slurm cluster management.",
+  "version": "1.1.0",
+  "description": "Standalone HPC Orchestrator Plugin: Cloud HPC Toolkit provisioning, VM availability & quota checks, Nextflow Batch optimization, and 2 interactive 30-day UI sidecars (HPC/Slurm/Storage Monitor & Google Cloud Batch Monitor).",
+  "suggestedPrompts": [
+    "Open the HPC Cluster & Slurm Monitor sidecar and review our 30-day instance and storage usage",
+    "Open the Google Cloud Batch Monitor sidecar and check which users and jobs have the longest runtime",
+    "Check VM availability and compute quotas for an H4D Slurm cluster in us-central1"
+  ],
   "author": {
     "name": "Google Cloud Platform"
   },

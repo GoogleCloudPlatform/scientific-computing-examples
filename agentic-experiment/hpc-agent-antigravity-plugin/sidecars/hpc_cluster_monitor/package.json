@@ -1,0 +1,7 @@
+{
+  "name": "hpc_cluster_monitor",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "HPC Cluster & Slurm Monitor sidecar for hpc-agent-antigravity"
+}
+

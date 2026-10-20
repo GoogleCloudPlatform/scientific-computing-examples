@@ -1,0 +1,7 @@
+{
+  "name": "gcp_batch_monitor",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Google Cloud Batch Monitor sidecar for hpc-agent-antigravity"
+}
+

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HPC Cluster &amp; Slurm Monitor</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/preload.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="title-block">
+        <h1>
+          <span class="pulse-dot"></span>
+          HPC Cluster &amp; Slurm Environment Monitor
+        </h1>
+        <div class="subtitle-meta">
+          <span id="badge-source" class="pill-badge live">Loading...</span>
+          <span id="badge-project" class="pill-badge">Project: --</span>
+          <span id="badge-region" class="pill-badge">Region: --</span>
+          <span id="badge-cluster" class="pill-badge">Cluster: --</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="window-group" role="group" aria-label="Statistics Window">
+          <button class="window-btn" data-days="7">7d</button>
+          <button class="window-btn" data-days="14">14d</button>
+          <button class="window-btn active" data-days="30">30 Days</button>
+        </div>
+        <button id="btn-toggle-config" class="btn btn-secondary" title="Configure GCP Project & Slurm Login Node">
+          ⚙ Config
+        </button>
+        <button id="btn-sync" class="btn btn-secondary" title="Refresh HPC & Slurm telemetry">
+          ↻ Sync
+        </button>
+        <button id="btn-ask-agent" class="btn" title="Send 30-day HPC & Slurm summary to the Agent">
+          ✦ Ask Agent
+        </button>
+      </div>
+    </header>
+
+    <!-- Collapsible Config Drawer -->
+    <section id="config-drawer" class="config-drawer hidden">
+      <div class="config-grid">
+        <div class="field-group">
+          <label for="cfg-project">GCP Project ID</label>
+          <input id="cfg-project" type="text" placeholder="e.g. gcp-hpc-research-prod" />
+        </div>
+        <div class="field-group">
+          <label for="cfg-region">GCP Region</label>
+          <input id="cfg-region" type="text" placeholder="e.g. us-central1" />
+        </div>
+        <div class="field-group">
+          <label for="cfg-login">Slurm Login Node</label>
+          <input id="cfg-login" type="text" placeholder="e.g. hpc-slurm-login-001" />
+        </div>
+        <div class="field-group">
+          <label for="cfg-mode">Telemetry Mode</label>
+          <select id="cfg-mode">
+            <option value="auto">Auto (Live GCP + 30d History)</option>
+            <option value="live">Live GCP Only</option>
+            <option value="demo">30d Simulated Benchmark</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="btn-cancel-config" class="btn btn-secondary btn-xs">Close</button>
+        <button id="btn-save-config" class="btn btn-xs">Save &amp; Reload</button>
+      </div>
+    </section>
+
+    <!-- 30-Day Executive KPI Strip -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Running HPC Instances</div>
+        <div id="kpi-running-instances" class="kpi-value">--</div>
+        <div id="kpi-running-sub" class="kpi-sub">Allocated + Controller VMs</div>
+      </div>
+      <div class="kpi-card">
+        <div id="kpi-window-label" class="kpi-label">30-Day Instance Stats</div>
+        <div id="kpi-peak-avg" class="kpi-value">--</div>
+        <div id="kpi-instance-hours" class="kpi-sub">-- instance-hrs (30d)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Slurm Jobs</div>
+        <div id="kpi-active-jobs" class="kpi-value">--</div>
+        <div id="kpi-active-users" class="kpi-sub">-- queued | -- active users</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Slurm Jobs (30 Days)</div>
+        <div id="kpi-jobs-30d" class="kpi-value">--</div>
+        <div id="kpi-core-hours-30d" class="kpi-sub">-- core-hrs | --% success</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Storage Systems In Use</div>
+        <div id="kpi-storage-used" class="kpi-value">--</div>
+        <div id="kpi-storage-throughput" class="kpi-sub">Lustre + Filestore + GCS</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">30-Day Utilization</div>
+        <div id="kpi-utilization-30d" class="kpi-value">--%</div>
+        <div class="kpi-sub">Across H4D, C4, C3 &amp; A3-GPU</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tab-instances">Instances Over Time (30d)</button>
+      <button class="tab-btn" data-tab="tab-slurm">Slurm Jobs &amp; Users</button>
+      <button class="tab-btn" data-tab="tab-storage">Storage Systems in Use</button>
+    </nav>
+
+    <!-- TAB 1: Instances Over Time & Partitions -->
+    <div id="tab-instances" class="tab-pane active">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Running HPC Instances Over Time (<span id="chart-days-title">Last 30 Days</span>)</h2>
+            <div class="card-subtitle">Daily peak &amp; average running compute instances stacked by machine family (H4D, C4, C3, A3-GPU, N4)</div>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <select id="chart-metric-select">
+              <option value="instances">Running Instances (Peak &amp; Avg)</option>
+              <option value="families">Stacked by Machine Family</option>
+              <option value="jobs">Daily Slurm Jobs Completed</option>
+            </select>
+            <button id="btn-scale-cluster" class="btn btn-secondary btn-xs">Ask Agent to Scale Cluster</button>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <svg id="instances-chart-svg" class="chart-svg" viewBox="0 0 780 210" preserveAspectRatio="none"></svg>
+          <div id="instances-chart-tooltip" class="chart-tooltip">
+            Hover over any day bar to inspect running instance count, peak concurrency, machine families, and 30-day Slurm job volume.
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6"></span> Avg Running Instances</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#93c5fd"></span> Peak Concurrent Instances</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#8b5cf6"></span> H4D (Cloud RDMA)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#14b8a6"></span> C4 / C3 Compute</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span> A3 MegaGPU</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slurm Partitions & Running Node Fleet -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Slurm Partitions &amp; Running Instance Fleet (`sinfo`)</h2>
+            <div class="card-subtitle">Real-time node state allocation and 30-day partition utilization</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Partition</th>
+                <th>Machine Shape</th>
+                <th>Provisioning</th>
+                <th>Running (Alloc/Mix)</th>
+                <th>Idle</th>
+                <th>Down</th>
+                <th>Total Nodes</th>
+                <th>Interconnect / Fabric</th>
+                <th>30d Util %</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="partitions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Slurm Environment — Jobs & Users -->
+    <div id="tab-slurm" class="tab-pane">
+      <!-- Per-User Breakdown: How Many Jobs Running by Who + 30d Stats -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Slurm Workload by User — Who Is Running Jobs (Now &amp; Last 30 Days)</h2>
+            <div class="card-subtitle">Click any researcher row to filter the active Slurm job queue below</div>
+          </div>
+          <button id="btn-clear-user-filter" class="btn btn-secondary btn-xs hidden">Show All Users</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>User / Researcher</th>
+                <th>Team / Domain</th>
+                <th>Running Jobs</th>
+                <th>Pending</th>
+                <th>Nodes &amp; Cores In Use</th>
+                <th>GPUs</th>
+                <th>30d Jobs Run</th>
+                <th>30d Core-Hours</th>
+                <th>Avg Duration</th>
+                <th>Primary Storage</th>
+                <th>30d Share</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Active Slurm Job Queue -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Active &amp; Queued Slurm Jobs (`squeue`)</h2>
+            <div class="card-subtitle">Live job execution state, user ownership, elapsed runtime, and active storage mount</div>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <input id="job-search-input" type="text" placeholder="Filter by job name, user, ID, or mount..." />
+          <select id="job-state-filter">
+            <option value="ALL">All States</option>
+            <option value="RUNNING">RUNNING Only</option>
+            <option value="PENDING">PENDING Only</option>
+          </select>
+          <select id="job-partition-filter">
+            <option value="ALL">All Partitions</option>
+            <option value="slurm-h4d-mpi">slurm-h4d-mpi</option>
+            <option value="slurm-c4-compute">slurm-c4-compute</option>
+            <option value="slurm-c3-throughput">slurm-c3-throughput</option>
+            <option value="slurm-a3-gpu">slurm-a3-gpu</option>
+          </select>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Job ID</th>
+                <th>Job Name</th>
+                <th>User</th>
+                <th>Partition</th>
+                <th>State</th>
+                <th>Nodes / Cores / GPUs</th>
+                <th>Elapsed / Limit</th>
+                <th>Storage Mount</th>
+                <th>I/O Rate</th>
+                <th>Node List</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="jobs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Storage Systems in Use -->
+    <div id="tab-storage" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">HPC Storage Systems in Use (Live Capacity &amp; 30-Day I/O Telemetry)</h2>
+            <div class="card-subtitle">Google Cloud Managed Lustre, Cloud Filestore (Enterprise &amp; Zonal), GCS FUSE, and Node-Local NVMe</div>
+          </div>
+          <button id="btn-check-storage-quota" class="btn btn-secondary btn-xs">Check Storage Quotas in Agent</button>
+        </div>
+        <div id="storage-cards-grid" class="storage-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">30-Day Storage Capacity &amp; Peak Throughput Trend</h2>
+            <div class="card-subtitle">Daily Managed Lustre &amp; Filestore capacity consumption (TiB) vs peak aggregate I/O throughput (GB/s)</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <svg id="storage-chart-svg" class="chart-svg" viewBox="0 0 780 190" preserveAspectRatio="none"></svg>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6"></span> Managed Lustre Used (TiB)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#14b8a6"></span> Filestore Used (TiB)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span> Peak Aggregate Throughput (GB/s)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
+

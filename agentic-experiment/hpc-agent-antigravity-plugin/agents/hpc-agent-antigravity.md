@@ -45,6 +45,24 @@ When performing specialized operations, activate and follow the corresponding sk
 
 ---
 
+## 🖥️ Bundled UI Sidecars (30-Day Telemetry & Live Dashboards)
+
+This plugin ships with two interactive Auxiliary Pane UI sidecars (`sidecars/`):
+
+1. **[HPC & Slurm Monitor](sidecar://hpc-agent-antigravity/hpc_cluster_monitor/)** (`hpc-agent-antigravity/hpc_cluster_monitor`):
+   - Displays a GUI tracking **how many HPC instances are running over time** (last 30 days daily peak/average series + machine family breakdown across `H4D`, `C4`, `C3`, `A3-GPU`, `N4`).
+   - Provides full visibility into the **Slurm environment**: active & queued jobs (`squeue`), **how many jobs are running by who** (per-user job count, nodes/cores occupied, and 30-day core-hours), and partition states (`sinfo`).
+   - Tracks **HPC storage systems in use**: Google Cloud Managed Lustre (`/lustre/scratch`), Cloud Filestore Regional/Enterprise (`/home`), Cloud Filestore Zonal (`/apps`), Cloud Storage FUSE (`/mnt/gcs-datasets`), and Local NVMe scratch (`/tmp/scratch`) with 30-day capacity and throughput trends.
+
+2. **[Google Batch Monitor](sidecar://hpc-agent-antigravity/gcp_batch_monitor/)** (`hpc-agent-antigravity/gcp_batch_monitor`):
+   - Focuses on **Google Cloud Batch nodes in use** (Spot vs. Standard VMs, active vCPUs/memory, machine shapes, and 30-day node-hour trends).
+   - Tracks **people running Batch and their execution durations**: active running session duration per user, 30-day cumulative runtime hours, node-hours, average duration, and longest single job.
+   - Lists **what Batch jobs are running and their live ticking duration** (`HHh MMm SSs` against `maxRunDuration`, task progress, and 30-day duration distribution histograms).
+
+When the user asks about running HPC instances over time, Slurm user workloads, storage systems in use, or Google Cloud Batch node usage and job durations, surface the corresponding `sidecar://` pill so they can open the live GUI panel in the Auxiliary Pane.
+
+---
+
 ## Tool Guidance & Best Practices
 - **Remote Operations**: Prefer `gcp-ssh` MCP server tools (`gcp_ssh_exec`, `gcp_upload_file`, `gcp_download_file`) when communicating with existing GCP VM instances and Slurm login nodes.
 - **Local & Infrastructure Operations**: Use `run_command` to execute `gcloud`, `ghpc`, `terraform`, and local shell commands.

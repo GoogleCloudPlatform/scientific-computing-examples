@@ -32,6 +32,23 @@ hpc-agent-antigravity/
 │       ├── reference/
 │       ├── resources/
 │       └── scripts/
+├── sidecars/                                       # 2 Interactive Auxiliary Pane UI Sidecars
+│   ├── hpc_cluster_monitor/                        # Sidecar 1: HPC Instances, Slurm Users & Storage (30d)
+│   │   ├── sidecar.json
+│   │   ├── package.json
+│   │   ├── main.mjs
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   ├── styles.css
+│   │   └── README.md
+│   └── gcp_batch_monitor/                          # Sidecar 2: Google Batch Nodes, Jobs & Durations (30d)
+│       ├── sidecar.json
+│       ├── package.json
+│       ├── main.mjs
+│       ├── index.html
+│       ├── app.js
+│       ├── styles.css
+│       └── README.md
 ├── app/                                            # Python ADK backend implementation
 │   ├── agent.py
 │   ├── sub_agents.py
@@ -39,6 +56,22 @@ hpc-agent-antigravity/
 ├── pyproject.toml
 └── README.md
 ```
+
+---
+
+## 🖥️ Interactive UI Sidecars (30-Day Statistics)
+
+This plugin bundles **2 interactive Auxiliary Pane UI sidecars** built with the Antigravity Sidecar SDK (`sidecar_sdk`):
+
+### 1. HPC Cluster & Slurm Environment Monitor (`sidecars/hpc_cluster_monitor`)
+- **Running HPC Instances Over Time (Last 30 Days)**: Interactive time-series chart tracking daily average and peak running HPC instances stacked by machine family (`H4D`, `C4`, `C3`, `A3-MegaGPU`, `N4`), plus real-time Slurm partition states (`allocated`, `mixed`, `idle`, `down`).
+- **Slurm Environment & User Ownership**: Shows how many jobs are currently running and pending per researcher/user (`squeue`), which nodes and GPUs they occupy, and 30-day completed job counts and core-hours (`sacct`).
+- **Storage Systems in Use**: Live and 30-day capacity/throughput telemetry for **Google Cloud Managed Lustre** (`/lustre/scratch`), **Cloud Filestore Regional/Enterprise** (`/home`), **Cloud Filestore Zonal High Scale** (`/apps`), **Cloud Storage FUSE** (`/mnt/gcs-datasets`), and **Node-Local NVMe / Hyperdisk Scratch** (`/tmp/scratch`).
+
+### 2. Google Cloud Batch Nodes & Job Duration Monitor (`sidecars/gcp_batch_monitor`)
+- **Google Batch Nodes in Use (Last 30 Days)**: Tracks active Google Cloud Batch VM nodes split by **Spot** vs. **Standard** provisioning models, vCPUs/memory in use, hardware tiers (`c3-standard-22`, `c4-highcpu-32`, `n2-highmem-32`, `a2-highgpu-1g`, `e2-standard-4`), and 30-day node-hour trends.
+- **People Running Batch & Execution Duration**: Per-user leaderboard showing who is actively running Batch jobs right now, their **live ticking running duration**, and their 30-day total job runtime hours, node-hours, average job duration, and longest single job.
+- **What Jobs & Duration**: Searchable, filterable table of active and recent Batch jobs (Nextflow processes, AlphaFold arrays, Batch container arrays) with live ticking elapsed duration (`HHh MMm SSs`), progress against `maxRunDuration`, comparison to 30-day average baselines, and a 30-day duration distribution histogram.
 
 ---
 
