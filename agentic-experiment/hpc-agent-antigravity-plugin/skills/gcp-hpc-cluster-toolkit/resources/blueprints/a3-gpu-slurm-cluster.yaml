@@ -1,0 +1,53 @@
+blueprint_name: a3-gpu-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: a3-gpu-cluster
+    region: us-central1
+    zone: us-central1-a
+
+  deployment_groups:
+    - group: primary
+      modules:
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        - id: shared_storage
+          source: modules/file-system/filestore
+          settings:
+            filestore_tier: HIGH_SCALE_SSD
+            size_gb: 2560
+            file_share_name: nfsshare
+            local_mount: /apps
+            network: $(network.network_name)
+
+        # A3 High GPU Partition (8x NVIDIA H100 SXM5 80GB with GPUDirect RDMA)
+        - id: a3_partition
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+          settings:
+            partition_name: a3-gpu
+            machine_type: a3-highgpu-8g
+            max_node_count: 16
+            zone: $(vars.zone)
+            is_default: true
+            bandwidth_tier: TIER_1
+            gpu:
+              type: nvidia-h100-80gb-sxm5
+              count: 8
+            install_gpu_drivers: true
+
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            login_nodes:
+              - machine_type: n2-standard-4
+                zone: $(vars.zone)
+                count: 1
+            nodeset:
+              - $(a3_partition)

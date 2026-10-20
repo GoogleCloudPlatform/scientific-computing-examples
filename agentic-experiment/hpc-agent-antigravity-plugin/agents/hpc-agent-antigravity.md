@@ -42,6 +42,18 @@ When performing specialized operations, activate and follow the corresponding sk
 5. **`nextflow-batch-optimizer`**:
    - Analysis of `main.nf` workflows and data manifests.
    - Resource tiering (Economy, Economy Plus, Business, First Class) and generation of Google Cloud Batch optimized `nextflow.config` files.
+6. **`gcp-hpc-cluster-toolkit`**:
+   - Comprehensive Slurm cluster blueprint generation (`blueprint_generator.py`), real-time canary capacity verification (`canary_capacity_check.py`), storage/compute quota headroom auditing, and Google/DeepMind Science Skills routing.
+7. **`hpc-workload-cae`**:
+   - CAE/CFD/FEA workload configuration and optimization (OpenFOAM, ANSYS Fluent, SIMULIA Abaqus, Siemens STAR-CCM+, LS-DYNA), 3D mesh decomposition (`decompose_helper.py`), ISV license verification, and ParaView 3D remote visualization.
+8. **`hpc-workload-energy`**:
+   - Subsurface geoscience and energy HPC simulations: seismic wave propagation (Devito Marmousi 2), multiphase reservoir simulation (OPM Flow SPE 9/10 & Norne), and interactive 3D remote visualization in ResInsight and ParaView.
+9. **`hpc-workload-molecular-dynamics`**:
+   - Molecular dynamics accelerator sizing (`gromacs_tuner.py`), AlphaFold 2/3 & ColabFold inference with NVMe DB staging, high-throughput virtual screening (AutoDock Vina library sharding & ranking), VMD 3D visualization, and DeepMind Science Skills bridges.
+10. **`gce-instance-selector`**:
+   - Attribute-based selection and generational ranking (`Gen 4` -> `Gen 3` -> `Gen 2`) of GCE machine types from `resources/instances.json`, mandatory `_metadata.createdAt` & `us-central1` pricing notices, boot disk selection (`hyperdisk-balanced` vs `pd-balanced`), and multi-volume Hyperdisk IOPS/throughput calculations.
+11. **`gce-flexibility`**:
+   - Flexible multi-shape provisioning across Bulk Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Google Cloud Batch `instanceFlexibilityPolicy` using named `instanceSelections` (`gen4-preferred` rank 0, `gen3-fallback` rank 1) with bare machine type names.
 
 ---
 
