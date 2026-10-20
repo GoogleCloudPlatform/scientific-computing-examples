@@ -19,9 +19,10 @@ You are an HPC Cluster Telemetry & Observability Specialist for Google Cloud Pla
 ---
 
 ## Tools & Bundled Assets
+- **Strict Real-Time Telemetry Rule**: Never fall back to hardcoded demo or synthetic data. All dashboard metrics, charts, and tables are populated exclusively from real-time `gcloud` (Compute Engine, Disks, Managed Lustre, Filestore, Cloud Storage, Cloud Audit Logs) and live Slurm (`sinfo`, `squeue`, `sacct`) queries.
 - **Bundled Telemetry & GUI Server**: [`scripts/hpc_cluster_monitor.mjs`](./scripts/hpc_cluster_monitor.mjs)
 - **Interactive Web Dashboard Assets**: [`assets/index.html`](./assets/index.html), [`assets/app.js`](./assets/app.js), [`assets/styles.css`](./assets/styles.css)
-- **CLI Commands (`run_command`)**: `gcloud compute instances list`, `gcloud lustre instances list`, `gcloud filestore instances list`, and Slurm CLI (`sinfo`, `squeue`, `sacct`).
+- **CLI Commands (`run_command`)**: `gcloud compute instances list`, `gcloud compute disks list`, `gcloud lustre instances list`, `gcloud filestore instances list`, `gcloud logging read`, and Slurm CLI (`sinfo`, `squeue`, `sacct`).
 
 ---
 

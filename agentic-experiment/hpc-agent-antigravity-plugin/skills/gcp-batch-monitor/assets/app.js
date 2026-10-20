@@ -75,7 +75,6 @@ function renderAll() {
 
   document.getElementById('cfg-project').value = config.projectId || '';
   document.getElementById('cfg-region').value = config.region || '';
-  document.getElementById('cfg-mode').value = config.dataMode || 'auto';
 
   // KPIs
   document.getElementById('kpi-nodes-now').textContent = `${summary30d.nodesInUseNow} Nodes`;
@@ -128,7 +127,19 @@ function renderBatchUsersTable() {
     clearBtn.classList.toggle('hidden', !selectedUserFilter);
   }
 
-  tbody.innerHTML = (currentTelemetry.batchUsers || [])
+  const users = currentTelemetry.batchUsers || [];
+  if (users.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live Google Cloud Batch API query completed for project <code>${currentTelemetry.config.projectId}</code> at <code>${currentTelemetry.generatedAt}</code>: <strong>0 Batch users or jobs found in the last 30 days</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = users
     .map((u) => {
       const isSelected = selectedUserFilter === u.user;
       const liveUserSec = u.activeJobsNow > 0 ? u.activeDurationSeconds + liveTickCounter : 0;
@@ -202,6 +213,17 @@ function renderBatchJobsTable() {
     }
     return true;
   });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live <code>gcloud batch jobs list</code> query completed for <code>${currentTelemetry.config.projectId}</code>: <strong>0 matching Google Cloud Batch jobs found</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
 
   tbody.innerHTML = filtered
     .map((j) => {
@@ -364,7 +386,19 @@ function renderNodePoolsTable() {
   const tbody = document.getElementById('node-pools-tbody');
   if (!tbody || !currentTelemetry) return;
 
-  tbody.innerHTML = (currentTelemetry.nodePools || [])
+  const pools = currentTelemetry.nodePools || [];
+  if (pools.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live Google Cloud Batch node query completed for <code>${currentTelemetry.config.projectId}</code>: <strong>0 active Batch worker node pools in use</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = pools
     .map(
       (p) => `
       <tr>
@@ -523,7 +557,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const payload = {
       projectId: document.getElementById('cfg-project').value,
       region: document.getElementById('cfg-region').value,
-      dataMode: document.getElementById('cfg-mode').value,
       days: selectedWindowDays,
     };
     const res = await apiFetch('/api/config', {

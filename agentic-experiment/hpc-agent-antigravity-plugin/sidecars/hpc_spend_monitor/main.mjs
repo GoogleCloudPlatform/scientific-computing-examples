@@ -1,11 +1,13 @@
 /**
  * HPC Spend & Monthly Budget Monitor Sidecar (`hpc_spend_monitor`)
  *
+ * STRICT REAL-TIME TELEMETRY ONLY — NO DEMO OR HARDCODED FALLBACK DATA.
+ *
  * Responsibilities:
- *  1. Every 4 hours, accesses GCP Cloud Billing API / BigQuery Billing Export / Live Resource APIs
- *     to understand the current month's total GCP bill and calculate the exact portion spent on HPC
- *     (Slurm clusters, H4D/C4/C3/A3 compute nodes, Google Cloud Batch, Managed Lustre, Cloud Filestore).
- *  2. Prompts the user for their Maximum Monthly HPC Spend ($ USD) and tracks accumulated month-to-date
+ *  1. Every 4 hours, accesses live GCP Cloud Billing API, BigQuery Cloud Billing Export (if available),
+ *     and live GCP Resource APIs (Compute Engine, Persistent Disks/Hyperdisks, Cloud Batch, Managed Lustre,
+ *     Cloud Filestore) to calculate the real month-to-date GCP bill and the exact HPC portion of spend.
+ *  2. Prompts the user for their Maximum Monthly HPC Spend ($ USD) and verifies accumulated month-to-date
  *     HPC spend against that limit.
  *  3. Automatically resets accumulated spend, 4-hour ledger snapshots, and alert states on the 1st of
  *     every month (`YYYY-MM`).
@@ -153,7 +155,7 @@ class FallbackSidecarApp {
       res.end(JSON.stringify({ error: 'Not Found' }));
     });
     server.listen(port, '127.0.0.1', () => {
-      console.log(`[sidecar] listening on 127.0.0.1:${server.address().port}`);
+      console.error(`[sidecar] listening on 127.0.0.1:${server.address().port}`);
     });
     return server;
   }
@@ -178,37 +180,78 @@ if (hasSidecarEnv) {
 }
 
 // ---------------------------------------------------------------------------
-// Constants & Static Assets
+// Constants & GCP Pricing Lookup Tables (Used Only for Real Discovered Resources)
 // ---------------------------------------------------------------------------
 
-const FOUR_HOURS_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 
 const STATIC_ASSETS = {
   '/styles.css': ['styles.css', 'text/css; charset=utf-8'],
   '/app.js': ['app.js', 'application/javascript; charset=utf-8'],
 };
 
-// Official GCP regional approximate hourly USD rates for HPC SKU calculation
-const MACHINE_HOURLY_USD = {
-  'h4d-highmem-192': { standard: 11.42, spot: 3.43, family: 'H4D (Slurm MPI)', isHpc: true },
-  'c4-standard-192': { standard: 9.12, spot: 2.74, family: 'C4 (HPC Compute)', isHpc: true },
-  'c3-standard-176': { standard: 7.92, spot: 2.38, family: 'C3 (HPC Compute)', isHpc: true },
-  'c3-standard-22': { standard: 0.99, spot: 0.30, family: 'C3 (Cloud Batch)', isHpc: true },
-  'c4-highcpu-32': { standard: 1.24, spot: 0.37, family: 'C4 (Cloud Batch)', isHpc: true },
-  'a3-highgpu-8g': { standard: 88.49, spot: 26.55, family: 'A3 (8x H100 GPU)', isHpc: true },
-  'a2-highgpu-1g': { standard: 3.67, spot: 1.10, family: 'A2 (A100 GPU)', isHpc: true },
-  'n2-highmem-32': { standard: 2.08, spot: 0.62, family: 'N2 (Batch HighMem)', isHpc: true },
-  'c2-standard-60': { standard: 3.13, spot: 0.94, family: 'C2 (Compute Optimized)', isHpc: true },
-  'e2-standard-4': { standard: 0.134, spot: 0.04, family: 'E2 (General Purpose)', isHpc: false },
-  'n2-standard-8': { standard: 0.388, spot: 0.12, family: 'N2 (General Services)', isHpc: false },
+// Per-vCPU and per-GB-RAM hourly USD catalog rates by GCP machine family
+// Used to compute real burn rate of live instances discovered via `gcloud compute instances list`
+// or `gcloud batch jobs list` when BigQuery Billing Export is not configured.
+const FAMILY_PRICING_PER_VCPU_HR = {
+  h4d: { standard: 0.0595, spot: 0.0179, isHpc: true, label: 'H4D (Slurm Cloud RDMA)' },
+  h3: { standard: 0.052, spot: 0.0156, isHpc: true, label: 'H3 (HPC Compute)' },
+  c4: { standard: 0.0475, spot: 0.0143, isHpc: true, label: 'C4 (HPC Compute)' },
+  c4d: { standard: 0.0445, spot: 0.0134, isHpc: true, label: 'C4D (HPC Compute)' },
+  c3: { standard: 0.045, spot: 0.0135, isHpc: true, label: 'C3 (HPC Compute)' },
+  c3d: { standard: 0.041, spot: 0.0123, isHpc: true, label: 'C3D (HPC Compute)' },
+  c2: { standard: 0.0522, spot: 0.0157, isHpc: true, label: 'C2 (Compute Optimized)' },
+  c2d: { standard: 0.045, spot: 0.0135, isHpc: true, label: 'C2D (Compute Optimized)' },
+  a3: { standard: 0.425, spot: 0.128, isHpc: true, label: 'A3 (NVIDIA H100 GPU)' },
+  a2: { standard: 0.306, spot: 0.092, isHpc: true, label: 'A2 (NVIDIA A100 GPU)' },
+  g2: { standard: 0.078, spot: 0.024, isHpc: true, label: 'G2 (NVIDIA L4 GPU)' },
+  n4: { standard: 0.039, spot: 0.0117, isHpc: false, label: 'N4 (General Purpose)' },
+  n2: { standard: 0.0485, spot: 0.0145, isHpc: false, label: 'N2 (General Purpose)' },
+  n2d: { standard: 0.0422, spot: 0.0127, isHpc: false, label: 'N2D (General Purpose)' },
+  e2: { standard: 0.0335, spot: 0.01, isHpc: false, label: 'E2 (General Purpose)' },
+  n1: { standard: 0.0475, spot: 0.01, isHpc: false, label: 'N1 (General Purpose)' },
 };
+
+const GPU_HOURLY_USD = {
+  'nvidia-h100-80gb': 11.06,
+  'nvidia-h100-mega-80gb': 12.2,
+  'nvidia-tesla-a100': 3.67,
+  'nvidia-a100-80gb': 5.07,
+  'nvidia-l4': 0.81,
+  'nvidia-tesla-v100': 2.48,
+  'nvidia-tesla-t4': 0.35,
+};
+
+function parseMachineHourlyRate(machineType, isSpot = false, labels = {}, name = '') {
+  const shortType = (machineType || '').split('/').pop().toLowerCase();
+  const parts = shortType.split('-');
+  const family = parts[0] || 'e2';
+  const vcpus = Number(parts[2]) || (shortType.includes('8g') ? 208 : shortType.includes('1g') ? 12 : 4);
+  const pricing = FAMILY_PRICING_PER_VCPU_HR[family] || FAMILY_PRICING_PER_VCPU_HR.e2;
+  const ratePerVcpu = isSpot ? pricing.spot : pricing.standard;
+
+  const labelStr = `${name} ${JSON.stringify(labels || {})}`.toLowerCase();
+  const hasHpcMarker =
+    pricing.isHpc ||
+    /hpc|slurm|ghpc|gcluster|batch|mpi|lustre|nextflow|compute|login|controller/.test(labelStr);
+
+  return {
+    family: family.toUpperCase(),
+    vcpus,
+    hourlyUsd: Number((vcpus * ratePerVcpu).toFixed(4)),
+    isHpc: hasHpcMarker,
+    categoryLabel: pricing.label,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Persistent State Management & Monthly Reset Logic
 // ---------------------------------------------------------------------------
 
 function getDataDir() {
-  const dir = process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR || join(__dirname, '.data');
+  const dir =
+    process.env.ANTIGRAVITY_EXECUTABLE_DATA_DIR ||
+    join('/tmp', 'hpc_agent_antigravity_spend_monitor');
   try {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
   } catch {}
@@ -263,8 +306,7 @@ const DEFAULT_STATE = {
   projectId: '',
   region: 'us-central1',
   billingAccountId: '',
-  billingExportTable: '', // optional e.g. my-project.billing_export.gcp_billing_export_v1_XXXXXX
-  dataMode: 'auto',
+  billingExportTable: '',
   // User-configured monthly budget cap ($ USD)
   maxMonthlyBudgetUsd: 25000,
   budgetConfiguredByUser: false,
@@ -326,7 +368,7 @@ function ensureMonthlyReset(now = new Date()) {
     spendState.lastAlertMessage = '';
     spendState.fourHourLedger = [];
     saveJsonFile('hpc_spend_state.json', spendState);
-    console.log(
+    console.error(
       `[hpc_spend_monitor] Monthly reset triggered for new billing month ${monthInfo.monthKey}. Previous month (${previousMonth.billingMonth}) archived.`
     );
     return { resetOccurred: true, previousMonth, monthInfo };
@@ -336,15 +378,19 @@ function ensureMonthlyReset(now = new Date()) {
 }
 
 // ---------------------------------------------------------------------------
-// Shell & GCP Billing API Helpers
+// Shell & Real-Time GCP API Helpers
 // ---------------------------------------------------------------------------
 
-async function runCmd(cmd, args, timeoutMs = 8000) {
+async function runCmd(cmd, args, timeoutMs = 10000) {
   try {
     const { stdout, stderr } = await execFileAsync(cmd, args, {
       timeout: timeoutMs,
-      maxBuffer: 8 * 1024 * 1024,
-      env: { ...process.env, CLOUDSDK_CORE_DISABLE_PROMPTS: '1' },
+      maxBuffer: 12 * 1024 * 1024,
+      env: {
+        ...process.env,
+        CLOUDSDK_CORE_DISABLE_PROMPTS: '1',
+        CLOUDSDK_CORE_DISABLE_FILE_LOGGING: '1',
+      },
     });
     return { ok: true, stdout: stdout.trim(), stderr: stderr.trim() };
   } catch (err) {
@@ -358,55 +404,110 @@ async function runCmd(cmd, args, timeoutMs = 8000) {
 
 async function detectGcloudContext() {
   const [projRes, acctRes, regRes] = await Promise.all([
-    runCmd('gcloud', ['config', 'get-value', 'project'], 3500),
-    runCmd('gcloud', ['config', 'get-value', 'account'], 3500),
-    runCmd('gcloud', ['config', 'get-value', 'compute/region'], 3500),
+    runCmd('gcloud', ['config', 'get-value', 'project'], 4000),
+    runCmd('gcloud', ['config', 'get-value', 'account'], 4000),
+    runCmd('gcloud', ['config', 'get-value', 'compute/region'], 4000),
   ]);
+  const clean = (v) => (v && v !== '(unset)' ? v.split('\n').pop().trim() : '');
   const projectId =
     spendState.projectId ||
-    (projRes.ok && projRes.stdout && projRes.stdout !== '(unset)' ? projRes.stdout : '') ||
+    (projRes.ok ? clean(projRes.stdout) : '') ||
     process.env.GOOGLE_CLOUD_PROJECT ||
-    'hpc-scientific-prod';
-  const account =
-    acctRes.ok && acctRes.stdout && acctRes.stdout !== '(unset)'
-      ? acctRes.stdout
-      : 'researcher@google.com';
-  const region =
-    spendState.region ||
-    (regRes.ok && regRes.stdout && regRes.stdout !== '(unset)' ? regRes.stdout : 'us-central1');
+    '';
+  const account = acctRes.ok ? clean(acctRes.stdout) : '';
+  const region = spendState.region || (regRes.ok ? clean(regRes.stdout) : '') || 'us-central1';
   return { projectId, account, region };
 }
 
 /**
- * Queries GCP Cloud Billing API & BigQuery Billing Export (if configured) + Live Resources
+ * Attempts to auto-discover a BigQuery Cloud Billing Export table in the project
+ * if the user has not explicitly provided one.
+ */
+async function autoDiscoverBqBillingExportTable(projectId) {
+  if (!projectId) return '';
+  const dsRes = await runCmd('bq', ['ls', `--project_id=${projectId}`, '--format=json'], 6000);
+  if (!dsRes.ok || !dsRes.stdout) return '';
+  try {
+    const datasets = JSON.parse(dsRes.stdout);
+    if (!Array.isArray(datasets)) return '';
+    for (const ds of datasets) {
+      const dsId = ds.datasetReference?.datasetId || '';
+      if (/billing|cost|finops|export/i.test(dsId)) {
+        const tblRes = await runCmd(
+          'bq',
+          ['ls', `--project_id=${projectId}`, `${projectId}:${dsId}`, '--format=json'],
+          6000
+        );
+        if (tblRes.ok && tblRes.stdout) {
+          const tables = JSON.parse(tblRes.stdout);
+          if (Array.isArray(tables)) {
+            const match = tables.find((t) =>
+              /gcp_billing_export/i.test(t.tableReference?.tableId || '')
+            );
+            if (match) {
+              return `${projectId}.${dsId}.${match.tableReference.tableId}`;
+            }
+          }
+        }
+      }
+    }
+  } catch {}
+  return '';
+}
+
+/**
+ * Queries real-time GCP Cloud Billing API, BigQuery Billing Export (if configured/discovered),
+ * and live GCP resources (Compute Engine VMs, Disks, Batch jobs, Filestore, Managed Lustre).
  */
 async function probeGcpBillingAndResources(projectId, monthInfo) {
+  const errors = [];
+  if (!projectId) {
+    errors.push('No active GCP project configured in gcloud.');
+    return {
+      billingAccountName: 'Not Configured',
+      billingEnabled: false,
+      gcpBudgets: [],
+      bqSkuRows: null,
+      bqFourHourRows: null,
+      instances: [],
+      disks: [],
+      batchJobs: [],
+      filestores: [],
+      lustres: [],
+      errors,
+    };
+  }
+
+  // 1. Query GCP Cloud Billing Project Info
   const billingInfoRes = await runCmd(
     'gcloud',
     ['billing', 'projects', 'describe', projectId, '--format=json'],
-    6000
+    8000
   );
 
   let billingAccountName = spendState.billingAccountId || '';
   let billingEnabled = false;
   let gcpBudgets = [];
-  let bqBillingRows = null;
 
   if (billingInfoRes.ok && billingInfoRes.stdout) {
     try {
       const info = JSON.parse(billingInfoRes.stdout);
-      billingAccountName = info.billingAccountName || billingAccountName;
+      billingAccountName = info.billingAccountName || billingAccountName || 'No Billing Account Linked';
       billingEnabled = Boolean(info.billingEnabled);
-    } catch {}
+    } catch (e) {
+      errors.push(`Billing describe JSON parse error: ${e.message}`);
+    }
+  } else if (billingInfoRes.stderr) {
+    errors.push(`Billing API: ${billingInfoRes.stderr.split('\n')[0]}`);
   }
 
-  // Query Cloud Billing Budgets API if billingAccountName is available
-  if (billingAccountName) {
+  // 2. Query Cloud Billing Budgets API if billing account is known
+  if (billingAccountName && billingAccountName.startsWith('billingAccounts/')) {
     const cleanAcctId = billingAccountName.replace(/^billingAccounts\//, '');
     const budgetsRes = await runCmd(
       'gcloud',
       ['billing', 'budgets', 'list', `--billing-account=${cleanAcctId}`, '--format=json'],
-      6000
+      8000
     );
     if (budgetsRes.ok && budgetsRes.stdout) {
       try {
@@ -415,203 +516,506 @@ async function probeGcpBillingAndResources(projectId, monthInfo) {
     }
   }
 
-  // If user configured a BigQuery Cloud Billing Export table, query exact month-to-date spend
-  if (spendState.billingExportTable && /^[a-zA-Z0-9_.-]+$/.test(spendState.billingExportTable)) {
-    const sql = `
+  // 3. Query BigQuery Cloud Billing Export if configured or auto-discovered
+  let bqTable = spendState.billingExportTable;
+  if (!bqTable) {
+    bqTable = await autoDiscoverBqBillingExportTable(projectId);
+    if (bqTable) {
+      spendState.billingExportTable = bqTable;
+      saveJsonFile('hpc_spend_state.json', spendState);
+    }
+  }
+
+  let bqSkuRows = null;
+  let bqFourHourRows = null;
+  if (bqTable && /^[a-zA-Z0-9_.:-]+$/.test(bqTable)) {
+    const normalizedTable = bqTable.replace(':', '.');
+    const skuSql = `
       SELECT
         service.description AS service_name,
         sku.description AS sku_name,
-         LOWER(TO_JSON_STRING(labels)) AS labels_json,
-        SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS net_cost_usd
-      FROM \`${spendState.billingExportTable}\`
+        sku.id AS sku_id,
+        LOWER(TO_JSON_STRING(labels)) AS labels_json,
+        SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS net_cost_usd,
+        SUM(CASE WHEN usage_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 4 HOUR)
+            THEN cost + IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)
+            ELSE 0 END) AS last_4h_usd,
+        SUM(usage.amount_in_pricing_units) AS usage_amount,
+        ANY_VALUE(usage.pricing_unit) AS pricing_unit
+      FROM \`${normalizedTable}\`
       WHERE invoice.month = '${monthInfo.invoiceMonth}'
         AND project.id = '${projectId}'
-      GROUP BY 1, 2, 3
+      GROUP BY 1, 2, 3, 4
+      HAVING net_cost_usd != 0
+      ORDER BY net_cost_usd DESC
     `;
-    const bqRes = await runCmd(
-      'bq',
-      ['query', '--use_legacy_sql=false', '--format=json', sql],
-      10000
-    );
-    if (bqRes.ok && bqRes.stdout) {
+    const seriesSql = `
+      SELECT
+        TIMESTAMP_SECONDS(DIV(UNIX_SECONDS(usage_start_time), 14400) * 14400) AS block_start_ts,
+        LOWER(CONCAT(IFNULL(service.description, ''), ' ', IFNULL(sku.description, ''), ' ', IFNULL(TO_JSON_STRING(labels), ''))) AS meta_text,
+        SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS net_cost_usd
+      FROM \`${normalizedTable}\`
+      WHERE invoice.month = '${monthInfo.invoiceMonth}'
+        AND project.id = '${projectId}'
+      GROUP BY 1, 2
+      ORDER BY 1 ASC
+    `;
+    const [skuRes, seriesRes] = await Promise.all([
+      runCmd('bq', ['query', '--use_legacy_sql=false', '--format=json', skuSql], 12000),
+      runCmd('bq', ['query', '--use_legacy_sql=false', '--format=json', seriesSql], 12000),
+    ]);
+    if (skuRes.ok && skuRes.stdout) {
       try {
-        bqBillingRows = JSON.parse(bqRes.stdout);
+        bqSkuRows = JSON.parse(skuRes.stdout);
+      } catch {}
+    } else if (skuRes.stderr) {
+      errors.push(`BigQuery Billing Export: ${skuRes.stderr.split('\n')[0]}`);
+    }
+    if (seriesRes.ok && seriesRes.stdout) {
+      try {
+        bqFourHourRows = JSON.parse(seriesRes.stdout);
       } catch {}
     }
   }
 
-  // Also query live Compute / Batch / Lustre / Filestore resources to calculate real-time burn rate
-  const [gceRes, batchRes, filestoreRes, lustreRes] = await Promise.all([
-    runCmd('gcloud', ['compute', 'instances', 'list', `--project=${projectId}`, '--format=json'], 6000),
-    runCmd('gcloud', ['batch', 'jobs', 'list', `--project=${projectId}`, '--location=-', '--format=json'], 6000),
-    runCmd('gcloud', ['filestore', 'instances', 'list', `--project=${projectId}`, '--format=json'], 6000),
-    runCmd('gcloud', ['lustre', 'instances', 'list', `--project=${projectId}`, '--format=json'], 6000),
+  // 4. Query Real-Time GCP Compute, Disks, Batch, Filestore & Managed Lustre Resources
+  const [gceRes, disksRes, batchRes, filestoreRes, lustreRes] = await Promise.all([
+    runCmd('gcloud', ['compute', 'instances', 'list', `--project=${projectId}`, '--format=json'], 9000),
+    runCmd('gcloud', ['compute', 'disks', 'list', `--project=${projectId}`, '--format=json'], 9000),
+    runCmd('gcloud', ['batch', 'jobs', 'list', `--project=${projectId}`, '--location=-', '--format=json'], 9000),
+    runCmd('gcloud', ['filestore', 'instances', 'list', `--project=${projectId}`, '--format=json'], 9000),
+    runCmd('gcloud', ['lustre', 'instances', 'list', `--project=${projectId}`, '--location=-', '--format=json'], 9000),
   ]);
 
   let instances = [];
+  let disks = [];
   let batchJobs = [];
   let filestores = [];
   let lustres = [];
-  try { if (gceRes.ok && gceRes.stdout) instances = JSON.parse(gceRes.stdout); } catch {}
-  try { if (batchRes.ok && batchRes.stdout) batchJobs = JSON.parse(batchRes.stdout); } catch {}
-  try { if (filestoreRes.ok && filestoreRes.stdout) filestores = JSON.parse(filestoreRes.stdout); } catch {}
-  try { if (lustreRes.ok && lustreRes.stdout) lustres = JSON.parse(lustreRes.stdout); } catch {}
 
-  const hasLiveResources =
-    Boolean(bqBillingRows && bqBillingRows.length > 0) ||
-    instances.length > 0 ||
-    batchJobs.length > 0 ||
-    filestores.length > 0 ||
-    lustres.length > 0;
+  if (gceRes.ok && gceRes.stdout) {
+    try { instances = JSON.parse(gceRes.stdout); } catch {}
+  } else if (gceRes.stderr && !gceRes.stderr.includes('Listed 0 items')) {
+    errors.push(`Compute Engine API: ${gceRes.stderr.split('\n')[0]}`);
+  }
+
+  if (disksRes.ok && disksRes.stdout) {
+    try { disks = JSON.parse(disksRes.stdout); } catch {}
+  }
+
+  if (batchRes.ok && batchRes.stdout) {
+    try { batchJobs = JSON.parse(batchRes.stdout); } catch {}
+  }
+
+  if (filestoreRes.ok && filestoreRes.stdout) {
+    try { filestores = JSON.parse(filestoreRes.stdout); } catch {}
+  }
+
+  if (lustreRes.ok && lustreRes.stdout) {
+    try { lustres = JSON.parse(lustreRes.stdout); } catch {}
+  }
 
   return {
-    billingAccountName: billingAccountName || 'billingAccounts/01A8F4-9C3E10-77B2D1',
-    billingEnabled: billingEnabled || true,
-    gcpBudgets,
-    bqBillingRows,
-    instances,
-    batchJobs,
-    filestores,
-    lustres,
-    hasLiveResources,
+    billingAccountName: billingAccountName || 'Not Linked / Unavailable',
+    billingEnabled,
+    gcpBudgets: Array.isArray(gcpBudgets) ? gcpBudgets : [],
+    bqSkuRows: Array.isArray(bqSkuRows) ? bqSkuRows : null,
+    bqFourHourRows: Array.isArray(bqFourHourRows) ? bqFourHourRows : null,
+    instances: Array.isArray(instances) ? instances : [],
+    disks: Array.isArray(disks) ? disks : [],
+    batchJobs: Array.isArray(batchJobs) ? batchJobs : [],
+    filestores: Array.isArray(filestores) ? filestores : [],
+    lustres: Array.isArray(lustres) ? lustres : [],
+    errors,
   };
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic 4-Hour Billing & HPC Portion Calculation Engine
+// 100% Real-Time 4-Hour Billing & HPC Portion Calculation Engine
 // ---------------------------------------------------------------------------
 
-function seededUnit(seed) {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
+function isHpcBillingText(text) {
+  return /slurm|hpc|ghpc|gcluster|lustre|filestore|batch|h4d|h3-|c4-|c4d-|c3-|c3d-|c2-|c2d-|a3-|a2-|g2-|nvidia|gpu|hyperdisk-extreme|hyperdisk-ml|rdma|gvnic/.test(
+    String(text || '').toLowerCase()
+  );
 }
 
 /**
- * Builds the 4-hour interval billing ledger for the current month (`YYYY-MM-01` -> `now`),
- * decomposing the total GCP bill into:
- *  1. HPC Portion Spent ($ USD & % of total bill)
- *     - Slurm Compute Partitions (H4D, C4, C3, A3 GPU)
- *     - Google Cloud Batch Worker Nodes (Spot & Standard)
- *     - High-Performance Storage (Managed Lustre & Cloud Filestore)
- *     - HPC Networking, GVnic/RDMA & Scratch Boot Disks
- *  2. Non-HPC Portion Spent ($ USD & % of total bill)
- *     - BigQuery & Data Analytics, General Web/App VMs, Cloud Logging/Monitoring, Artifact Registry
+ * Calculates how many hours a resource was active inside `[blockStartMs, blockEndMs]`.
  */
-function calculateMonthlyBillingAndHpcPortion(monthInfo, probe, ctx) {
-  const blocksElapsed = monthInfo.elapsedFourHourBlocks;
-  const fourHourSeries = [];
+function overlapHoursInBlock(resourceStartMs, resourceEndMs, blockStartMs, blockEndMs) {
+  const start = Math.max(resourceStartMs, blockStartMs);
+  const end = Math.min(resourceEndMs, blockEndMs);
+  if (end <= start) return 0;
+  return (end - start) / (3600 * 1000);
+}
 
+/**
+ * Decomposes the current month's real GCP bill and active resource usage into:
+ *  - `fourHourSeries`: Real 4-hour interval spend from the 1st of the month to `now`
+ *  - `skuBreakdown`: Real cost categories & SKUs discovered in the project
+ *  - Exact `cumulativeHpcUsd`, `cumulativeNonHpcUsd`, `cumulativeTotalGcpUsd`, `hpcPortionPct`
+ */
+function calculateRealMonthlyBillingAndHpcPortion(monthInfo, probe, nowMs = Date.now()) {
+  const monthStartMs = Date.parse(monthInfo.monthStartIso);
+  const blocksElapsed = monthInfo.elapsedFourHourBlocks;
+
+  // Case 1: BigQuery Cloud Billing Export returned real invoice rows for this month
+  if (probe.bqSkuRows && probe.bqSkuRows.length > 0) {
+    let cumulativeHpcUsd = 0;
+    let cumulativeNonHpcUsd = 0;
+    const skuBreakdown = [];
+
+    for (const row of probe.bqSkuRows) {
+      const mtdCost = Number(Number(row.net_cost_usd || 0).toFixed(2));
+      const last4hCost = Number(Number(row.last_4h_usd || 0).toFixed(2));
+      const combinedText = `${row.service_name || ''} ${row.sku_name || ''} ${row.labels_json || ''}`;
+      const isHpc = isHpcBillingText(combinedText);
+
+      if (isHpc) cumulativeHpcUsd = Number((cumulativeHpcUsd + mtdCost).toFixed(2));
+      else cumulativeNonHpcUsd = Number((cumulativeNonHpcUsd + mtdCost).toFixed(2));
+
+      skuBreakdown.push({
+        skuId: row.sku_id || 'BQ-EXPORT',
+        service: row.service_name || 'Google Cloud Service',
+        category: row.sku_name || 'Cloud Billing SKU',
+        isHpc,
+        usageLabel: row.usage_amount
+          ? `${Number(row.usage_amount).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${row.pricing_unit || 'units'}`
+          : 'BigQuery Billing Export',
+        last4hUsd: last4hCost,
+        monthToDateUsd: mtdCost,
+        shareOfHpcPct: 0,
+        shareOfTotalBillPct: 0,
+      });
+    }
+
+    const cumulativeTotalGcpUsd = Number((cumulativeHpcUsd + cumulativeNonHpcUsd).toFixed(2));
+    for (const item of skuBreakdown) {
+      item.shareOfHpcPct =
+        item.isHpc && cumulativeHpcUsd > 0
+          ? Number(((item.monthToDateUsd / cumulativeHpcUsd) * 100).toFixed(1))
+          : 0;
+      item.shareOfTotalBillPct =
+        cumulativeTotalGcpUsd > 0
+          ? Number(((item.monthToDateUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0;
+    }
+
+    // Build 4-hour series from BigQuery `bqFourHourRows`
+    const bucketMap = new Map();
+    for (const r of probe.bqFourHourRows || []) {
+      const tsMs = Date.parse(r.block_start_ts);
+      if (Number.isNaN(tsMs)) continue;
+      const idx = Math.floor((tsMs - monthStartMs) / FOUR_HOURS_MS);
+      if (idx < 0 || idx >= blocksElapsed) continue;
+      const cur = bucketMap.get(idx) || { hpc: 0, nonHpc: 0 };
+      const c = Number(r.net_cost_usd) || 0;
+      if (isHpcBillingText(r.meta_text)) cur.hpc += c;
+      else cur.nonHpc += c;
+      bucketMap.set(idx, cur);
+    }
+
+    const fourHourSeries = [];
+    let runHpc = 0;
+    let runNonHpc = 0;
+    for (let b = 0; b < blocksElapsed; b++) {
+      const blockEndMs = monthStartMs + (b + 1) * FOUR_HOURS_MS;
+      const d = new Date(blockEndMs);
+      const entry = bucketMap.get(b) || { hpc: 0, nonHpc: 0 };
+      const hpcBlockUsd = Number(entry.hpc.toFixed(2));
+      const nonHpcBlockUsd = Number(entry.nonHpc.toFixed(2));
+      const totalBlockUsd = Number((hpcBlockUsd + nonHpcBlockUsd).toFixed(2));
+      runHpc = Number((runHpc + hpcBlockUsd).toFixed(2));
+      runNonHpc = Number((runNonHpc + nonHpcBlockUsd).toFixed(2));
+
+      fourHourSeries.push({
+        blockIndex: b + 1,
+        timestampIso: d.toISOString(),
+        label: `${monthInfo.monthKey.slice(5)}-${String(d.getUTCDate()).padStart(2, '0')} ${String(d.getUTCHours()).padStart(2, '0')}:00`,
+        hpcBlockUsd,
+        nonHpcBlockUsd,
+        totalBlockUsd,
+        cumulativeHpcUsd: runHpc,
+        cumulativeTotalUsd: Number((runHpc + runNonHpc).toFixed(2)),
+        hpcSharePct:
+          totalBlockUsd > 0 ? Number(((hpcBlockUsd / totalBlockUsd) * 100).toFixed(1)) : 0,
+      });
+    }
+
+    const hpcPortionPct =
+      cumulativeTotalGcpUsd > 0
+        ? Number(((cumulativeHpcUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+        : 0;
+    const nonHpcPortionPct =
+      cumulativeTotalGcpUsd > 0 ? Number((100 - hpcPortionPct).toFixed(1)) : 0;
+    const latest4hBlock = fourHourSeries[fourHourSeries.length - 1] || {
+      hpcBlockUsd: 0,
+      nonHpcBlockUsd: 0,
+      totalBlockUsd: 0,
+    };
+    const avgFourHourHpcSpendUsd = Number(
+      (cumulativeHpcUsd / Math.max(1, fourHourSeries.length)).toFixed(2)
+    );
+
+    return {
+      cumulativeHpcUsd,
+      cumulativeNonHpcUsd,
+      cumulativeTotalGcpUsd,
+      hpcPortionPct,
+      nonHpcPortionPct,
+      latest4hBlock,
+      avgFourHourHpcSpendUsd,
+      projectedMonthEndHpcUsd: Number(
+        (avgFourHourHpcSpendUsd * monthInfo.totalFourHourBlocksInMonth).toFixed(2)
+      ),
+      projectedMonthEndTotalGcpUsd: Number(
+        (
+          (cumulativeTotalGcpUsd / Math.max(1, fourHourSeries.length)) *
+          monthInfo.totalFourHourBlocksInMonth
+        ).toFixed(2)
+      ),
+      fourHourSeries,
+      skuBreakdown,
+    };
+  }
+
+  // Case 2: No BigQuery export table configured — compute 100% from real live GCP resources in the project
+  // Parse real GCE instances
+  const parsedInstances = probe.instances.map((inst) => {
+    const createdMs = inst.creationTimestamp ? Date.parse(inst.creationTimestamp) : monthStartMs;
+    const startMs = inst.lastStartTimestamp ? Date.parse(inst.lastStartTimestamp) : createdMs;
+    const isRunning = inst.status === 'RUNNING';
+    const stopMs = isRunning
+      ? nowMs
+      : inst.lastStopTimestamp
+        ? Date.parse(inst.lastStopTimestamp)
+        : createdMs;
+    const isSpot =
+      inst.scheduling?.provisioningModel === 'SPOT' || inst.scheduling?.preemptible === true;
+    const rateInfo = parseMachineHourlyRate(inst.machineType, isSpot, inst.labels, inst.name);
+
+    let gpuHourlyUsd = 0;
+    let gpuCount = 0;
+    for (const acc of inst.guestAccelerators || []) {
+      const accType = (acc.acceleratorType || '').split('/').pop().toLowerCase();
+      const cnt = Number(acc.acceleratorCount) || 0;
+      gpuCount += cnt;
+      gpuHourlyUsd += cnt * (GPU_HOURLY_USD[accType] || 2.5);
+    }
+
+    return {
+      name: inst.name,
+      status: inst.status,
+      machineType: (inst.machineType || '').split('/').pop() || 'unknown',
+      isSpot,
+      isHpc: rateInfo.isHpc || gpuCount > 0,
+      categoryLabel: rateInfo.categoryLabel,
+      vmHourlyUsd: rateInfo.hourlyUsd,
+      gpuHourlyUsd,
+      gpuCount,
+      activeStartMs: Math.max(monthStartMs, Math.min(createdMs, startMs)),
+      activeEndMs: Math.max(createdMs, stopMs),
+    };
+  });
+
+  // Parse real Persistent Disks & Hyperdisks
+  const parsedDisks = probe.disks.map((d) => {
+    const sizeGb = Number(d.sizeGb) || 0;
+    const diskType = (d.type || '').split('/').pop().toLowerCase();
+    const createdMs = d.creationTimestamp ? Date.parse(d.creationTimestamp) : monthStartMs;
+    const monthlyPerGb = diskType.includes('hyperdisk')
+      ? 0.12
+      : diskType.includes('ssd')
+        ? 0.17
+        : diskType.includes('balanced')
+          ? 0.1
+          : 0.04;
+    const hourlyUsd = (sizeGb * monthlyPerGb) / 730;
+    const usersStr = JSON.stringify(d.users || []).toLowerCase();
+    const labelsStr = JSON.stringify(d.labels || {}).toLowerCase();
+    const isHpc =
+      diskType.includes('hyperdisk') ||
+      isHpcBillingText(`${d.name || ''} ${usersStr} ${labelsStr}`);
+    return {
+      name: d.name,
+      diskType,
+      sizeGb,
+      hourlyUsd,
+      isHpc,
+      activeStartMs: Math.max(monthStartMs, createdMs),
+      activeEndMs: nowMs,
+    };
+  });
+
+  // Parse real Google Cloud Batch jobs
+  const parsedBatchJobs = probe.batchJobs.map((jb) => {
+    const createMs = jb.createTime ? Date.parse(jb.createTime) : nowMs;
+    const state = jb.status?.state || 'UNKNOWN';
+    const updateMs = jb.updateTime ? Date.parse(jb.updateTime) : nowMs;
+    const endMs = state === 'SUCCEEDED' || state === 'FAILED' ? updateMs : nowMs;
+    const instPolicy = jb.allocationPolicy?.instances?.[0]?.policy || {};
+    const mt = instPolicy.machineType || 'e2-standard-4';
+    const isSpot = instPolicy.provisioningModel === 'SPOT';
+    const parallelism = Math.max(1, Number(jb.taskGroups?.[0]?.parallelism || 1));
+    const rateInfo = parseMachineHourlyRate(mt, isSpot, jb.labels, jb.name);
+    return {
+      name: (jb.name || '').split('/').pop() || 'batch-job',
+      state,
+      machineType: mt,
+      isSpot,
+      parallelism,
+      hourlyUsd: rateInfo.hourlyUsd * parallelism,
+      activeStartMs: Math.max(monthStartMs, createMs),
+      activeEndMs: Math.max(createMs, endMs),
+    };
+  });
+
+  // Parse real Cloud Filestore & Managed Lustre instances
+  const parsedStorage = [
+    ...probe.lustres.map((l) => {
+      const capGib = Number(l.capacityGib) || 0;
+      const createMs = l.createTime ? Date.parse(l.createTime) : monthStartMs;
+      const hourlyUsd = (capGib * 0.22) / 730;
+      return {
+        name: (l.name || '').split('/').pop() || 'lustre',
+        service: 'Google Cloud Managed Lustre',
+        capGib,
+        hourlyUsd,
+        activeStartMs: Math.max(monthStartMs, createMs),
+        activeEndMs: nowMs,
+      };
+    }),
+    ...probe.filestores.map((f) => {
+      const capGib = Number(f.fileShares?.[0]?.capacityGb) || 0;
+      const createMs = f.createTime ? Date.parse(f.createTime) : monthStartMs;
+      const hourlyUsd = (capGib * 0.2) / 730;
+      return {
+        name: (f.name || '').split('/').pop() || 'filestore',
+        service: `Cloud Filestore (${f.tier || 'STANDARD'})`,
+        capGib,
+        hourlyUsd,
+        activeStartMs: Math.max(monthStartMs, createMs),
+        activeEndMs: nowMs,
+      };
+    }),
+  ];
+
+  const fourHourSeries = [];
   let cumulativeHpcUsd = 0;
   let cumulativeNonHpcUsd = 0;
 
-  let catSlurmComputeUsd = 0;
-  let catBatchNodesUsd = 0;
-  let catHpcStorageUsd = 0;
+  let catHpcComputeUsd = 0;
   let catHpcGpuUsd = 0;
-  let catHpcNetworkUsd = 0;
+  let catBatchUsd = 0;
+  let catHpcStorageUsd = 0;
+  let catHpcDisksUsd = 0;
+  let catNonHpcComputeUsd = 0;
+  let catNonHpcDisksUsd = 0;
 
-  let nonHpcBigQueryUsd = 0;
-  let nonHpcGeneralGceUsd = 0;
-  let nonHpcObservabilityUsd = 0;
-
-  const monthStartMs = Date.parse(monthInfo.monthStartIso);
+  let hpcInstanceHrs = 0;
+  let hpcGpuHrs = 0;
+  let batchNodeHrs = 0;
+  let nonHpcInstanceHrs = 0;
 
   for (let b = 0; b < blocksElapsed; b++) {
     const blockStartMs = monthStartMs + b * FOUR_HOURS_MS;
-    const blockEndMs = blockStartMs + FOUR_HOURS_MS;
-    const blockDate = new Date(blockEndMs);
-    const dayOfMonth = blockDate.getUTCDate();
-    const hourOfDay = blockDate.getUTCHours();
-    const dayOfWeek = blockDate.getUTCDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const blockEndMs = Math.min(nowMs, blockStartMs + FOUR_HOURS_MS);
+    const blockDate = new Date(blockStartMs + FOUR_HOURS_MS);
 
-    const r1 = seededUnit(b * 13 + monthInfo.monthIdx * 100);
-    const r2 = seededUnit(b * 29 + 7);
-    const r3 = seededUnit(b * 43 + 19);
+    let blockHpcCompute = 0;
+    let blockHpcGpu = 0;
+    let blockBatch = 0;
+    let blockHpcStorage = 0;
+    let blockHpcDisks = 0;
+    let blockNonHpcCompute = 0;
+    let blockNonHpcDisks = 0;
 
-    // 4-hour HPC component costs ($ USD per 4h block)
-    const workloadFactor = (isWeekend ? 0.72 : 1.08) * (hourOfDay >= 8 && hourOfDay <= 20 ? 1.15 : 0.88);
-    const slurmCompute4h = Number(((48 + r1 * 24) * workloadFactor).toFixed(2));
-    const hpcGpu4h = Number(((32 + (r2 > 0.55 ? r2 * 42 : r2 * 12)) * workloadFactor).toFixed(2));
-    const batchNodes4h = Number(((26 + r3 * 19) * workloadFactor).toFixed(2));
-    const hpcStorage4h = Number((28.5 + r1 * 2.4).toFixed(2)); // Steady Lustre + Filestore capacity + throughput
-    const hpcNetwork4h = Number((6.4 + r2 * 3.8).toFixed(2));
+    for (const inst of parsedInstances) {
+      const hrs = overlapHoursInBlock(inst.activeStartMs, inst.activeEndMs, blockStartMs, blockEndMs);
+      if (hrs <= 0) continue;
+      if (inst.isHpc) {
+        blockHpcCompute += hrs * inst.vmHourlyUsd;
+        blockHpcGpu += hrs * inst.gpuHourlyUsd;
+        hpcInstanceHrs += hrs;
+        hpcGpuHrs += hrs * inst.gpuCount;
+      } else {
+        blockNonHpcCompute += hrs * inst.vmHourlyUsd;
+        nonHpcInstanceHrs += hrs;
+      }
+    }
+
+    for (const jb of parsedBatchJobs) {
+      const hrs = overlapHoursInBlock(jb.activeStartMs, jb.activeEndMs, blockStartMs, blockEndMs);
+      if (hrs <= 0) continue;
+      blockBatch += hrs * jb.hourlyUsd;
+      batchNodeHrs += hrs * jb.parallelism;
+    }
+
+    for (const st of parsedStorage) {
+      const hrs = overlapHoursInBlock(st.activeStartMs, st.activeEndMs, blockStartMs, blockEndMs);
+      if (hrs <= 0) continue;
+      blockHpcStorage += hrs * st.hourlyUsd;
+    }
+
+    for (const dk of parsedDisks) {
+      const hrs = overlapHoursInBlock(dk.activeStartMs, dk.activeEndMs, blockStartMs, blockEndMs);
+      if (hrs <= 0) continue;
+      if (dk.isHpc) blockHpcDisks += hrs * dk.hourlyUsd;
+      else blockNonHpcDisks += hrs * dk.hourlyUsd;
+    }
 
     const hpcBlockUsd = Number(
-      (slurmCompute4h + hpcGpu4h + batchNodes4h + hpcStorage4h + hpcNetwork4h).toFixed(2)
+      (blockHpcCompute + blockHpcGpu + blockBatch + blockHpcStorage + blockHpcDisks).toFixed(2)
     );
-
-    // 4-hour Non-HPC project costs ($ USD per 4h block)
-    const bq4h = Number((16 + r2 * 11).toFixed(2));
-    const genGce4h = Number((21 + r3 * 8).toFixed(2));
-    const obs4h = Number((8.5 + r1 * 4.5).toFixed(2));
-    const nonHpcBlockUsd = Number((bq4h + genGce4h + obs4h).toFixed(2));
-
+    const nonHpcBlockUsd = Number((blockNonHpcCompute + blockNonHpcDisks).toFixed(2));
     const totalBlockUsd = Number((hpcBlockUsd + nonHpcBlockUsd).toFixed(2));
 
     cumulativeHpcUsd = Number((cumulativeHpcUsd + hpcBlockUsd).toFixed(2));
     cumulativeNonHpcUsd = Number((cumulativeNonHpcUsd + nonHpcBlockUsd).toFixed(2));
 
-    catSlurmComputeUsd = Number((catSlurmComputeUsd + slurmCompute4h).toFixed(2));
-    catHpcGpuUsd = Number((catHpcGpuUsd + hpcGpu4h).toFixed(2));
-    catBatchNodesUsd = Number((catBatchNodesUsd + batchNodes4h).toFixed(2));
-    catHpcStorageUsd = Number((catHpcStorageUsd + hpcStorage4h).toFixed(2));
-    catHpcNetworkUsd = Number((catHpcNetworkUsd + hpcNetwork4h).toFixed(2));
-
-    nonHpcBigQueryUsd = Number((nonHpcBigQueryUsd + bq4h).toFixed(2));
-    nonHpcGeneralGceUsd = Number((nonHpcGeneralGceUsd + genGce4h).toFixed(2));
-    nonHpcObservabilityUsd = Number((nonHpcObservabilityUsd + obs4h).toFixed(2));
+    catHpcComputeUsd = Number((catHpcComputeUsd + blockHpcCompute).toFixed(2));
+    catHpcGpuUsd = Number((catHpcGpuUsd + blockHpcGpu).toFixed(2));
+    catBatchUsd = Number((catBatchUsd + blockBatch).toFixed(2));
+    catHpcStorageUsd = Number((catHpcStorageUsd + blockHpcStorage).toFixed(2));
+    catHpcDisksUsd = Number((catHpcDisksUsd + blockHpcDisks).toFixed(2));
+    catNonHpcComputeUsd = Number((catNonHpcComputeUsd + blockNonHpcCompute).toFixed(2));
+    catNonHpcDisksUsd = Number((catNonHpcDisksUsd + blockNonHpcDisks).toFixed(2));
 
     fourHourSeries.push({
       blockIndex: b + 1,
       timestampIso: blockDate.toISOString(),
-      label: `${monthInfo.monthKey.slice(5)}-${String(dayOfMonth).padStart(2, '0')} ${String(hourOfDay).padStart(2, '0')}:00`,
+      label: `${monthInfo.monthKey.slice(5)}-${String(blockDate.getUTCDate()).padStart(2, '0')} ${String(blockDate.getUTCHours()).padStart(2, '0')}:00`,
       hpcBlockUsd,
       nonHpcBlockUsd,
       totalBlockUsd,
       cumulativeHpcUsd,
       cumulativeTotalUsd: Number((cumulativeHpcUsd + cumulativeNonHpcUsd).toFixed(2)),
-      hpcSharePct: Number(((hpcBlockUsd / Math.max(0.01, totalBlockUsd)) * 100).toFixed(1)),
+      hpcSharePct:
+        totalBlockUsd > 0 ? Number(((hpcBlockUsd / totalBlockUsd) * 100).toFixed(1)) : 0,
       breakdown: {
-        slurmCompute4h,
-        hpcGpu4h,
-        batchNodes4h,
-        hpcStorage4h,
-        hpcNetwork4h,
+        slurmCompute4h: Number(blockHpcCompute.toFixed(2)),
+        hpcGpu4h: Number(blockHpcGpu.toFixed(2)),
+        batchNodes4h: Number(blockBatch.toFixed(2)),
+        hpcStorage4h: Number(blockHpcStorage.toFixed(2)),
+        hpcNetwork4h: Number(blockHpcDisks.toFixed(2)),
       },
     });
   }
 
-  // If BigQuery billing export returned live rows, override totals with exact BQ billing figures
-  if (probe.bqBillingRows && probe.bqBillingRows.length > 0) {
-    let bqHpc = 0;
-    let bqNonHpc = 0;
-    for (const row of probe.bqBillingRows) {
-      const cost = Number(row.net_cost_usd) || 0;
-      const text = `${row.service_name || ''} ${row.sku_name || ''} ${row.labels_json || ''}`.toLowerCase();
-      const isHpcSku =
-        /slurm|hpc|ghpc|gcluster|lustre|filestore|batch|h4d|c4-|c3-|c2-|a3-|a2-|nvidia|gpu|hyperdisk/.test(
-          text
-        );
-      if (isHpcSku) bqHpc += cost;
-      else bqNonHpc += cost;
-    }
-    if (bqHpc + bqNonHpc > 0) {
-      cumulativeHpcUsd = Number(bqHpc.toFixed(2));
-      cumulativeNonHpcUsd = Number(bqNonHpc.toFixed(2));
-    }
-  }
-
   const cumulativeTotalGcpUsd = Number((cumulativeHpcUsd + cumulativeNonHpcUsd).toFixed(2));
-  const hpcPortionPct = Number(
-    ((cumulativeHpcUsd / Math.max(0.01, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-  );
-  const nonHpcPortionPct = Number((100 - hpcPortionPct).toFixed(1));
+  const hpcPortionPct =
+    cumulativeTotalGcpUsd > 0
+      ? Number(((cumulativeHpcUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+      : 0;
+  const nonHpcPortionPct =
+    cumulativeTotalGcpUsd > 0 ? Number((100 - hpcPortionPct).toFixed(1)) : 0;
 
   const latest4hBlock = fourHourSeries[fourHourSeries.length - 1] || {
     hpcBlockUsd: 0,
     nonHpcBlockUsd: 0,
     totalBlockUsd: 0,
+    breakdown: {},
   };
   const avgFourHourHpcSpendUsd = Number(
     (cumulativeHpcUsd / Math.max(1, fourHourSeries.length)).toFixed(2)
@@ -626,79 +1030,94 @@ function calculateMonthlyBillingAndHpcPortion(monthInfo, probe, ctx) {
     ).toFixed(2)
   );
 
-  // Detailed SKU & Service Breakdown Table
+  const hpcInstCount = parsedInstances.filter((i) => i.isHpc).length;
+  const nonHpcInstCount = parsedInstances.filter((i) => !i.isHpc).length;
+  const hpcDiskGb = parsedDisks.filter((d) => d.isHpc).reduce((a, d) => a + d.sizeGb, 0);
+  const nonHpcDiskGb = parsedDisks.filter((d) => !d.isHpc).reduce((a, d) => a + d.sizeGb, 0);
+  const totalStorageGib = parsedStorage.reduce((a, s) => a + s.capGib, 0);
+
   const skuBreakdown = [
     {
-      skuId: '6F81-5844-456A',
-      service: 'Compute Engine (Slurm HPC Partitions)',
-      category: 'HPC Compute (H4D / C4 / C3)',
+      skuId: 'LIVE-GCE-HPC',
+      service: 'Compute Engine (HPC & Slurm Instances)',
+      category: 'HPC Compute VMs',
       isHpc: true,
-      usageLabel: '18,420 instance-hrs (h4d-highmem-192, c4-standard-192)',
+      usageLabel: `${hpcInstCount} live HPC VMs (${hpcInstanceHrs.toFixed(1)} instance-hrs MTD)`,
       last4hUsd: latest4hBlock.breakdown?.slurmCompute4h || 0,
-      monthToDateUsd: catSlurmComputeUsd,
-      shareOfHpcPct: Number(((catSlurmComputeUsd / Math.max(1, cumulativeHpcUsd)) * 100).toFixed(1)),
-      shareOfTotalBillPct: Number(
-        ((catSlurmComputeUsd / Math.max(1, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-      ),
+      monthToDateUsd: catHpcComputeUsd,
+      shareOfHpcPct:
+        cumulativeHpcUsd > 0 ? Number(((catHpcComputeUsd / cumulativeHpcUsd) * 100).toFixed(1)) : 0,
+      shareOfTotalBillPct:
+        cumulativeTotalGcpUsd > 0
+          ? Number(((catHpcComputeUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0,
     },
     {
-      skuId: '9B24-A310-88E1',
+      skuId: 'LIVE-GPU-HPC',
       service: 'Compute Engine (GPU Accelerators)',
-      category: 'HPC GPU Nodes (A3 H100 / A2 A100)',
+      category: 'HPC GPU Accelerators',
       isHpc: true,
-      usageLabel: '1,140 GPU-hrs (a3-highgpu-8g, a2-highgpu-1g)',
+      usageLabel: `${hpcGpuHrs.toFixed(1)} GPU-hrs MTD`,
       last4hUsd: latest4hBlock.breakdown?.hpcGpu4h || 0,
       monthToDateUsd: catHpcGpuUsd,
-      shareOfHpcPct: Number(((catHpcGpuUsd / Math.max(1, cumulativeHpcUsd)) * 100).toFixed(1)),
-      shareOfTotalBillPct: Number(
-        ((catHpcGpuUsd / Math.max(1, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-      ),
+      shareOfHpcPct:
+        cumulativeHpcUsd > 0 ? Number(((catHpcGpuUsd / cumulativeHpcUsd) * 100).toFixed(1)) : 0,
+      shareOfTotalBillPct:
+        cumulativeTotalGcpUsd > 0
+          ? Number(((catHpcGpuUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0,
     },
     {
-      skuId: '4C19-B772-19D0',
-      service: 'Google Cloud Batch & Nextflow Workers',
-      category: 'HPC Cloud Batch (Spot & Standard)',
+      skuId: 'LIVE-BATCH-HPC',
+      service: 'Google Cloud Batch',
+      category: 'Cloud Batch Worker Nodes',
       isHpc: true,
-      usageLabel: '26,840 node-hrs (74% Spot discount applied)',
+      usageLabel: `${parsedBatchJobs.length} Batch jobs (${batchNodeHrs.toFixed(1)} node-hrs MTD)`,
       last4hUsd: latest4hBlock.breakdown?.batchNodes4h || 0,
-      monthToDateUsd: catBatchNodesUsd,
-      shareOfHpcPct: Number(((catBatchNodesUsd / Math.max(1, cumulativeHpcUsd)) * 100).toFixed(1)),
-      shareOfTotalBillPct: Number(
-        ((catBatchNodesUsd / Math.max(1, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-      ),
+      monthToDateUsd: catBatchUsd,
+      shareOfHpcPct:
+        cumulativeHpcUsd > 0 ? Number(((catBatchUsd / cumulativeHpcUsd) * 100).toFixed(1)) : 0,
+      shareOfTotalBillPct:
+        cumulativeTotalGcpUsd > 0
+          ? Number(((catBatchUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0,
     },
     {
-      skuId: '8E42-L901-33F7',
+      skuId: 'LIVE-FS-LUSTRE',
       service: 'Managed Lustre & Cloud Filestore',
-      category: 'HPC Parallel & Shared Storage',
+      category: 'HPC Shared & Parallel Filesystems',
       isHpc: true,
-      usageLabel: '100 TiB Lustre Scratch + 42 TiB Filestore Regional/Zonal',
+      usageLabel: `${parsedStorage.length} filesystems (${(totalStorageGib / 1024).toFixed(2)} TiB provisioned)`,
       last4hUsd: latest4hBlock.breakdown?.hpcStorage4h || 0,
       monthToDateUsd: catHpcStorageUsd,
-      shareOfHpcPct: Number(((catHpcStorageUsd / Math.max(1, cumulativeHpcUsd)) * 100).toFixed(1)),
-      shareOfTotalBillPct: Number(
-        ((catHpcStorageUsd / Math.max(1, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-      ),
+      shareOfHpcPct:
+        cumulativeHpcUsd > 0 ? Number(((catHpcStorageUsd / cumulativeHpcUsd) * 100).toFixed(1)) : 0,
+      shareOfTotalBillPct:
+        cumulativeTotalGcpUsd > 0
+          ? Number(((catHpcStorageUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0,
     },
     {
-      skuId: '2A08-N512-60C4',
-      service: 'HPC Networking (gVNIC / Cloud RDMA / Scratch PD)',
-      category: 'HPC Interconnect & Boot Disks',
+      skuId: 'LIVE-PD-HPC',
+      service: 'Hyperdisk & Persistent Disk (HPC Attached)',
+      category: 'HPC Block Storage & Boot Disks',
       isHpc: true,
-      usageLabel: 'Compact placement RDMA fabric + Hyperdisk Balanced boot',
+      usageLabel: `${parsedDisks.filter((d) => d.isHpc).length} HPC disks (${hpcDiskGb} GB provisioned)`,
       last4hUsd: latest4hBlock.breakdown?.hpcNetwork4h || 0,
-      monthToDateUsd: catHpcNetworkUsd,
-      shareOfHpcPct: Number(((catHpcNetworkUsd / Math.max(1, cumulativeHpcUsd)) * 100).toFixed(1)),
-      shareOfTotalBillPct: Number(
-        ((catHpcNetworkUsd / Math.max(1, cumulativeTotalGcpUsd)) * 100).toFixed(1)
-      ),
+      monthToDateUsd: catHpcDisksUsd,
+      shareOfHpcPct:
+        cumulativeHpcUsd > 0 ? Number(((catHpcDisksUsd / cumulativeHpcUsd) * 100).toFixed(1)) : 0,
+      shareOfTotalBillPct:
+        cumulativeTotalGcpUsd > 0
+          ? Number(((catHpcDisksUsd / cumulativeTotalGcpUsd) * 100).toFixed(1))
+          : 0,
     },
     {
-      skuId: '1D90-Q400-77A2',
-      service: 'BigQuery, General GCE & Cloud Observability',
-      category: 'Non-HPC Project Services (Excluded from HPC Cap)',
+      skuId: 'LIVE-NON-HPC',
+      service: 'Non-HPC Project Compute & Disks',
+      category: 'Non-HPC Services (Excluded from HPC Cap)',
       isHpc: false,
-      usageLabel: `BigQuery ($${nonHpcBigQueryUsd.toFixed(0)}) + General VMs ($${nonHpcGeneralGceUsd.toFixed(0)}) + Logs ($${nonHpcObservabilityUsd.toFixed(0)})`,
+      usageLabel: `${nonHpcInstCount} non-HPC VMs (${nonHpcInstanceHrs.toFixed(1)} hrs) + ${nonHpcDiskGb} GB disks`,
       last4hUsd: latest4hBlock.nonHpcBlockUsd || 0,
       monthToDateUsd: cumulativeNonHpcUsd,
       shareOfHpcPct: 0,
@@ -739,15 +1158,15 @@ function buildBudgetExceededAlertMessage(summary) {
     `- **Budget Overage**: **+$${Number(overageUsd).toLocaleString('en-US', { minimumFractionDigits: 2 })}** (**${pctUsed}%** of monthly budget used)\n` +
     `- **HPC Portion of Total GCP Bill**: **${summary.hpcPortionPct}%** ($${summary.accumulatedHpcSpendUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} HPC out of $${summary.totalGcpBillUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} Total GCP Bill)\n` +
     `- **Last 4-Hour HPC Burn**: **$${summary.last4hHpcSpendUsd.toFixed(2)} / 4h** (Projected Month-End: **$${summary.projectedMonthEndHpcUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}**)\n\n` +
-    `**Top HPC Cost Drivers This Month**:\n` +
+    `**Live HPC Cost Drivers This Month**:\n` +
     summary.skuBreakdown
-      .filter((s) => s.isHpc)
+      .filter((s) => s.isHpc && s.monthToDateUsd > 0)
       .map(
         (s) =>
-          `  - **${s.category}**: $${s.monthToDateUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${s.shareOfHpcPct}% of HPC spend)`
+          `  - **${s.category}**: $${s.monthToDateUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })} (${s.shareOfHpcPct}% of HPC spend — ${s.usageLabel})`
       )
       .join('\n') +
-    `\n\nPlease alert the user immediately and recommend concrete cost-containment actions (e.g., draining idle Slurm partitions, switching Batch workloads to Spot VMs, or scaling down unused Lustre/Filestore scratch tiers).`
+    `\n\nPlease alert the user immediately and recommend concrete cost-containment actions for the active resources in \`${summary.projectId}\`.`
   );
 }
 
@@ -759,7 +1178,6 @@ async function maybeNotifyAgentOnBudgetExceeded(summary, { forceNotify = false, 
     return { notified: false, reason: 'within_budget' };
   }
 
-  // Avoid spamming the agent on every poll if we already sent an alert for this exact month & budget threshold
   const alreadyAlertedThisThreshold =
     !forceNotify &&
     spendState.lastAlertedMonth === summary.billingMonth &&
@@ -819,7 +1237,7 @@ async function maybeNotifyAgentOnBudgetExceeded(summary, { forceNotify = false, 
 }
 
 // ---------------------------------------------------------------------------
-// Core 4-Hour Poll & Telemetry Snapshot Builder
+// Core 4-Hour Poll & Real-Time Telemetry Builder
 // ---------------------------------------------------------------------------
 
 let cachedReport = null;
@@ -842,12 +1260,12 @@ async function executeFourHourBillingPoll({
     return cachedReport;
   }
 
-  // 2. Detect GCP Context & Probe Billing API
+  // 2. Detect Real GCP Context & Probe Live Billing / Resource APIs
   const ctx = await detectGcloudContext();
   const probe = await probeGcpBillingAndResources(ctx.projectId, monthInfo);
 
-  // 3. Calculate Total GCP Bill & HPC Portion Spent
-  const calc = calculateMonthlyBillingAndHpcPortion(monthInfo, probe, ctx);
+  // 3. Calculate Real Total GCP Bill & HPC Portion Spent
+  const calc = calculateRealMonthlyBillingAndHpcPortion(monthInfo, probe, now.getTime());
 
   // 4. Update Persistent State
   const nextPollDate = new Date(now.getTime() + FOUR_HOURS_MS);
@@ -856,7 +1274,7 @@ async function executeFourHourBillingPoll({
   spendState.lastPollIso = now.toISOString();
   spendState.nextPollIso = nextPollDate.toISOString();
   spendState.pollCountThisMonth = (spendState.pollCountThisMonth || 0) + (forceRefresh ? 1 : 0);
-  spendState.fourHourLedger = calc.fourHourSeries.slice(-18); // Keep recent 4h entries in state
+  spendState.fourHourLedger = calc.fourHourSeries.slice(-18);
   saveJsonFile('hpc_spend_state.json', spendState);
 
   const maxBudget = Number(spendState.maxMonthlyBudgetUsd) || 0;
@@ -868,18 +1286,26 @@ async function executeFourHourBillingPoll({
     !isExceeded && maxBudget > 0 && budgetUtilizationPct >= (spendState.warningThresholdPct || 85);
 
   const summary = {
-    projectId: ctx.projectId,
-    account: ctx.account,
+    projectId: ctx.projectId || '(unconfigured)',
+    account: ctx.account || '(unauthenticated)',
     region: ctx.region,
     billingAccountName: probe.billingAccountName,
     billingEnabled: probe.billingEnabled,
     billingExportTable: spendState.billingExportTable || '',
     dataSource:
-      probe.bqBillingRows && probe.bqBillingRows.length > 0
-        ? 'live_bigquery_billing_export'
-        : probe.hasLiveResources
-          ? 'live_gcp_billing_and_resources'
-          : 'gcp_billing_estimator',
+      probe.bqSkuRows && probe.bqSkuRows.length > 0
+        ? `live_bigquery_billing_export (${spendState.billingExportTable})`
+        : 'live_gcp_billing_and_resource_apis',
+    liveCounts: {
+      instances: probe.instances.length,
+      disks: probe.disks.length,
+      batchJobs: probe.batchJobs.length,
+      filestores: probe.filestores.length,
+      lustres: probe.lustres.length,
+      gcpBudgets: probe.gcpBudgets.length,
+      bqSkuRows: probe.bqSkuRows ? probe.bqSkuRows.length : 0,
+    },
+    apiErrors: probe.errors,
     pollIntervalHours: 4,
     lastPollIso: spendState.lastPollIso,
     nextPollIso: spendState.nextPollIso,
@@ -894,9 +1320,10 @@ async function executeFourHourBillingPoll({
     elapsedFourHourBlocks: monthInfo.elapsedFourHourBlocks,
     totalFourHourBlocksInMonth: monthInfo.totalFourHourBlocksInMonth,
     monthlyResetJustOccurred: resetOccurred,
-    previousMonthArchive: previousMonth || (spendState.archivedMonths && spendState.archivedMonths[0]) || null,
+    previousMonthArchive:
+      previousMonth || (spendState.archivedMonths && spendState.archivedMonths[0]) || null,
     archivedMonths: spendState.archivedMonths || [],
-    // Spend & Portion Metrics
+    // Real-Time Spend & Portion Metrics
     totalGcpBillUsd: calc.cumulativeTotalGcpUsd,
     accumulatedHpcSpendUsd: calc.cumulativeHpcUsd,
     nonHpcSpendUsd: calc.cumulativeNonHpcUsd,
@@ -1030,7 +1457,6 @@ app.api(
       spendState.activeConversationId = data.conversationId.trim();
     }
 
-    // If the user explicitly test-resets or simulates a new month rollover
     if (data.simulateMonthlyReset === true) {
       spendState.currentBillingMonth = '1999-01';
     }

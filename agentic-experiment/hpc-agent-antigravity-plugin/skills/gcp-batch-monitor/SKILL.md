@@ -19,9 +19,10 @@ You are a Google Cloud Batch Telemetry & Workload Duration Specialist. Your role
 ---
 
 ## Tools & Bundled Assets
+- **Strict Real-Time Telemetry Rule**: Never fall back to hardcoded demo or synthetic data. All dashboard metrics, node counts, per-user durations, and job tables are populated exclusively from real-time `gcloud batch jobs list`, `gcloud compute instances list`, and `gcloud logging read` queries.
 - **Bundled Telemetry & GUI Server**: [`scripts/gcp_batch_monitor.mjs`](./scripts/gcp_batch_monitor.mjs)
 - **Interactive Web Dashboard Assets**: [`assets/index.html`](./assets/index.html), [`assets/app.js`](./assets/app.js), [`assets/styles.css`](./assets/styles.css)
-- **CLI Commands (`run_command`)**: `gcloud batch jobs list`, `gcloud batch jobs describe`, and `gcloud compute instances list`.
+- **CLI Commands (`run_command`)**: `gcloud batch jobs list`, `gcloud batch jobs describe`, `gcloud compute instances list`, and `gcloud logging read`.
 
 ---
 

@@ -61,6 +61,9 @@ When performing specialized operations, activate and follow the corresponding sk
 ---
 
 ## Tool Guidance & Best Practices
+- **Strict Real-Time Telemetry Invariant (Zero Demo / Hardcoded Fallback Data)**:
+  - For all dashboards, skills, and sidecars (`hpc-cluster-slurm-monitor`, `gcp-batch-monitor`, `hpc_spend_monitor`), you **CANNOT** fall back to hardcoded demo, synthetic, or simulated data under any circumstance.
+  - Always use real-time information queried directly from live GCP APIs (`gcloud compute`, `gcloud batch`, `gcloud lustre`, `gcloud filestore`, `gcloud billing`, `bq query`, `gcloud logging`) and live Slurm commands (`sinfo`, `squeue`, `sacct`). If a project currently has 0 active instances, 0 jobs, or `$0.00` spend, report those exact real-time `0` values truthfully.
 - **Remote Operations**: Prefer `gcp-ssh` MCP server tools (`gcp_ssh_exec`, `gcp_upload_file`, `gcp_download_file`) when communicating with existing GCP VM instances and Slurm login nodes.
 - **Local & Infrastructure Operations**: Use `run_command` to execute `gcloud`, `ghpc`, `terraform`, and local shell commands.
 - **Always Confirm Before Destructive Actions**: Confirm with the user before destroying clusters or deleting persistent storage.

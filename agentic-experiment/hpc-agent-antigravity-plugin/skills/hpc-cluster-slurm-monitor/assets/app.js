@@ -68,11 +68,12 @@ function renderAll() {
   document.getElementById('cfg-project').value = config.projectId || '';
   document.getElementById('cfg-region').value = config.region || '';
   document.getElementById('cfg-login').value = config.loginNode || '';
-  document.getElementById('cfg-mode').value = config.dataMode || 'auto';
+  const zoneEl = document.getElementById('cfg-zone');
+  if (zoneEl) zoneEl.value = config.zone || '';
 
   // KPIs
   document.getElementById('kpi-running-instances').textContent =
-    `${summary30d.currentRunningInstances} / ${summary30d.totalClusterNodes + 2}`;
+    `${summary30d.currentRunningInstances} / ${summary30d.totalClusterNodes}`;
   document.getElementById('kpi-running-sub').textContent =
     `${summary30d.allocatedNodes} allocated · ${summary30d.idleNodes} idle · ${summary30d.downNodes} down`;
 
@@ -212,7 +213,19 @@ function renderPartitionsTable() {
   const tbody = document.getElementById('partitions-tbody');
   if (!tbody || !currentTelemetry) return;
 
-  tbody.innerHTML = (currentTelemetry.partitions || [])
+  const list = currentTelemetry.partitions || [];
+  if (list.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="10" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live GCP &amp; Slurm query completed for project <code>${currentTelemetry.config.projectId}</code> at <code>${currentTelemetry.generatedAt}</code>: <strong>0 active Slurm partitions or GCE instances found</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = list
     .map((p) => {
       const running = p.allocatedNodes + p.mixedNodes;
       return `
@@ -265,7 +278,19 @@ function renderUsersTable() {
     clearBtn.classList.toggle('hidden', !selectedUserFilter);
   }
 
-  tbody.innerHTML = (currentTelemetry.slurmUsers || [])
+  const users = currentTelemetry.slurmUsers || [];
+  if (users.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live Slurm query (<code>squeue</code> / <code>sacct</code>) completed for <code>${currentTelemetry.config.projectId}</code>: <strong>0 active or 30-day Slurm user jobs found</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = users
     .map((u) => {
       const isSelected = selectedUserFilter === u.user;
       return `
@@ -320,6 +345,17 @@ function renderJobsTable() {
     return true;
   });
 
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="11" style="text-align:center; padding:18px; color:#94a3b8;">
+          Live Slurm <code>squeue</code> query completed: <strong>0 active or queued Slurm jobs right now</strong>.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
   tbody.innerHTML = filtered
     .map(
       (j) => `
@@ -364,7 +400,17 @@ function renderStorageSection() {
   const grid = document.getElementById('storage-cards-grid');
   if (!grid || !currentTelemetry) return;
 
-  grid.innerHTML = (currentTelemetry.storageSystems || [])
+  const systems = currentTelemetry.storageSystems || [];
+  if (systems.length === 0) {
+    grid.innerHTML = `
+      <div class="storage-card" style="grid-column: 1 / -1; text-align:center; padding:20px; color:#94a3b8;">
+        Live GCP Storage query (<code>gcloud lustre</code>, <code>gcloud filestore</code>, <code>gcloud compute disks</code>, <code>gcloud storage buckets</code>) completed for <code>${currentTelemetry.config.projectId}</code>: <strong>0 provisioned storage volumes found</strong>.
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = systems
     .map(
       (s) => `
       <div class="storage-card">
@@ -514,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
       projectId: document.getElementById('cfg-project').value,
       region: document.getElementById('cfg-region').value,
       loginNode: document.getElementById('cfg-login').value,
-      dataMode: document.getElementById('cfg-mode').value,
+      zone: document.getElementById('cfg-zone')?.value || '',
       days: selectedWindowDays,
     };
     const res = await apiFetch('/api/config', {
