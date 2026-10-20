@@ -19,63 +19,72 @@ let Response;
 try {
   ({ SidecarApp, Response } = await import('sidecar_sdk'));
 } catch {
-  Response = {
-    json(data, status = 200) {
-      return { status, headers: { 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify(data) };
-    },
-    html(content, status = 200) {
-      return { status, headers: { 'Content-Type': 'text/html; charset=utf-8' }, body: content };
-    },
-    text(content, contentType = 'text/plain; charset=utf-8', status = 200) {
-      return { status, headers: { 'Content-Type': contentType }, body: content };
-    },
-    error(message, status = 500) {
-      return { status, headers: { 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify({ error: message }) };
-    },
+  Response = class FallbackResponse {
+    constructor(body, { status = 200, contentType = 'text/plain; charset=utf-8', headers = {} } = {}) {
+      this.body = body;
+      this.status = status;
+      this.contentType = contentType;
+      this.headers = headers;
+    }
   };
   SidecarApp = class FallbackSidecarApp {
-    constructor() { this.routes = []; }
-    use(method, pattern, handler) {
-      const paramNames = [];
-      const regexStr = '^' + pattern.replace(/:([a-zA-Z0-9_]+)/g, (_, n) => { paramNames.push(n); return '([^/]+)'; }) + '$';
-      this.routes.push({ method: method.toUpperCase(), regex: new RegExp(regexStr), paramNames, handler });
+    constructor() {
+      this.pages = new Map();
+      this.apis = new Map();
+    }
+    page(path, handler) {
+      this.pages.set(path, handler);
       return this;
     }
-    get(p, h) { return this.use('GET', p, h); }
-    post(p, h) { return this.use('POST', p, h); }
-    listen() {
+    api(path, handler, method = 'POST') {
+      const m = method.toUpperCase();
+      if (!this.apis.has(path)) this.apis.set(path, new Map());
+      this.apis.get(path).set(m, handler);
+      return this;
+    }
+    run() {
       const portArg = process.argv.find((a) => a.startsWith('--port='));
       const port = portArg ? Number(portArg.split('=')[1]) : Number(process.env.PORT || 8080);
       const server = createServer(async (req, res) => {
-        const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-        if (req.method === 'GET' && url.pathname === '/preload.js') {
+        const url = new URL(req.url, `http://${req.headers.host || '127.0.0.1'}`);
+        const pathname = url.pathname;
+        if (req.method === 'GET' && pathname === '/preload.js') {
           res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
           res.end('window.antigravity = window.antigravity || { sendPromptToAgent() {}, sendTextToTerminal() {} };');
           return;
         }
-        const chunks = [];
-        for await (const c of req) chunks.push(c);
-        const rawBody = Buffer.concat(chunks).toString('utf-8');
-        let body = rawBody;
-        try { if (rawBody) body = JSON.parse(rawBody); } catch {}
-        for (const r of this.routes) {
-          if (r.method !== req.method && r.method !== 'ALL') continue;
-          const m = url.pathname.match(r.regex);
-          if (m) {
-            const params = {};
-            r.paramNames.forEach((n, i) => { params[n] = decodeURIComponent(m[i + 1]); });
-            const out = await r.handler({ method: req.method, path: url.pathname, query: Object.fromEntries(url.searchParams.entries()), headers: req.headers, params, body, rawBody });
-            if (out) {
-              res.writeHead(out.status || 200, out.headers || {});
-              res.end(out.body ?? '');
-              return;
+        if (req.method === 'GET' && this.pages.has(pathname)) {
+          const html = await this.pages.get(pathname)(Object.fromEntries(url.searchParams));
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(html);
+          return;
+        }
+        if (this.apis.has(pathname)) {
+          const methods = this.apis.get(pathname);
+          const handler = methods.get(req.method.toUpperCase());
+          if (handler) {
+            let data = Object.fromEntries(url.searchParams);
+            if (req.method === 'POST' || req.method === 'PUT' || req.method === 'PATCH') {
+              const chunks = [];
+              for await (const c of req) chunks.push(c);
+              const raw = Buffer.concat(chunks).toString('utf-8');
+              try { if (raw) data = JSON.parse(raw); } catch {}
             }
+            const out = await handler(data, req);
+            if (out instanceof Response) {
+              res.writeHead(out.status, { 'Content-Type': out.contentType, ...out.headers });
+              res.end(out.body);
+            } else {
+              res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+              res.end(JSON.stringify(out ?? {}));
+            }
+            return;
           }
         }
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Not Found' }));
       });
-      server.listen(port, '127.0.0.1', () => console.log(`[Sidecar] Listening on 127.0.0.1:${port}`));
+      server.listen(port, '127.0.0.1', () => console.log(`[hpc-cluster-slurm-monitor] GUI listening on http://127.0.0.1:${port}`));
       return server;
     }
   };
@@ -83,6 +92,9 @@ try {
 
 const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const ASSETS_DIR = existsSync(join(__dirname, '..', 'assets', 'index.html'))
+  ? join(__dirname, '..', 'assets')
+  : __dirname;
 
 const STATIC_ASSETS = {
   '/styles.css': ['styles.css', 'text/css; charset=utf-8'],
@@ -982,17 +994,39 @@ function sliceByDays(telemetry, days) {
 }
 
 // ---------------------------------------------------------------------------
-// Sidecar HTTP Server Registration
+// CLI Mode & HTTP GUI Server Registration
 // ---------------------------------------------------------------------------
+
+function getArgValue(prefix) {
+  const arg = process.argv.find((a) => a.startsWith(`${prefix}=`));
+  if (arg) return arg.slice(prefix.length + 1);
+  const idx = process.argv.indexOf(prefix);
+  if (idx !== -1 && process.argv[idx + 1] && !process.argv[idx + 1].startsWith('--')) {
+    return process.argv[idx + 1];
+  }
+  return null;
+}
+
+const cliProject = getArgValue('--project');
+const cliRegion = getArgValue('--region');
+const cliDays = Number(getArgValue('--days')) || 30;
+if (cliProject) sidecarConfig.projectId = cliProject;
+if (cliRegion) sidecarConfig.region = cliRegion;
+
+if (process.argv.includes('--cli')) {
+  const telemetry = await buildTelemetry({ days: cliDays, forceRefresh: true });
+  console.log(JSON.stringify(telemetry, null, 2));
+  process.exit(0);
+}
 
 const app = new SidecarApp();
 
-app.page('/', () => readFileSync(join(__dirname, 'index.html'), 'utf-8'));
+app.page('/', () => readFileSync(join(ASSETS_DIR, 'index.html'), 'utf-8'));
 
 for (const [route, [file, contentType]] of Object.entries(STATIC_ASSETS)) {
   app.api(
     route,
-    () => new Response(readFileSync(join(__dirname, file), 'utf-8'), { contentType }),
+    () => new Response(readFileSync(join(ASSETS_DIR, file), 'utf-8'), { contentType }),
     'GET'
   );
 }

@@ -2,7 +2,7 @@
 
 This project is a standalone **Antigravity Plugin** and AI agent built for managing High-Performance Computing (HPC) environments, infrastructure provisioning, and batch workloads on Google Cloud Platform.
 
-It packages a specialized agent persona alongside 5 modular skills for automated capacity validation, quota inspection, Cluster Toolkit blueprint management, Slurm orchestration, and Nextflow optimization.
+It packages a specialized agent persona alongside 7 modular skills for automated capacity validation, quota inspection, Cluster Toolkit blueprint management, Slurm orchestration, Nextflow optimization, and 30-day HPC/Slurm/Storage & Google Cloud Batch telemetry with interactive GUI dashboards.
 
 ---
 
@@ -16,8 +16,9 @@ hpc-agent-antigravity/
 ├── agents/
 │   └── hpc-agent-antigravity.md                    # Primary agent definition
 ├── rules/                                          # Plugin rules
-│   └── credentials-and-project.md                  # Mandatory credential & project onboarding
-├── skills/                                         # 5 packed skills for selection
+│   ├── credentials-and-project.md                  # Mandatory credential & project onboarding
+│   └── GEMINI.md                                   # Coding agent development guide
+├── skills/                                         # 7 packed skills for selection
 │   ├── vm-availability-checker/                    # Live & dry-run instance testing
 │   │   └── SKILL.md
 │   ├── compute-quota-checker/                      # CPU & storage quota inspection
@@ -26,22 +27,30 @@ hpc-agent-antigravity/
 │   │   └── SKILL.md
 │   ├── nextflow-batch-optimizer/                   # Nextflow GCP Batch config optimizer
 │   │   └── SKILL.md
-│   └── cluster-toolkit-blueprint-creator/          # HPC Toolkit blueprints & schemas
+│   ├── cluster-toolkit-blueprint-creator/          # HPC Toolkit blueprints & schemas
+│   │   ├── SKILL.md
+│   │   ├── examples/
+│   │   ├── reference/
+│   │   ├── resources/
+│   │   └── scripts/
+│   ├── hpc-cluster-slurm-monitor/                  # Skill 6: HPC Instances, Slurm Users & Storage (30d + GUI)
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   │   └── hpc_cluster_monitor.mjs
+│   │   └── assets/
+│   │       ├── index.html
+│   │       ├── app.js
+│   │       └── styles.css
+│   └── gcp-batch-monitor/                          # Skill 7: Google Batch Nodes, Jobs & Durations (30d + GUI)
 │       ├── SKILL.md
-│       ├── examples/
-│       ├── reference/
-│       ├── resources/
-│       └── scripts/
-├── sidecars/                                       # 2 Interactive Auxiliary Pane UI Sidecars
-│   ├── hpc_cluster_monitor/                        # Sidecar 1: HPC Instances, Slurm Users & Storage (30d)
-│   │   ├── sidecar.json
-│   │   ├── package.json
-│   │   ├── main.mjs
-│   │   ├── index.html
-│   │   ├── app.js
-│   │   ├── styles.css
-│   │   └── README.md
-│   └── gcp_batch_monitor/                          # Sidecar 2: Google Batch Nodes, Jobs & Durations (30d)
+│       ├── scripts/
+│       │   └── gcp_batch_monitor.mjs
+│       └── assets/
+│           ├── index.html
+│           ├── app.js
+│           └── styles.css
+├── sidecars/                                       # Bundled UI Sidecars
+│   └── hpc_spend_monitor/                          # Every-4h HPC Spend & Monthly Budget Monitor + Agent Alert
 │       ├── sidecar.json
 │       ├── package.json
 │       ├── main.mjs
@@ -59,16 +68,16 @@ hpc-agent-antigravity/
 
 ---
 
-## 🖥️ Interactive UI Sidecars (30-Day Statistics)
+## 📊 30-Day Monitoring Skills & Interactive GUI Dashboards
 
-This plugin bundles **2 interactive Auxiliary Pane UI sidecars** built with the Antigravity Sidecar SDK (`sidecar_sdk`):
+This plugin bundles **2 specialized 30-day telemetry skills** (`skills/hpc-cluster-slurm-monitor` and `skills/gcp-batch-monitor`), each supporting both one-shot CLI telemetry output (`--cli`) and an interactive web GUI dashboard (`--port=8080` / `--port=8081`):
 
-### 1. HPC Cluster & Slurm Environment Monitor (`sidecars/hpc_cluster_monitor`)
+### 1. HPC Cluster & Slurm Environment Monitor (`skills/hpc-cluster-slurm-monitor`)
 - **Running HPC Instances Over Time (Last 30 Days)**: Interactive time-series chart tracking daily average and peak running HPC instances stacked by machine family (`H4D`, `C4`, `C3`, `A3-MegaGPU`, `N4`), plus real-time Slurm partition states (`allocated`, `mixed`, `idle`, `down`).
 - **Slurm Environment & User Ownership**: Shows how many jobs are currently running and pending per researcher/user (`squeue`), which nodes and GPUs they occupy, and 30-day completed job counts and core-hours (`sacct`).
 - **Storage Systems in Use**: Live and 30-day capacity/throughput telemetry for **Google Cloud Managed Lustre** (`/lustre/scratch`), **Cloud Filestore Regional/Enterprise** (`/home`), **Cloud Filestore Zonal High Scale** (`/apps`), **Cloud Storage FUSE** (`/mnt/gcs-datasets`), and **Node-Local NVMe / Hyperdisk Scratch** (`/tmp/scratch`).
 
-### 2. Google Cloud Batch Nodes & Job Duration Monitor (`sidecars/gcp_batch_monitor`)
+### 2. Google Cloud Batch Nodes & Job Duration Monitor (`skills/gcp-batch-monitor`)
 - **Google Batch Nodes in Use (Last 30 Days)**: Tracks active Google Cloud Batch VM nodes split by **Spot** vs. **Standard** provisioning models, vCPUs/memory in use, hardware tiers (`c3-standard-22`, `c4-highcpu-32`, `n2-highmem-32`, `a2-highgpu-1g`, `e2-standard-4`), and 30-day node-hour trends.
 - **People Running Batch & Execution Duration**: Per-user leaderboard showing who is actively running Batch jobs right now, their **live ticking running duration**, and their 30-day total job runtime hours, node-hours, average job duration, and longest single job.
 - **What Jobs & Duration**: Searchable, filterable table of active and recent Batch jobs (Nextflow processes, AlphaFold arrays, Batch container arrays) with live ticking elapsed duration (`HHh MMm SSs`), progress against `maxRunDuration`, comparison to 30-day average baselines, and a 30-day duration distribution histogram.
@@ -96,6 +105,8 @@ When activated in Antigravity, the agent can autonomously select and execute the
 3. **`compute-quota-checker`**: Inspects Standard vs. Spot CPU quotas and identifies disk architecture constraints (Hyperdisk for `N4`/`H4D` vs. Persistent Disk).
 4. **`storage-quota-checker`**: Analyzes capacity headroom and performance tiers for Filestore Zonal, Filestore Regional/Enterprise, and Google Cloud Managed Lustre.
 5. **`nextflow-batch-optimizer`**: Parses `main.nf` workflows, maps bioinformatics processes to GCP hardware tiers, and generates production-ready `nextflow.config` files for Google Cloud Batch.
+6. **`hpc-cluster-slurm-monitor`**: Tracks running HPC instances over time (30-day statistics), Slurm jobs by user, and active storage systems (Managed Lustre, Filestore, GCS FUSE, Local NVMe) with an interactive GUI dashboard.
+7. **`gcp-batch-monitor`**: Tracks Google Cloud Batch nodes in use (Spot vs. Standard), per-user Batch runtime duration statistics, and active/recent Batch jobs with durations over the last 30 days, with an interactive GUI dashboard.
 
 ---
 

@@ -42,24 +42,21 @@ When performing specialized operations, activate and follow the corresponding sk
 5. **`nextflow-batch-optimizer`**:
    - Analysis of `main.nf` workflows and data manifests.
    - Resource tiering (Economy, Economy Plus, Business, First Class) and generation of Google Cloud Batch optimized `nextflow.config` files.
+6. **`hpc-cluster-slurm-monitor`**:
+   - Tracks **how many HPC instances are running over time** (last 30 days daily peak/average series + machine family breakdown across `H4D`, `C4`, `C3`, `A3-GPU`, `N4`) with an interactive GUI dashboard (`scripts/hpc_cluster_monitor.mjs`).
+   - Provides full visibility into the **Slurm environment**: active & queued jobs (`squeue`), **how many jobs are running by who** (per-user job count, nodes/cores occupied, and 30-day core-hours), and partition states (`sinfo`).
+   - Tracks **HPC storage systems in use**: Google Cloud Managed Lustre (`/lustre/scratch`), Cloud Filestore Regional/Enterprise (`/home`), Cloud Filestore Zonal (`/apps`), Cloud Storage FUSE (`/mnt/gcs-datasets`), and Local NVMe scratch (`/tmp/scratch`) with 30-day capacity and throughput trends.
+7. **`gcp-batch-monitor`**:
+   - Focuses on **Google Cloud Batch nodes in use** (Spot vs. Standard VMs, active vCPUs/memory, machine shapes, and 30-day node-hour trends) with an interactive GUI dashboard (`scripts/gcp_batch_monitor.mjs`).
+   - Tracks **people running Batch and their execution durations**: active running session duration per user, 30-day cumulative runtime hours, node-hours, average duration, and longest single job.
+   - Lists **what Batch jobs are running and their live duration** (`HHh MMm SSs` against `maxRunDuration`, task progress, and 30-day duration distribution histograms).
 
 ---
 
-## 🖥️ Bundled UI Sidecars (30-Day Telemetry & Live Dashboards)
+## Bundled UI Sidecar (`sidecars/hpc_spend_monitor`)
 
-This plugin ships with two interactive Auxiliary Pane UI sidecars (`sidecars/`):
-
-1. **[HPC & Slurm Monitor](sidecar://hpc-agent-antigravity/hpc_cluster_monitor/)** (`hpc-agent-antigravity/hpc_cluster_monitor`):
-   - Displays a GUI tracking **how many HPC instances are running over time** (last 30 days daily peak/average series + machine family breakdown across `H4D`, `C4`, `C3`, `A3-GPU`, `N4`).
-   - Provides full visibility into the **Slurm environment**: active & queued jobs (`squeue`), **how many jobs are running by who** (per-user job count, nodes/cores occupied, and 30-day core-hours), and partition states (`sinfo`).
-   - Tracks **HPC storage systems in use**: Google Cloud Managed Lustre (`/lustre/scratch`), Cloud Filestore Regional/Enterprise (`/home`), Cloud Filestore Zonal (`/apps`), Cloud Storage FUSE (`/mnt/gcs-datasets`), and Local NVMe scratch (`/tmp/scratch`) with 30-day capacity and throughput trends.
-
-2. **[Google Batch Monitor](sidecar://hpc-agent-antigravity/gcp_batch_monitor/)** (`hpc-agent-antigravity/gcp_batch_monitor`):
-   - Focuses on **Google Cloud Batch nodes in use** (Spot vs. Standard VMs, active vCPUs/memory, machine shapes, and 30-day node-hour trends).
-   - Tracks **people running Batch and their execution durations**: active running session duration per user, 30-day cumulative runtime hours, node-hours, average duration, and longest single job.
-   - Lists **what Batch jobs are running and their live ticking duration** (`HHh MMm SSs` against `maxRunDuration`, task progress, and 30-day duration distribution histograms).
-
-When the user asks about running HPC instances over time, Slurm user workloads, storage systems in use, or Google Cloud Batch node usage and job durations, surface the corresponding `sidecar://` pill so they can open the live GUI panel in the Auxiliary Pane.
+- **HPC Spend & Monthly Budget Monitor (`[HPC Spend Monitor (4h)](sidecar://hpc-agent-antigravity/hpc_spend_monitor/)`)**:
+  - Polls the GCP Billing API & live resources **every 4 hours**, decomposes the total GCP bill into the **HPC portion** vs. Non-HPC spend, prompts the user for their **Maximum Monthly HPC Spend ($ USD)**, resets accumulated counters on the **1st of every calendar month**, and sends an **alert notification directly into the agent** if accumulated monthly HPC spend exceeds the user's cap.
 
 ---
 

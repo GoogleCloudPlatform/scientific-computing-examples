@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HPC Spend & Monthly Budget Monitor (4h)</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/preload.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="topbar-title-group">
+        <div class="title-row">
+          <span class="status-dot" id="statusDot"></span>
+          <h1>HPC Spend &amp; Budget Monitor</h1>
+          <span class="badge badge-cycle">Every 4h Poll</span>
+          <span class="badge badge-month" id="monthBadge">2026-10</span>
+        </div>
+        <p class="subtitle" id="projectSubtitle">
+          GCP Project: <code>loading...</code> &bull; Billing Account: <code>loading...</code>
+        </p>
+      </div>
+      <div class="topbar-actions">
+        <div class="countdown-box" title="Next automatic 4-hour GCP Billing API poll">
+          <span class="countdown-label">Next 4h Poll</span>
+          <span class="countdown-val" id="nextPollCountdown">04h 00m 00s</span>
+        </div>
+        <button class="btn btn-secondary" id="pollNowBtn" title="Trigger an immediate 4-hour GCP Billing API check">
+          &#x21bb; Poll Billing Now
+        </button>
+      </div>
+    </header>
+
+    <!-- User Prompt Card: Ask user for Max Monthly HPC Spend -->
+    <section class="budget-prompt-card" id="budgetPromptCard">
+      <div class="prompt-header">
+        <div>
+          <span class="prompt-eyebrow">MONTHLY HPC SPEND CAP (RESETS 1ST OF EVERY MONTH)</span>
+          <h2 id="budgetPromptTitle">How much is the maximum amount you plan to spend on HPC this month?</h2>
+        </div>
+        <span class="status-pill" id="budgetStatusPill">CHECKING...</span>
+      </div>
+      <p class="prompt-desc">
+        Every 4 hours, this sidecar queries the GCP Billing API, calculates the <strong>HPC portion</strong> of your total cloud bill, and verifies that accumulated monthly HPC spend does not exceed your cap. Counters automatically reset on the 1st of each month (<code id="nextResetDateLabel">2026-11-01 00:00 UTC</code>).
+      </p>
+
+      <form class="budget-form" id="budgetForm">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="maxBudgetInput">Max Monthly HPC Spend ($ USD)</label>
+            <div class="input-with-prefix">
+              <span class="prefix">$</span>
+              <input type="number" id="maxBudgetInput" min="100" step="100" required placeholder="25000" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label for="projectIdInput">Target GCP Project ID</label>
+            <input type="text" id="projectIdInput" placeholder="e.g. hpc-scientific-prod" />
+          </div>
+          <div class="form-field">
+            <label for="bqTableInput">BQ Billing Export Table (Optional)</label>
+            <input type="text" id="bqTableInput" placeholder="project.dataset.gcp_billing_export_v1_XXXX" />
+          </div>
+        </div>
+
+        <div class="preset-row">
+          <span class="preset-label">Quick Presets:</span>
+          <button type="button" class="chip-btn" data-preset="10000">$10,000 / mo</button>
+          <button type="button" class="chip-btn" data-preset="20000">$20,000 / mo (Test Exceed Alert)</button>
+          <button type="button" class="chip-btn" data-preset="25000">$25,000 / mo</button>
+          <button type="button" class="chip-btn" data-preset="35000">$35,000 / mo</button>
+          <button type="button" class="chip-btn" data-preset="50000">$50,000 / mo</button>
+          <div class="spacer"></div>
+          <button type="submit" class="btn btn-primary" id="saveBudgetBtn">Save Monthly Max Spend</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Red Alert Banner when Accumulated HPC Spend > Max Monthly Budget -->
+    <section class="exceeded-alert-banner hidden" id="exceededAlertBanner">
+      <div class="alert-icon">&#x26A0;</div>
+      <div class="alert-body">
+        <div class="alert-title-row">
+          <h3>ALERT: Monthly HPC Spend Limit Exceeded!</h3>
+          <span class="alert-AutoBadge" id="agentNotifiedBadge">Agent Alert Notification Dispatched</span>
+        </div>
+        <p id="exceededAlertText">
+          Accumulated HPC spend has exceeded your monthly maximum budget.
+        </p>
+        <div class="alert-actions">
+          <button class="btn btn-danger" id="sendAlertToAgentBtn">
+            &#x1F6A8; Send Alert Notification to Agent Now
+          </button>
+          <button class="btn btn-outline-light" id="askAgentMitigateBtn">
+            &#x2699; Ask Agent to Scale Down Idle HPC / Slurm Nodes
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- KPI Summary Grid -->
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-highlight">
+        <div class="kpi-top">
+          <span class="kpi-label">Accumulated HPC Spend (MTD)</span>
+          <span class="kpi-tag" id="kpiMonthTag">2026-10</span>
+        </div>
+        <div class="kpi-value" id="kpiHpcSpend">$0.00</div>
+        <div class="kpi-sub" id="kpiBudgetComparison">
+          of $25,000.00 monthly max (0.0%)
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="budgetProgressBar" style="width: 0%"></div>
+        </div>
+      </article>
+
+      <article class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">HPC Portion of Total GCP Bill</span>
+          <span class="kpi-tag">Portion Ratio</span>
+        </div>
+        <div class="kpi-value" id="kpiHpcPortionPct">0.0%</div>
+        <div class="kpi-sub" id="kpiTotalGcpBillSub">
+          Total GCP Bill (MTD): <strong>$0.00</strong> (Non-HPC: $0.00)
+        </div>
+        <div class="split-bar" title="HPC Portion vs Non-HPC Project Spend">
+          <div class="split-hpc" id="splitHpcBar" style="width: 75%"></div>
+          <div class="split-nonhpc" id="splitNonHpcBar" style="width: 25%"></div>
+        </div>
+      </article>
+
+      <article class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Latest 4-Hour HPC Burn</span>
+          <span class="kpi-tag">4h Interval</span>
+        </div>
+        <div class="kpi-value" id="kpiLast4hBurn">$0.00 <small>/ 4h</small></div>
+        <div class="kpi-sub" id="kpiAvg4hBurn">
+          Month Avg: $0.00 / 4h &bull; Projected EOM: $0.00
+        </div>
+      </article>
+
+      <article class="kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-label">Remaining Monthly HPC Budget</span>
+          <span class="kpi-tag" id="kpiResetTag">Resets Nov 1</span>
+        </div>
+        <div class="kpi-value" id="kpiRemainingBudget">$0.00</div>
+        <div class="kpi-sub" id="kpiElapsedBlocks">
+          0 / 186 4-hour billing intervals elapsed
+        </div>
+      </article>
+    </section>
+
+    <!-- Cumulative Spend vs Max Budget Chart (Every 4 Hours) -->
+    <section class="panel-card">
+      <div class="panel-header">
+        <div>
+          <h2>Accumulated HPC Spend vs. Monthly Max Budget (Every 4 Hours)</h2>
+          <p class="panel-sub">
+            Tracks cumulative month-to-date HPC spend (blue), total GCP bill (muted), and your Max Monthly HPC Spend cap (red dashed line).
+          </p>
+        </div>
+        <div class="chart-legend">
+          <span class="legend-item"><i class="dot dot-hpc"></i> Accumulated HPC Spend</span>
+          <span class="legend-item"><i class="dot dot-cap"></i> Max Monthly HPC Cap</span>
+          <span class="legend-item"><i class="dot dot-total"></i> Total GCP Bill</span>
+        </div>
+      </div>
+      <div class="chart-container" id="cumulativeChartContainer">
+        <svg id="cumulativeSpendSvg" viewBox="0 0 760 230" preserveAspectRatio="none"></svg>
+      </div>
+    </section>
+
+    <!-- Two-Column Section: HPC Cost Portion Breakdown & Monthly Reset Archive -->
+    <section class="two-col-grid">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>GCP Bill Decomposition: HPC vs. Non-HPC Portion</h2>
+            <p class="panel-sub">Calculated from GCP Billing SKUs, Slurm/Batch labels, and Lustre/Filestore usage</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Cost Category &amp; GCP Service</th>
+                <th>Type</th>
+                <th class="num">Last 4h</th>
+                <th class="num">MTD Spend</th>
+                <th class="num">% of Bill</th>
+              </tr>
+            </thead>
+            <tbody id="skuBreakdownBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2>4-Hour GCP Billing Check Log</h2>
+            <p class="panel-sub">Recent 4-hour polling intervals for the active billing month</p>
+          </div>
+          <button class="btn btn-xs" id="sendSummaryToAgentBtn" title="Send current 4h spend summary to the agent">
+            Send Report to Agent
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>4h Interval (UTC)</th>
+                <th class="num">4h HPC</th>
+                <th class="num">4h Total</th>
+                <th class="num">HPC %</th>
+                <th class="num">Accumulated HPC</th>
+              </tr>
+            </thead>
+            <tbody id="fourHourLogBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer-bar">
+      <span id="lastPollFooter">Last 4h GCP Billing Poll: --</span>
+      <span id="resetNoticeFooter">Monthly accumulator resets automatically on the 1st of every month at 00:00 UTC.</span>
+    </footer>
+  </div>
+
+  <div class="toast hidden" id="toastBanner"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
+
