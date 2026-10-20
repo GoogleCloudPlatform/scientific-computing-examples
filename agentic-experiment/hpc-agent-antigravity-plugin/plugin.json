@@ -6,9 +6,5 @@
     "Open the HPC Cluster & Slurm Monitor sidecar and review our 30-day instance and storage usage",
     "Open the Google Cloud Batch Monitor sidecar and check which users and jobs have the longest runtime",
     "Check VM availability and compute quotas for an H4D Slurm cluster in us-central1"
-  ],
-  "author": {
-    "name": "Google Cloud Platform"
-  },
-  "license": "Apache-2.0"
+  ]
 }

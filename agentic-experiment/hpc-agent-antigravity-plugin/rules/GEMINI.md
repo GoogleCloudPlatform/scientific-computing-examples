@@ -1,3 +1,8 @@
+---
+trigger: model_decision
+description: "Coding agent development phases, evaluation loop, and operational guidelines for Google ADK agents."
+---
+
 # Coding Agent Guide
 
 ## Prerequisites
@@ -59,3 +64,4 @@ Ask the user: Option A (simple single-project) or Option B (full CI/CD pipeline 
 - **Run Python with `uv`**: `uv run python script.py`. Run `agents-cli install` first.
 - **Stop on repeated errors**: If the same error appears 3+ times, fix the root cause instead of retrying.
 - **Terraform conflicts** (Error 409): Use `terraform import` instead of retrying creation.
+

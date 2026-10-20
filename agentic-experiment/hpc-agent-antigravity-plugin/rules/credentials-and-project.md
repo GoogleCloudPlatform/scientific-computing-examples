@@ -1,3 +1,8 @@
+---
+trigger: always_on
+description: "Mandatory credential, project, and region initialization before running GCP or HPC commands."
+---
+
 # Mandatory Session Initialization: Credentials, Project & Region
 
 For every new conversation when using the `hpc-agent-antigravity` plugin:
