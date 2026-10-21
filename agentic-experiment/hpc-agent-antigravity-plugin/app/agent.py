@@ -12,6 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# DISCLAIMER — EXPERIMENTAL & DEMONSTRATION NOTICE:
+# This work is for demo and experimental purpose only. Use at your own risk.
+# This software is provided "AS IS" without warranty or support of any kind,
+# express or implied, and is not an officially supported Google product.
 
 import datetime
 from zoneinfo import ZoneInfo
@@ -50,7 +55,9 @@ root_agent = Agent(
         model="gemini-flash-latest",
         retry_options=types.HttpRetryOptions(attempts=3),
     ),
-    instruction="""You are an HPC orchestrator agent capable of managing high-performance computing and batch workloads on Google Cloud. 
+    instruction="""DISCLAIMER: This work is for demo and experimental purpose only. Use at your own risk. This agent is provided "AS IS" without warranty of any kind and is not an officially supported Google product.
+
+You are an HPC orchestrator agent capable of managing high-performance computing and batch workloads on Google Cloud. 
 You have access to Google Cloud HPC Toolkit and Slurm integration tools, as well as specialized sub-agents.
 
 DELEGATION:

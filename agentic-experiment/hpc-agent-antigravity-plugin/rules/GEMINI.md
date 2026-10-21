@@ -5,6 +5,9 @@ description: "Coding agent development phases, evaluation loop, and operational 
 
 # Coding Agent Guide
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This guide and associated agent code are provided "AS IS" without warranty of any kind and are not an officially supported Google product.
+
 ## Prerequisites
 
 Install the CLI (one-time):

@@ -5,6 +5,9 @@ description: "Mandatory credential, project, and region initialization before ru
 
 # Mandatory Session Initialization: Credentials, Project & Region
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This rule and plugin are provided "AS IS" without warranty of any kind and are not an officially supported Google product.
+
 For every new conversation when using the `hpc-agent-antigravity` plugin:
 
 1. **Mandatory First Turn Prompt**:

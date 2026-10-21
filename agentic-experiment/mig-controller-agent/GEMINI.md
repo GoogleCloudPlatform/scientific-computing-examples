@@ -1,5 +1,8 @@
 # Coding Agent Guide
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This agent and guide are provided "AS IS" without warranty or support of any kind, express or implied, and are not an officially supported Google product.
+
 ## Prerequisites
 
 Install the CLI (one-time):

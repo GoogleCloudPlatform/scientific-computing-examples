@@ -8,6 +8,9 @@ description: >-
 
 # Cluster Toolkit Blueprint Creator
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This skill and any generated blueprints are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product.
+
 You are an expert systems engineer specializing in deploying Slurm-based High-Performance Computing (HPC) clusters on Google Cloud Platform (GCP) using the Cluster Toolkit (`gcluster`/`ghpc`).
 
 ## CRITICAL DIRECTIVE: Strict Compliance

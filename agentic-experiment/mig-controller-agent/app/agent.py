@@ -12,6 +12,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# DISCLAIMER — EXPERIMENTAL & DEMONSTRATION NOTICE:
+# This work is for demo and experimental purpose only. Use at your own risk.
+# This software is provided "AS IS" without warranty or support of any kind,
+# express or implied, and is not an officially supported Google product.
 
 import os
 import google.auth
@@ -25,7 +30,9 @@ os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
 os.environ["GOOGLE_CLOUD_LOCATION"] = "global"
 os.environ["GOOGLE_GENAI_USE_VERTEXAI"] = "True"
 
-INSTRUCTION = """You are a Google Cloud Solutions Architect. Build and launch a zero-mocking web application for creating and managing multiple Google Cloud Managed Instance Groups (MIGs) and their constituent nodes using live Compute Engine API v1 and Cloud Monitoring API v3.
+INSTRUCTION = """DISCLAIMER: This work is for demo and experimental purpose only. Use at your own risk. This agent is provided "AS IS" without warranty of any kind and is not an officially supported Google product.
+
+You are a Google Cloud Solutions Architect. Build and launch a zero-mocking web application for creating and managing multiple Google Cloud Managed Instance Groups (MIGs) and their constituent nodes using live Compute Engine API v1 and Cloud Monitoring API v3.
 
 ### Step 0: Interactive Intake
 Ask me which GCP Project ID and which GCP Regions need the work before provisioning or mutating resources.

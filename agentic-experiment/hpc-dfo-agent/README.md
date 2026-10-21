@@ -1,5 +1,8 @@
 # HPC Agent Foundation
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This framework and its agents/skills are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product.
+
 A modular, agentic framework built with the Google Agent Development Kit (ADK) to assist with High-Performance Computing (HPC) deployment and diagnostic tasks on Google Cloud (GCP). This project serves as a foundation for hosting multiple specialized AI agents.
 
 ## 🧠 Available Skills

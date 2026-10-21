@@ -3,7 +3,7 @@
   "args": ["main.mjs"],
   "restart_policy": "always",
   "display_name": "HPC Spend & Budget Monitor",
-  "description": "Monitors GCP billing every 4 hours, calculates the HPC portion of total cloud spend, enforces a monthly auto-resetting user budget cap, and sends an alert notification to the agent if exceeded.",
+  "description": "Monitors GCP billing every 4 hours, calculates the HPC portion of total cloud spend, enforces a monthly auto-resetting user budget cap, and sends an alert notification to the agent if exceeded. [Disclaimer: This work is for demo and experimental purpose only. Use at your own risk.]",
   "has_web_ui": true,
   "agent_permissions": {
     "allows_user_interactions": true
@@ -19,4 +19,3 @@
     ]
   }
 }
-

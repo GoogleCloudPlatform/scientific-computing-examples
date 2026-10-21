@@ -1,5 +1,8 @@
 # HPC Spend & Monthly Budget Monitor (`hpc_spend_monitor`)
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This sidecar is provided "AS IS" without warranty or support of any kind, express or implied, and is not an officially supported Google product.
+
 An Antigravity UI Sidecar for `hpc-agent-antigravity` that monitors GCP Billing every **4 hours**, decomposes the total cloud bill to isolate the **HPC portion** of spend, prompts the user for their **Maximum Monthly HPC Spend ($ USD)**, resets accumulated counters on the **1st of every month**, and dispatches an **automatic alert notification in the agent** whenever accumulated monthly HPC spend exceeds the user's cap.
 
 ## Key Capabilities

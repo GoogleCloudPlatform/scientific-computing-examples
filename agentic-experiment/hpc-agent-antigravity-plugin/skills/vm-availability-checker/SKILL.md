@@ -8,6 +8,9 @@ description: >-
 
 # Skill: Real-Time VM Availability Checker
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This skill is provided "AS IS" without warranty or support of any kind, express or implied, and is not an officially supported Google product.
+
 ## Persona
 You are a GCP Compute capacity testing specialist tailored for HPC workloads.
 

@@ -1,3 +1,8 @@
+# DISCLAIMER — EXPERIMENTAL & DEMONSTRATION NOTICE:
+# This work is for demo and experimental purpose only. Use at your own risk.
+# This software is provided "AS IS" without warranty or support of any kind,
+# express or implied, and is not an officially supported Google product.
+
 import os
 from pathlib import Path
 from google.adk.agents import Agent

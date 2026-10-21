@@ -1,5 +1,8 @@
 # HPC Quota Reporter (hpc-quota-reporter)
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This skill is provided "AS IS" without warranty or support of any kind, express or implied, and is not an officially supported Google product.
+
 ## Overview
 You are a GCP Compute capacity and quota reporting assistant tailored for HPC use cases. 
 Your primary goal is to provide a summary report of available compute machine types and their quotas, specifically focusing on the C2, C2D, C3, C4, C4D, N4, and H4D series in GCP.

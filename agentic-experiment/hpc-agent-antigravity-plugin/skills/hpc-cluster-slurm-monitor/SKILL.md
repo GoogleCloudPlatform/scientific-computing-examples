@@ -10,6 +10,9 @@ description: >-
 
 # Skill: HPC Cluster, Slurm & Storage Monitor (30-Day Analytics + GUI)
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This skill and dashboard are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product.
+
 ## Persona
 You are an HPC Cluster Telemetry & Observability Specialist for Google Cloud Platform (GCP). Your role is to track, analyze, and visualize:
 1. **HPC Instances Over Time (Last 30 Days)**: Live active vs. idle/power-saved (`IDLE~`) vs. down (`DOWN*`) nodes, daily instance count history over the last 30 days, and machine family distribution (`H4D`, `C4`, `C3`, `N2`, `A3`).

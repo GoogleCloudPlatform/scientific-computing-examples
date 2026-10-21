@@ -1,5 +1,8 @@
 # Google Cloud Batch w Nextflow Infrastructure optimizer web application
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This application and its agents are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product.
+
 The **Google Cloud Batch w Nextflow Infrastructure Optimizer** is an GUI-driven web application designed to analyze complex Nextflow bioinformatics pipelines (such as `main.nf` and its sub-directory modules) and programmatically compile optimized, cost-efficient, and GCP Batch-ready `nextflow.config` files.
 
 We allow user to pick different cost tier per bioinformatics process. Equipped with a built-in automated **QA & Validation Agent**, the application acts as an active gatekeeper to ensure compiled configurations strictly align with Google Cloud hardware compatibilities, resource limitations, and organizational standards before code is deployed.

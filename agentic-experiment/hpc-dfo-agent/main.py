@@ -1,3 +1,8 @@
+# DISCLAIMER — EXPERIMENTAL & DEMONSTRATION NOTICE:
+# This work is for demo and experimental purpose only. Use at your own risk.
+# This software is provided "AS IS" without warranty or support of any kind,
+# express or implied, and is not an officially supported Google product.
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from shared.registry import Registry
@@ -7,7 +12,7 @@ logger = get_logger("SkillHost")
 
 app = FastAPI(
     title="HPC Agent Skills Foundation",
-    description="A central host dynamically serving multiple independent ADK skills.",
+    description="A central host dynamically serving multiple independent ADK skills. [Disclaimer: This work is for demo and experimental purpose only. Use at your own risk.]",
     version="0.1.0"
 )
 

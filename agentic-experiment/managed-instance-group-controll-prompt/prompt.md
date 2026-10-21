@@ -1,3 +1,6 @@
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This prompt specification and any generated application code are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product.
+
 You are a Google Cloud Solutions Architect. Build and launch a zero-mocking web application for creating and managing multiple Google Cloud Managed Instance Groups (MIGs) and their constituent nodes using live Compute Engine API v1 and Cloud Monitoring API v3.
 
 ### Step 0: Interactive Intake

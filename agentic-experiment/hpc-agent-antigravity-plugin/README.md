@@ -1,5 +1,8 @@
 # HPC Orchestrator Agent & Plugin (`hpc-agent-antigravity`)
 
+> [!CAUTION]
+> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This plugin, agent, and its associated skills and sidecars are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product. Always review, validate, and test any generated blueprints, commands, or configurations in an isolated non-production environment before execution.
+
 This project is a standalone **Antigravity Plugin** and AI agent built for managing High-Performance Computing (HPC) environments, infrastructure provisioning, and batch workloads on Google Cloud Platform.
 
 It packages a specialized agent persona alongside 7 modular skills for automated capacity validation, quota inspection, Cluster Toolkit blueprint management, Slurm orchestration, Nextflow optimization, and 30-day HPC/Slurm/Storage & Google Cloud Batch telemetry with interactive GUI dashboards.
