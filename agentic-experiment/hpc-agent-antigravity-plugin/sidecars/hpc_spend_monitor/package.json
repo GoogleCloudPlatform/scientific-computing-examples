@@ -1,0 +1,9 @@
+{
+  "name": "hpc_spend_monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Antigravity UI Sidecar that polls GCP Billing every 4 hours, calculates the HPC portion of cloud spend, enforces a monthly resetting user budget, and alerts the agent when exceeded.",
+  "main": "main.mjs"
+}
+

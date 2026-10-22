@@ -1,0 +1,349 @@
+{
+  "projectId": "",
+  "region": "us-central1",
+  "billingAccountId": "",
+  "billingExportTable": "",
+  "dataMode": "auto",
+  "maxMonthlyBudgetUsd": 25000,
+  "budgetConfiguredByUser": true,
+  "warningThresholdPct": 85,
+  "autoAlertAgent": true,
+  "activeConversationId": "0ace7446-adb8-4282-99f8-02f6481057dc",
+  "currentBillingMonth": "2026-10",
+  "accumulatedHpcSpendUsd": 21637.29,
+  "accumulatedTotalGcpSpendUsd": 28300.07,
+  "lastPollIso": "2026-10-20T15:04:08.692Z",
+  "nextPollIso": "2026-10-20T19:04:08.692Z",
+  "pollCountThisMonth": 5,
+  "lastAlertedMonth": "2026-10",
+  "lastAlertedThresholdBudgetUsd": 20000,
+  "lastAlertSentIso": "2026-10-20T15:04:08.682Z",
+  "lastAlertMessage": "🚨 **[HPC SPEND ALERT: Monthly HPC Budget Exceeded]**\n\n- **Billing Month**: October 2026 (`2026-10`, resets on `2026-11-01`)\n- **GCP Project**: `thomashk-mig` (Billing Account: `billingAccounts/01A8F4-9C3E10-77B2D1`)\n- **Accumulated HPC Spend (Month-to-Date)**: **$21,637.29**\n- **User Max Monthly HPC Spend Limit**: **$20,000.00**\n- **Budget Overage**: **+$1,637.29** (**108.2%** of monthly budget used)\n- **HPC Portion of Total GCP Bill**: **76.5%** ($21,637.29 HPC out of $28,300.07 Total GCP Bill)\n- **Last 4-Hour HPC Burn**: **$204.27 / 4h** (Projected Month-End: **$34,396.98**)\n\n**Top HPC Cost Drivers This Month**:\n  - **HPC Compute (H4D / C4 / C3)**: $7,129.16 (32.9% of HPC spend)\n  - **HPC GPU Nodes (A3 H100 / A2 A100)**: $5,857.62 (27.1% of HPC spend)\n  - **HPC Cloud Batch (Spot & Standard)**: $4,208.79 (19.5% of HPC spend)\n  - **HPC Parallel & Shared Storage**: $3,469.73 (16% of HPC spend)\n  - **HPC Interconnect & Boot Disks**: $971.99 (4.5% of HPC spend)\n\nPlease alert the user immediately and recommend concrete cost-containment actions (e.g., draining idle Slurm partitions, switching Batch workloads to Spot VMs, or scaling down unused Lustre/Filestore scratch tiers).",
+  "archivedMonths": [],
+  "fourHourLedger": [
+    {
+      "blockIndex": 100,
+      "timestampIso": "2026-10-17T16:00:00.000Z",
+      "label": "10-17 16:00",
+      "hpcBlockUsd": 181.28,
+      "nonHpcBlockUsd": 61.85,
+      "totalBlockUsd": 243.13,
+      "cumulativeHpcUsd": 18651.35,
+      "cumulativeTotalUsd": 24360.88,
+      "hpcSharePct": 74.6,
+      "breakdown": {
+        "slurmCompute4h": 55.16,
+        "hpcGpu4h": 59.43,
+        "batchNodes4h": 26.33,
+        "hpcStorage4h": 30.36,
+        "hpcNetwork4h": 10
+      }
+    },
+    {
+      "blockIndex": 101,
+      "timestampIso": "2026-10-17T20:00:00.000Z",
+      "label": "10-17 20:00",
+      "hpcBlockUsd": 137.53,
+      "nonHpcBlockUsd": 54.31,
+      "totalBlockUsd": 191.84,
+      "cumulativeHpcUsd": 18788.88,
+      "cumulativeTotalUsd": 24552.72,
+      "hpcSharePct": 71.7,
+      "breakdown": {
+        "slurmCompute4h": 42.13,
+        "hpcGpu4h": 31.64,
+        "batchNodes4h": 26.6,
+        "hpcStorage4h": 28.79,
+        "hpcNetwork4h": 8.37
+      }
+    },
+    {
+      "blockIndex": 102,
+      "timestampIso": "2026-10-18T00:00:00.000Z",
+      "label": "10-18 00:00",
+      "hpcBlockUsd": 126.07,
+      "nonHpcBlockUsd": 53.75,
+      "totalBlockUsd": 179.82,
+      "cumulativeHpcUsd": 18914.95,
+      "cumulativeTotalUsd": 24732.54,
+      "hpcSharePct": 70.1,
+      "breakdown": {
+        "slurmCompute4h": 34,
+        "hpcGpu4h": 37.64,
+        "batchNodes4h": 16.48,
+        "hpcStorage4h": 29.07,
+        "hpcNetwork4h": 8.88
+      }
+    },
+    {
+      "blockIndex": 103,
+      "timestampIso": "2026-10-18T04:00:00.000Z",
+      "label": "10-18 04:00",
+      "hpcBlockUsd": 106.18,
+      "nonHpcBlockUsd": 47.9,
+      "totalBlockUsd": 154.08,
+      "cumulativeHpcUsd": 19021.13,
+      "cumulativeTotalUsd": 24886.62,
+      "hpcSharePct": 68.9,
+      "breakdown": {
+        "slurmCompute4h": 32.07,
+        "hpcGpu4h": 21.27,
+        "batchNodes4h": 17.18,
+        "hpcStorage4h": 28.76,
+        "hpcNetwork4h": 6.9
+      }
+    },
+    {
+      "blockIndex": 104,
+      "timestampIso": "2026-10-18T08:00:00.000Z",
+      "label": "10-18 08:00",
+      "hpcBlockUsd": 138.19,
+      "nonHpcBlockUsd": 54.23,
+      "totalBlockUsd": 192.42,
+      "cumulativeHpcUsd": 19159.32,
+      "cumulativeTotalUsd": 25079.04,
+      "hpcSharePct": 71.8,
+      "breakdown": {
+        "slurmCompute4h": 43.49,
+        "hpcGpu4h": 31.73,
+        "batchNodes4h": 25.62,
+        "hpcStorage4h": 28.95,
+        "hpcNetwork4h": 8.4
+      }
+    },
+    {
+      "blockIndex": 105,
+      "timestampIso": "2026-10-18T12:00:00.000Z",
+      "label": "10-18 12:00",
+      "hpcBlockUsd": 141.77,
+      "nonHpcBlockUsd": 52.06,
+      "totalBlockUsd": 193.83,
+      "cumulativeHpcUsd": 19301.09,
+      "cumulativeTotalUsd": 25272.87,
+      "hpcSharePct": 73.1,
+      "breakdown": {
+        "slurmCompute4h": 50.62,
+        "hpcGpu4h": 27.95,
+        "batchNodes4h": 26.43,
+        "hpcStorage4h": 29.81,
+        "hpcNetwork4h": 6.96
+      }
+    },
+    {
+      "blockIndex": 106,
+      "timestampIso": "2026-10-18T16:00:00.000Z",
+      "label": "10-18 16:00",
+      "hpcBlockUsd": 176.39,
+      "nonHpcBlockUsd": 61.54,
+      "totalBlockUsd": 237.93,
+      "cumulativeHpcUsd": 19477.48,
+      "cumulativeTotalUsd": 25510.8,
+      "hpcSharePct": 74.1,
+      "breakdown": {
+        "slurmCompute4h": 57.91,
+        "hpcGpu4h": 46.85,
+        "batchNodes4h": 32.32,
+        "hpcStorage4h": 30.69,
+        "hpcNetwork4h": 8.62
+      }
+    },
+    {
+      "blockIndex": 107,
+      "timestampIso": "2026-10-18T20:00:00.000Z",
+      "label": "10-18 20:00",
+      "hpcBlockUsd": 173.02,
+      "nonHpcBlockUsd": 60.76,
+      "totalBlockUsd": 233.78,
+      "cumulativeHpcUsd": 19650.5,
+      "cumulativeTotalUsd": 25744.58,
+      "hpcSharePct": 74,
+      "breakdown": {
+        "slurmCompute4h": 51.84,
+        "hpcGpu4h": 51.45,
+        "batchNodes4h": 30.64,
+        "hpcStorage4h": 29.96,
+        "hpcNetwork4h": 9.13
+      }
+    },
+    {
+      "blockIndex": 108,
+      "timestampIso": "2026-10-19T00:00:00.000Z",
+      "label": "10-19 00:00",
+      "hpcBlockUsd": 180.5,
+      "nonHpcBlockUsd": 56.03,
+      "totalBlockUsd": 236.53,
+      "cumulativeHpcUsd": 19831,
+      "cumulativeTotalUsd": 25981.11,
+      "hpcSharePct": 76.3,
+      "breakdown": {
+        "slurmCompute4h": 56.86,
+        "hpcGpu4h": 59.34,
+        "batchNodes4h": 25.47,
+        "hpcStorage4h": 29.68,
+        "hpcNetwork4h": 9.15
+      }
+    },
+    {
+      "blockIndex": 109,
+      "timestampIso": "2026-10-19T04:00:00.000Z",
+      "label": "10-19 04:00",
+      "hpcBlockUsd": 167.1,
+      "nonHpcBlockUsd": 56.82,
+      "totalBlockUsd": 223.92,
+      "cumulativeHpcUsd": 19998.1,
+      "cumulativeTotalUsd": 26205.03,
+      "hpcSharePct": 74.6,
+      "breakdown": {
+        "slurmCompute4h": 60.27,
+        "hpcGpu4h": 34.87,
+        "batchNodes4h": 34.03,
+        "hpcStorage4h": 30.04,
+        "hpcNetwork4h": 7.89
+      }
+    },
+    {
+      "blockIndex": 110,
+      "timestampIso": "2026-10-19T08:00:00.000Z",
+      "label": "10-19 08:00",
+      "hpcBlockUsd": 219.26,
+      "nonHpcBlockUsd": 58.82,
+      "totalBlockUsd": 278.08,
+      "cumulativeHpcUsd": 20217.36,
+      "cumulativeTotalUsd": 26483.11,
+      "hpcSharePct": 78.8,
+      "breakdown": {
+        "slurmCompute4h": 85.84,
+        "hpcGpu4h": 43.26,
+        "batchNodes4h": 52.25,
+        "hpcStorage4h": 30.61,
+        "hpcNetwork4h": 7.3
+      }
+    },
+    {
+      "blockIndex": 111,
+      "timestampIso": "2026-10-19T12:00:00.000Z",
+      "label": "10-19 12:00",
+      "hpcBlockUsd": 177.6,
+      "nonHpcBlockUsd": 49.16,
+      "totalBlockUsd": 226.76,
+      "cumulativeHpcUsd": 20394.96,
+      "cumulativeTotalUsd": 26709.87,
+      "hpcSharePct": 78.3,
+      "breakdown": {
+        "slurmCompute4h": 65.1,
+        "hpcGpu4h": 43.22,
+        "batchNodes4h": 33.05,
+        "hpcStorage4h": 28.94,
+        "hpcNetwork4h": 7.29
+      }
+    },
+    {
+      "blockIndex": 112,
+      "timestampIso": "2026-10-19T16:00:00.000Z",
+      "label": "10-19 16:00",
+      "hpcBlockUsd": 246.69,
+      "nonHpcBlockUsd": 61.79,
+      "totalBlockUsd": 308.48,
+      "cumulativeHpcUsd": 20641.65,
+      "cumulativeTotalUsd": 27018.35,
+      "hpcSharePct": 80,
+      "breakdown": {
+        "slurmCompute4h": 76.37,
+        "hpcGpu4h": 87.31,
+        "batchNodes4h": 43.3,
+        "hpcStorage4h": 29.85,
+        "hpcNetwork4h": 9.86
+      }
+    },
+    {
+      "blockIndex": 113,
+      "timestampIso": "2026-10-19T20:00:00.000Z",
+      "label": "10-19 20:00",
+      "hpcBlockUsd": 199.61,
+      "nonHpcBlockUsd": 52.45,
+      "totalBlockUsd": 252.06,
+      "cumulativeHpcUsd": 20841.26,
+      "cumulativeTotalUsd": 27270.41,
+      "hpcSharePct": 79.2,
+      "breakdown": {
+        "slurmCompute4h": 82.42,
+        "hpcGpu4h": 41.84,
+        "batchNodes4h": 38.07,
+        "hpcStorage4h": 30.34,
+        "hpcNetwork4h": 6.94
+      }
+    },
+    {
+      "blockIndex": 114,
+      "timestampIso": "2026-10-20T00:00:00.000Z",
+      "label": "10-20 00:00",
+      "hpcBlockUsd": 208.33,
+      "nonHpcBlockUsd": 65.52,
+      "totalBlockUsd": 273.85,
+      "cumulativeHpcUsd": 21049.59,
+      "cumulativeTotalUsd": 27544.26,
+      "hpcSharePct": 76.1,
+      "breakdown": {
+        "slurmCompute4h": 65.62,
+        "hpcGpu4h": 60.7,
+        "batchNodes4h": 42.13,
+        "hpcStorage4h": 30.6,
+        "hpcNetwork4h": 9.28
+      }
+    },
+    {
+      "blockIndex": 115,
+      "timestampIso": "2026-10-20T04:00:00.000Z",
+      "label": "10-20 04:00",
+      "hpcBlockUsd": 181.82,
+      "nonHpcBlockUsd": 56.73,
+      "totalBlockUsd": 238.55,
+      "cumulativeHpcUsd": 21231.41,
+      "cumulativeTotalUsd": 27782.81,
+      "hpcSharePct": 76.2,
+      "breakdown": {
+        "slurmCompute4h": 51.61,
+        "hpcGpu4h": 66.08,
+        "batchNodes4h": 25.2,
+        "hpcStorage4h": 29.13,
+        "hpcNetwork4h": 9.8
+      }
+    },
+    {
+      "blockIndex": 116,
+      "timestampIso": "2026-10-20T08:00:00.000Z",
+      "label": "10-20 08:00",
+      "hpcBlockUsd": 201.61,
+      "nonHpcBlockUsd": 58.59,
+      "totalBlockUsd": 260.2,
+      "cumulativeHpcUsd": 21433.02,
+      "cumulativeTotalUsd": 28043.01,
+      "hpcSharePct": 77.5,
+      "breakdown": {
+        "slurmCompute4h": 63.43,
+        "hpcGpu4h": 46.23,
+        "batchNodes4h": 55.09,
+        "hpcStorage4h": 28.81,
+        "hpcNetwork4h": 8.05
+      }
+    },
+    {
+      "blockIndex": 117,
+      "timestampIso": "2026-10-20T12:00:00.000Z",
+      "label": "10-20 12:00",
+      "hpcBlockUsd": 204.27,
+      "nonHpcBlockUsd": 52.79,
+      "totalBlockUsd": 257.06,
+      "cumulativeHpcUsd": 21637.29,
+      "cumulativeTotalUsd": 28300.07,
+      "hpcSharePct": 79.5,
+      "breakdown": {
+        "slurmCompute4h": 64.22,
+        "hpcGpu4h": 69.19,
+        "batchNodes4h": 33.44,
+        "hpcStorage4h": 28.87,
+        "hpcNetwork4h": 8.55
+      }
+    }
+  ]
+}
