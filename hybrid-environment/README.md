@@ -1,8 +1,5 @@
 # Setting Up a Slurm Hybrid & Multi-Cluster HPC Environment on Google Cloud
 
-> [!CAUTION]
-> **Disclaimer — Experimental & Demonstration Notice**: This work is for demo and experimental purpose only. Use at your own risk. This guide and its associated blueprints, scripts, and configurations are provided "AS IS" without warranty or support of any kind, express or implied, and do not constitute an officially supported Google product. Always review, validate, and test any configurations in an isolated non-production environment before execution.
-
 ---
 
 ## Overview
