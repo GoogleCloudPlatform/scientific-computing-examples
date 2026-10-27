@@ -5,6 +5,7 @@
 
 ## Contents
 
+- **[`antigravity-w-hpc-agents/`](./antigravity-w-hpc-agents/)**: General user guide and introduction on how to use Google Antigravity with the HPC Orchestrator Agent, skills, and monitoring dashboards in your own Google Cloud environment.
 - **[`hpc-agent-antigravity-plugin/`](./hpc-agent-antigravity-plugin/)**: Standalone Antigravity HPC Orchestrator Plugin, Agent, 7 HPC/Batch skills, and the 4-Hour HPC Spend & Monthly Budget Monitor UI Sidecar.
 - **[`hpc-clusterbuilder-skill/`](./hpc-clusterbuilder-skill/)**: Google Cloud Cluster Toolkit (`gcluster`/`ghpc`) blueprint creator skill and reference library.
 - **[`hpc-dfo-agent/`](./hpc-dfo-agent/)**: Modular Google ADK foundation agent for HPC compute quota, storage quota, and real-time VM availability checks.
