@@ -18,9 +18,9 @@
 # Ensure the sshd runtime directory exists
 mkdir -p /var/run/sshd
 
-# Configure SSH client and daemon to use port 5000
-echo "Port 5000" >> /etc/ssh/sshd_config
-echo "Port 5000" >> /etc/ssh/ssh_config
+# Configure SSH client and daemon to use port 5000 cleanly
+grep -q "Port 5000" /etc/ssh/sshd_config || echo "Port 5000" >> /etc/ssh/sshd_config
+grep -q "Port 5000" /etc/ssh/ssh_config || echo "Port 5000" >> /etc/ssh/ssh_config
 
 # Start SSH daemon in background
 /usr/sbin/sshd

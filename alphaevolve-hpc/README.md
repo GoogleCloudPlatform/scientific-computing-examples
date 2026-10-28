@@ -75,7 +75,8 @@ We prepackaged a set of examples to get you started. In the following section, w
 | `netlist_simulation` | SPICE | Performance Score | Uses ngspice for simulation |
 | `signal_processing` | Python | `overall_score` | Uses SciPy |
 | `nbody_molecular_dynamics` | C++ | `simulation_speed_score` | Multi-node MPI orchestration |
-| `airfoil_optimization` | Python | `lift_to_drag_ratio` | Uses OpenFOAM for 2D CFD simulation |
+| `airfoil_optimization` | Python | `lift_to_drag_ratio` | Uses NeuralFoil surrogate for 2D airfoil optimization |
+| `airfoil_openfoam` | Python | `lift_to_drag_ratio` | Uses OpenFOAM-14 (`incompressibleFluid` / `airFoil2D`) for 2D RANS CFD simulation |
 | `llm_fine_tuning_cloud_batch` | Python | `neg_eval_loss` | GPU training/evaluation (PyTorch/LoRA) on Cloud Batch |
 
 

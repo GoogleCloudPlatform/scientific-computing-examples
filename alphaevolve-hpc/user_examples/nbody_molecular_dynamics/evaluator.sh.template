@@ -52,10 +52,28 @@ else
       sleep 2
     done
     if [ "$ALL_READY" = "true" ]; then
+      # Populate non-root SSH host mappings from BATCH_HOSTS_FILE
+      if [ -f "$BATCH_HOSTS_FILE" ]; then
+        mkdir -p /home/evaluser/.ssh
+        while read -r line; do
+          HOSTNAME=$(echo "$line" | awk '{print $1}')
+          if [ -n "$HOSTNAME" ]; then
+            IP=$(getent hosts "$HOSTNAME" | awk '{print $1}')
+            if [ -n "$IP" ]; then
+              echo -e "Host $HOSTNAME\n  HostName $IP\n  Port 5000\n  IdentityFile /home/evaluser/.ssh/id_rsa\n  StrictHostKeyChecking no\n  UserKnownHostsFile /dev/null\n" >> /home/evaluser/.ssh/config
+            fi
+          fi
+        done < "$BATCH_HOSTS_FILE"
+        chmod 600 /home/evaluser/.ssh/config 2>/dev/null || true
+      fi
+
       CORES_PER_NODE=$(nproc)
       TOTAL_PROCS=$(($CORES_PER_NODE * $BATCH_TASK_COUNT))
       echo "[Coordinator] Launching parallel MPI simulation (Detected ${CORES_PER_NODE} cores/node, spawning total of ${TOTAL_PROCS} processes)..."
-      mpirun --allow-run-as-root --oversubscribe --mca btl_tcp_if_exclude docker0,lo --mca oob_tcp_if_exclude docker0,lo --hostfile "$BATCH_HOSTS_FILE" -np ${TOTAL_PROCS} -npernode ${CORES_PER_NODE} /var/tmp/nbody_sim 5000 > /app/experiment/simulation_output.txt 2>&1
+      timeout --kill-after=5s 60s mpirun --oversubscribe --mca plm_rsh_args "-i /home/evaluser/.ssh/id_rsa -p 5000 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" --mca btl_tcp_if_exclude docker0,lo --mca oob_tcp_if_exclude docker0,lo --hostfile "$BATCH_HOSTS_FILE" -np ${TOTAL_PROCS} -npernode ${CORES_PER_NODE} /var/tmp/nbody_sim 5000 > /app/experiment/simulation_output.txt 2>&1
+      if [ $? -eq 124 ] || [ $? -eq 137 ]; then
+        echo "Simulation failed: Execution timed out after 60 seconds." >> /app/experiment/simulation_output.txt
+      fi
       echo "=== CLUSTER SIMULATION OUTPUT ==="
       cat /app/experiment/simulation_output.txt
       echo "================================="

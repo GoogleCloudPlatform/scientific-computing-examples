@@ -1,0 +1,41 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "2D Airfoil OpenFOAM Optimization"
+problem_description: |
+  Evolve the `design_airfoil(parameters)` generator in Python to synthesize the optimal 6 Kulfan Class-Shape Transformation (CST) parameters of a 2D airfoil that maximizes the Lift-to-Drag ratio (`Cl / Cd`) when evaluated by an OpenFOAM-14 steady-state incompressible RANS CFD simulation (`tutorials/incompressibleFluid/airFoil2D`).
+
+  Physics & Flow Conditions (`airFoil2D` default):
+  - Freestream velocity: `U = (25.75, 3.62, 0.0)` m/s (`|U| = 26.003` m/s, angle of attack `AoA = 8.0024` deg).
+  - Kinematic viscosity: `nu = 1.0e-5` m^2/s (`Re = 2.6e6` for unit chord `c = 1.0` m).
+  - Turbulence model: Spalart-Allmaras (`nuTilda = 0.14`, `nut = 0.14`), steady-state SIMPLE solver (`incompressibleFluid`).
+  - Meshing: Each candidate airfoil is meshed into a 6-block structured C-grid (`system/blockMeshDict`) with curved B-spline surfaces and validated via `blockMesh` and `checkMesh` prior to running `foamRun`.
+
+  Parameterization & Constraints:
+  - `best_x` must be a 1D NumPy array of shape `(6,)` strictly within `BOUNDS`:
+    - `x[0:3] = [w_l0, w_l1, w_l2]`: Lower surface Bernstein weights (`[-0.3, -0.1]`, `[-0.3, -0.05]`, `[-0.3, -0.05]`).
+    - `x[3:6] = [w_u0, w_u1, w_u2]`: Upper surface Bernstein weights (`[0.1, 0.3]`, `[0.05, 0.3]`, `[0.05, 0.3]`).
+  - Surface coordinates on `x/c in [0, 1]` follow `y(x) = sqrt(x) * (1 - x) * (w_0*(1-x)^2 + 2*w_1*x*(1-x) + w_2*x^2)`.
+  - Minimum interior thickness `y_u(x) - y_l(x)` must exceed `0.002` and maximum thickness must lie in `[0.03, 0.35]` to pass `blockMesh` and `checkMesh`.
+  - Strictly 1 OpenFOAM simulation is executed per candidate program evaluation (`evaluate(parameters)` calls `funct(best_x, parameters)` once outside the evolve block). You may use analytical aerodynamic models (e.g., thin-airfoil camber-line theory, boundary-layer form-factor drag estimation, Kutta-Joukowski / Stratford pressure recovery, or `scipy.optimize` over analytical surrogates) inside `design_airfoil` to compute the optimal 6 CST weights.
+program_language: "python"
+primary_metric: "lift_to_drag_ratio"
+initial_score: 12.59
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"

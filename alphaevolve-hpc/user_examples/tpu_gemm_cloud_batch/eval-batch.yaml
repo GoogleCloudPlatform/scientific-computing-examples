@@ -1,0 +1,114 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+taskGroups:
+- taskSpec:
+    runnables:
+    - script:
+        text: |
+          mkdir -p ${_MOUNT_PATH}
+          chown -f -R 1000:1000 ${_MOUNT_PATH} || true
+          chmod -R 777 /dev/vfio* /dev/accel* 2>/dev/null || true
+          echo always > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+          ulimit -l unlimited 2>/dev/null || true
+
+          echo "=== TPU DEVICE & VFIO STATUS ==="
+          lspci -nnk -d 1ae0: 2>/dev/null || true
+          ls -la /dev/vfio/ 2>/dev/null || true
+          ls -la /sys/kernel/iommu_groups/ 2>/dev/null || true
+    - container:
+        imageUri: "${_EVALUATOR_IMAGE_URI}"
+        options: "--privileged --net=host --ipc=host --user 0:0 --ulimit memlock=-1:-1"
+        volumes:
+        - "${_MOUNT_PATH}:${_MOUNT_PATH}"
+        - "/dev/vfio:/dev/vfio"
+        - "/dev/shm:/dev/shm"
+        - "/sys:/sys"
+    volumes:
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other"
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/data"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/data"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other,ro"
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/logs"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/logs"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other"
+    environment:
+      variables:
+        _PROJECT_ID: "${_PROJECT_ID}"
+        OUTPUT_DIR: "${_MOUNT_PATH}"
+        _JOB_ID: "${_JOB_ID}"
+        _CANDIDATE_PROGRAM_ID: "${_CANDIDATE_PROGRAM_ID}"
+        _CLIENT_EVALUATOR_SCRIPT: "${_CLIENT_EVALUATOR_SCRIPT}"
+        _CLIENT_EVALUATOR_METHOD: "${_CLIENT_EVALUATOR_METHOD}"
+        _PROGRAMS_DIR: "${_PROGRAMS_DIR}"
+        _MOUNT_PATH: "${_MOUNT_PATH}"
+        _CLOUD_BUCKET_NAME: "${_CLOUD_BUCKET_NAME}"
+        _USER_EXPERIMENT_NAME: "${_USER_EXPERIMENT_NAME}"
+        _EVALUATION_MACHINE_TYPE: "${_EVALUATION_MACHINE_TYPE}"
+        _CANDIDATE_DIR: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+        TPU_ACCELERATION_ENABLED: "true"
+        JAX_PLATFORMS: "tpu"
+        PJRT_DEVICE: "TPU"
+        TPU_STDERR_LOG_LEVEL: "0"
+        TPU_MIN_LOG_LEVEL: "0"
+        ENABLE_TPUNETD_CLIENT: "false"
+        BARE_METAL_MODE: "true"
+        BYPASS_VBAR_CONTROL_SERVICE: "1"
+        LIBTPU_INIT_ARGS: "--enable_tpunetd_client=false --bypass_vbar_control_service=true"
+        TPU_SKIP_MDS_QUERY: "true"
+        ENABLE_RUNTIME_UPTIME_TELEMETRY: "0"
+        TPU_WORKER_HOSTNAMES: "localhost"
+        TPU_WORKER_ID: "0"
+        TPU_HOST_BOUNDS: "1,1,1"
+    maxRunDuration: "${_MAX_DURATION_SECONDS}s"
+    maxRetryCount: 3
+    lifecyclePolicies:
+    - action: RETRY_TASK
+      actionCondition:
+        exitCodes:
+        - 50001
+  taskCount: 1
+  parallelism: 1
+allocationPolicy:
+  instances:
+  - policy:
+      machineType: "${_EVALUATION_MACHINE_TYPE}"
+      provisioningModel: "${_EVALUATION_PROVISIONING_MODEL}"
+      bootDisk:
+        image: "${_BOOT_DISK_IMAGE}"
+  serviceAccount:
+    email: "${_EVALUATOR_SERVICE_ACCOUNT_EMAIL}"
+logsPolicy:
+  destination: CLOUD_LOGGING
+notifications:
+- pubsubTopic: "projects/${_PROJECT_ID}/topics/${_PUBSUB_TOPIC}"
+  message:
+    type: JOB_STATE_CHANGED
