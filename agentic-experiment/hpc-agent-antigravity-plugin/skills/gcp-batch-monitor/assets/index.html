@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Google Cloud Batch Monitor</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/preload.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="title-block">
+        <h1>
+          <span class="pulse-dot"></span>
+          Google Cloud Batch Nodes &amp; Job Duration Monitor
+        </h1>
+        <div class="subtitle-meta">
+          <span id="badge-source" class="pill-badge live">Loading...</span>
+          <span id="badge-project" class="pill-badge">Project: --</span>
+          <span id="badge-region" class="pill-badge">Region: --</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="window-group" role="group" aria-label="Statistics Window">
+          <button class="window-btn" data-days="7">7d</button>
+          <button class="window-btn" data-days="14">14d</button>
+          <button class="window-btn active" data-days="30">30 Days</button>
+        </div>
+        <button id="btn-toggle-config" class="btn btn-secondary" title="Configure GCP Project & Region">
+          ⚙ Config
+        </button>
+        <button id="btn-sync" class="btn btn-secondary" title="Refresh Google Cloud Batch telemetry">
+          ↻ Sync
+        </button>
+        <button id="btn-optimize-batch" class="btn" title="Optimize Google Cloud Batch & Nextflow config in Agent">
+          ✦ Optimize in Agent
+        </button>
+      </div>
+    </header>
+
+    <!-- Collapsible Config Drawer -->
+    <section id="config-drawer" class="config-drawer hidden">
+      <div class="config-grid">
+        <div class="field-group">
+          <label for="cfg-project">GCP Project ID</label>
+          <input id="cfg-project" type="text" placeholder="e.g. gcp-hpc-research-prod" />
+        </div>
+        <div class="field-group">
+          <label for="cfg-region">GCP Region</label>
+          <input id="cfg-region" type="text" placeholder="e.g. us-central1" />
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button id="btn-cancel-config" class="btn btn-secondary btn-xs">Close</button>
+        <button id="btn-save-config" class="btn btn-xs">Save &amp; Reload</button>
+      </div>
+    </section>
+
+    <!-- 30-Day Executive KPI Strip -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Batch Nodes In Use</div>
+        <div id="kpi-nodes-now" class="kpi-value">--</div>
+        <div id="kpi-nodes-spot-sub" class="kpi-sub">-- Spot · -- Standard</div>
+      </div>
+      <div class="kpi-card">
+        <div id="kpi-window-nodes-label" class="kpi-label">30-Day Node Usage</div>
+        <div id="kpi-peak-avg-nodes" class="kpi-value">--</div>
+        <div id="kpi-node-hours-30d" class="kpi-sub">-- node-hrs (30d)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Batch Jobs</div>
+        <div id="kpi-active-jobs" class="kpi-value">--</div>
+        <div id="kpi-queued-jobs" class="kpi-sub">-- queued · -- vCPUs active</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Job Duration (30d)</div>
+        <div id="kpi-avg-duration" class="kpi-value">--</div>
+        <div id="kpi-max-duration" class="kpi-sub">P95: -- · Max: --</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Users Running Batch</div>
+        <div id="kpi-users-now" class="kpi-value">--</div>
+        <div id="kpi-runtime-hours-30d" class="kpi-sub">-- job-hrs (30d)</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">30-Day Batch Jobs</div>
+        <div id="kpi-jobs-30d" class="kpi-value">--</div>
+        <div id="kpi-success-rate" class="kpi-sub">--% success · -- Spot retries</div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tab-jobs-duration">Jobs &amp; People Duration</button>
+      <button class="tab-btn" data-tab="tab-nodes-time">Batch Nodes in Use (30d)</button>
+      <button class="tab-btn" data-tab="tab-duration-stats">30-Day Duration Analytics</button>
+    </nav>
+
+    <!-- TAB 1: What Jobs & Duration + People Running Batch -->
+    <div id="tab-jobs-duration" class="tab-pane active">
+      <!-- People Running Batch & Duration Leaderboard -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">People Running Google Batch — Active Duration &amp; 30-Day Runtime</h2>
+            <div class="card-subtitle">Shows how long each user has been running Batch jobs currently and over the last 30 days (click row to filter jobs)</div>
+          </div>
+          <button id="btn-clear-user-filter" class="btn btn-secondary btn-xs hidden">Show All Users</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>User / Submitter</th>
+                <th>Team / Pipeline</th>
+                <th>Active Jobs</th>
+                <th>Batch Nodes In Use</th>
+                <th>Current Running Duration</th>
+                <th>Avg Job Duration</th>
+                <th>Longest Job (30d)</th>
+                <th>30d Total Duration</th>
+                <th>30d Node-Hours</th>
+                <th>Spot %</th>
+              </tr>
+            </thead>
+            <tbody id="batch-users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- What Jobs & Duration Table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Google Cloud Batch Jobs &amp; Live Execution Duration</h2>
+            <div class="card-subtitle">Real-time ticking duration, max walltime progress, nodes in use, and task completion per Batch job</div>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <input id="job-search-input" type="text" placeholder="Filter by job ID, pipeline, process, or user..." />
+          <select id="job-state-filter">
+            <option value="ALL">All Statuses</option>
+            <option value="RUNNING">RUNNING Only</option>
+            <option value="QUEUED">QUEUED Only</option>
+            <option value="SUCCEEDED">SUCCEEDED Only</option>
+            <option value="FAILED">FAILED Only</option>
+          </select>
+          <select id="job-prov-filter">
+            <option value="ALL">Spot &amp; Standard</option>
+            <option value="SPOT">SPOT Only</option>
+            <option value="STANDARD">STANDARD Only</option>
+          </select>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Job ID / Process</th>
+                <th>Pipeline</th>
+                <th>User</th>
+                <th>State</th>
+                <th>Nodes In Use &amp; Shape</th>
+                <th>Tasks</th>
+                <th>Duration / Max Limit</th>
+                <th>Walltime Progress</th>
+                <th>30d Avg Baseline</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="batch-jobs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Batch Nodes in Use Over Time (30 Days) -->
+    <div id="tab-nodes-time" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Google Batch Nodes in Use Over Time (<span id="chart-days-title">Last 30 Days</span>)</h2>
+            <div class="card-subtitle">Daily Spot vs Standard Batch VM nodes in use, peak node concurrency, and daily runtime hours</div>
+          </div>
+          <select id="nodes-chart-mode">
+            <option value="spot_std">Spot vs Standard Nodes + Peak</option>
+            <option value="runtime">Daily Cumulative Runtime Hours</option>
+            <option value="jobs">Daily Batch Jobs Executed</option>
+          </select>
+        </div>
+
+        <div class="chart-wrap">
+          <svg id="batch-nodes-svg" class="chart-svg" viewBox="0 0 780 210" preserveAspectRatio="none"></svg>
+          <div id="batch-nodes-tooltip" class="chart-tooltip">
+            Hover over any day bar to inspect Batch nodes in use (Spot vs Standard), peak concurrency, jobs executed, and average duration.
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#14b8a6"></span> Spot Batch Nodes (Avg)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#6366f1"></span> Standard Batch Nodes (Avg)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:rgba(147,197,253,0.35)"></span> Daily Peak Batch Nodes</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span> Avg Job Duration Trend</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Batch Node Pools & Machine Shapes in Use -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Active Google Batch Node Pools &amp; Machine Shapes</h2>
+            <div class="card-subtitle">Hardware tiers currently executing Batch tasks and 30-day cumulative node-hours</div>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Machine Type</th>
+                <th>Nextflow / Batch Tier</th>
+                <th>Provisioning</th>
+                <th>Nodes In Use Now</th>
+                <th>vCPUs / Memory Active</th>
+                <th>Storage Disk</th>
+                <th>Avg Node Duration</th>
+                <th>30d Node-Hours</th>
+                <th>30d Jobs Served</th>
+                <th>Primary Workloads</th>
+              </tr>
+            </thead>
+            <tbody id="node-pools-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: 30-Day Duration Analytics -->
+    <div id="tab-duration-stats" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">30-Day Batch Job Duration Distribution &amp; Tiering Guidance</h2>
+            <div class="card-subtitle">Breakdown of all Batch jobs over the last 30 days by execution duration bucket</div>
+          </div>
+        </div>
+        <div id="duration-buckets-grid" class="bucket-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">30-Day Daily Average vs Maximum Job Duration Trend (Minutes)</h2>
+            <div class="card-subtitle">Tracks daily average job runtime vs longest tail job runtime across the last 30 days</div>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <svg id="duration-trend-svg" class="chart-svg" viewBox="0 0 780 190" preserveAspectRatio="none"></svg>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch" style="background:#3b82f6"></span> Daily Mean Job Duration (min)</span>
+            <span class="legend-item"><span class="legend-swatch" style="background:#f59e0b"></span> Daily Longest Job Duration (min)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer style="margin-top:14px; padding-top:8px; border-top:1px solid rgba(148,163,184,0.16); color:#94a3b8; font-size:11px; text-align:center;">
+      Disclaimer: This work is for demo and experimental purpose only. Use at your own risk. Not an officially supported Google product.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
+
