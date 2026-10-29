@@ -160,7 +160,7 @@ To define a new experiment, you need to create a new folder for the experiment `
 5.  **`evaluator.Dockerfile` (Required for Cloud Batch mode)**: Used for distributed mode (Cloud Batch) to customize the worker environment by building the container image.
     *   **What to modify**:
         *   Adjust based on the example if there are special dependencies to install on the VM.
-        *   Change the base image if specialized hardware like GPUs or TPUs are required.
+        *   Change the base image if specialized hardware like GPUs are required.
         *   If the new experiment requires additional Python packages or Linux libraries, create a local `requirements.txt` and/or `setup.sh` in the experiment directory. Your `evaluator.Dockerfile` should include steps to install/run these at build time if they exist.
         *   **Source Code and WORKDIR**: Your `evaluator.Dockerfile` MUST copy the AlphaEvolve source code to `/app/src/alpha_evolve` and set `WORKDIR` to `/app/src/alpha_evolve`. This ensures that `cloud_evaluator.py` can be found and executed correctly.
         *   **Entrypoint**: Your `evaluator.Dockerfile` MUST use the standard `ENTRYPOINT` script that handles copying generated code from `_CANDIDATE_DIR` to `/app/experiment/`, running `make`, and then executing `/app/experiment/evaluator.sh`. See `user_examples/circle_packing_cloud_batch/evaluator.Dockerfile` for the exact snippet.
