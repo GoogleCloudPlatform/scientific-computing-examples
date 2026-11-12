@@ -1,0 +1,29 @@
+# Google Cloud Batch Job Specification: Basel III FRTB 99.9% CVaR Sweep
+# Submit with:
+#   gcloud batch jobs submit frtb-cvar-grid --location=us-central1 --config=frtb_var_batch_job.yaml
+
+taskGroups:
+- taskCount: 200
+  parallelism: 50
+  taskSpec:
+    computeResource:
+      cpuMilli: 16000
+      memoryMib: 32768
+    maxRetryCount: 3
+    runnables:
+    - container:
+        imageUri: us-central1-docker.pkg.dev/quant-hpc/risk/mc-engine:latest
+        commands:
+        - /usr/bin/python3
+        - /app/quant_mc_helper.py
+        - run-mc
+        - --paths=50000
+        - --theta=2.95
+        - --p-tilt=0.78
+allocationPolicy:
+  instances:
+  - policy:
+      machineType: c4d-standard-192
+      provisioningModel: SPOT
+logsPolicy:
+  destination: CLOUD_LOGGING

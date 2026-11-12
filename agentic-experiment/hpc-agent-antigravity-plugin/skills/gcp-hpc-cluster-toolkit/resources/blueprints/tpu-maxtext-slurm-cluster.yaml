@@ -1,0 +1,105 @@
+blueprint_name: tpu-maxtext-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: tpu-maxtext-cluster
+    region: us-central2
+    zone: us-central2-b
+
+  deployment_groups:
+    - group: primary
+      modules:
+        # VPC Network
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        # MaxText Setup & Benchmark Startup Script
+        - id: maxtext_script
+          source: modules/scripts/startup-script
+          settings:
+            runners:
+              - type: shell
+                destination: /tmp/tpu_setup.sh
+                content: |
+                  #!/bin/bash
+                  mkdir -p /opt/apps/scripts/tpu-test
+                  chmod a+rwx /opt/apps/scripts/tpu-test
+              - type: data
+                destination: /opt/apps/scripts/tpu-test/run_maxtext.sh
+                content: |
+                  #!/bin/bash
+                  #SBATCH --nodes=1
+                  #SBATCH --ntasks-per-node=1
+                  #SBATCH --partition=tpu
+                  set -e -o pipefail
+                  virtualenv /opt/apps/venv-tpu
+                  source /opt/apps/venv-tpu/bin/activate
+                  if [ ! -d /opt/apps/maxtext ]; then
+                    git clone https://github.com/google/maxtext /opt/apps/maxtext
+                    cd /opt/apps/maxtext
+                    bash setup.sh
+                  fi
+
+        # Cloud TPU Nodeset (v4-8 accelerator slice)
+        - id: tpu_nodeset
+          source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset-tpu
+          use: [network]
+          settings:
+            node_type: v4-8
+            tf_version: 2.14.0
+            preemptible: false
+            preserve_tpu: false
+            node_count_dynamic_max: 4
+
+        # TPU Slurm Partition
+        - id: tpu_partition
+          source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+          use: [tpu_nodeset]
+          settings:
+            partition_name: tpu
+
+        # Standard CPU Compute Nodeset (for preprocessing & data pipeline)
+        - id: compute_nodeset
+          source: community/modules/compute/schedmd-slurm-gcp-v6-nodeset
+          use: [network]
+          settings:
+            name: cpu-ns
+            machine_type: n2-standard-16
+            node_count_dynamic_max: 16
+            bandwidth_tier: gvnic_enabled
+
+        # CPU Partition
+        - id: compute_partition
+          source: community/modules/compute/schedmd-slurm-gcp-v6-partition
+          use: [compute_nodeset]
+          settings:
+            partition_name: compute
+            is_default: true
+
+        # Dedicated Slurm Login Node
+        - id: slurm_login
+          source: community/modules/compute/schedmd-slurm-gcp-v6-login
+          use: [network]
+          settings:
+            enable_login_public_ips: true
+            machine_type: n2-standard-16
+            zone: $(vars.zone)
+
+        # Slurm Controller Module
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          use:
+            - network
+            - tpu_partition
+            - compute_partition
+            - slurm_login
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            nodeset:
+              - $(compute_partition)
+              - $(tpu_partition)

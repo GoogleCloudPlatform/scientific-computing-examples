@@ -53,6 +53,30 @@ When performing specialized operations, activate and follow the corresponding sk
    - Focuses on **Google Cloud Batch nodes in use** (Spot vs. Standard VMs, active vCPUs/memory, machine shapes, and 30-day node-hour trends) with an interactive GUI dashboard (`scripts/gcp_batch_monitor.mjs`).
    - Tracks **people running Batch and their execution durations**: active running session duration per user, 30-day cumulative runtime hours, node-hours, average duration, and longest single job.
    - Lists **what Batch jobs are running and their live duration** (`HHh MMm SSs` against `maxRunDuration`, task progress, and 30-day duration distribution histograms).
+8. **`gce-instance-selector`**:
+   - Attribute-based selection and generational ranking (`Gen 4` -> `Gen 3` -> `Gen 2`) of GCE machine types from `resources/instances.json`, mandatory `_metadata.createdAt` & `us-central1` pricing notices, boot disk selection (`hyperdisk-balanced` vs. `pd-balanced`), and multi-volume Hyperdisk IOPS/throughput calculations.
+9. **`gce-flexibility`**:
+   - Flexible multi-shape provisioning across Bulk Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Google Cloud Batch `instanceFlexibilityPolicy` using named `instanceSelections` (`gen4-preferred` rank 0, `gen3-fallback` rank 1) with bare machine type names.
+10. **`gcp-hpc-cluster-toolkit`**:
+    - Comprehensive Slurm cluster blueprint generation (`blueprint_generator.py`), real-time canary capacity verification (`canary_capacity_check.py`), storage/compute quota headroom auditing, and Google/DeepMind Science Skills routing.
+11. **`hpc-workload-cae`**:
+    - CAE/CFD/FEA workload configuration and optimization (OpenFOAM, ANSYS Fluent, SIMULIA Abaqus, Siemens STAR-CCM+, LS-DYNA), 3D mesh decomposition (`decompose_helper.py`), ISV license verification, and ParaView 3D remote visualization.
+12. **`hpc-workload-energy`**:
+    - Subsurface geoscience and energy HPC simulations: seismic wave propagation (Devito Marmousi 2), multiphase reservoir simulation (OPM Flow SPE 9/10 & Norne), and interactive 3D remote visualization in ResInsight and ParaView.
+13. **`hpc-workload-molecular-dynamics`**:
+    - Molecular dynamics accelerator sizing (`gromacs_tuner.py`), AlphaFold 2/3 & ColabFold inference with NVMe DB staging, high-throughput virtual screening (AutoDock Vina library sharding & ranking), VMD 3D visualization, and DeepMind Science Skills bridges.
+14. **`hpc-alphaevolve-optimizer`**:
+    - Closed-loop evolutionary code and parametric 3D CAD optimization using `# EVOLVE-BLOCK-START`/`# EVOLVE-BLOCK-END` AST splicing, isolated `python3 -I` sandboxes, 2-manifold STL watertight verification, 4-island MAP-Elites prompting, and Cluster Toolkit + Cloud Batch blueprints (`alphaevolve_helper.py`).
+15. **`hpc-workload-eda`**:
+    - OpenROAD RTL-to-GDSII physical design (ASAP7 7nm / Sky130HD West/East SRAM macro floorplanning, 3-corner OpenSTA timing, adaptive `TritonRoute` DRC convergence), parallel `ngspice`/`Xyce` SPICE PVT sweeps, and high-IOPS metadata storage sizing (`eda_flow_helper.py`).
+16. **`hpc-workload-weather-climate`**:
+    - Numerical Weather Prediction (`WRF-ARW`, `MPAS-Atmosphere`) MPI + OpenMP + Parallel NetCDF I/O quilting on `H4D`/`C4N` with Managed Lustre, zero-egress NOAA HRRR v4 GRIB2 byte-range ingestion, 80m wind-power diagnostics, and hybrid AI weather models (`weather_hpc_helper.py`).
+17. **`hpc-workload-structural-impact`**:
+    - Explicit FEA and crashworthiness (`OpenRadioss`, `LS-DYNA` MPP): CFL & `/DT/NODA/CST` mass-scaling audits, QEPH `I_shell = 24` energy conservation, `SEA`/`CFE`, `VFPCT` triggers, SPH-FEM bird-strike, ASTM F90 stent gates, and `anim_to_vtk` export (`impact_fea_helper.py`).
+18. **`hpc-workload-quant-finance`**:
+    - Basel III FRTB `99.9%` CVaR Monte Carlo with 2-component Defensive Girsanov Importance Sampling, 2nd-order Delta-Gamma Control Variates, and multi-scheduler risk grid manifests across Cloud Batch, GKE `Kueue`/`JobSet`, Slurm, IBM Spectrum Symphony, and Flux (`quant_mc_helper.py`).
+19. **`hpc-interactive-3d-lab`**:
+    - Unified 3D scientific visualization combining **ParaView** (headless `Xvfb :1`, binary `.vtp`/`.vti` caches, `PythonAnimationCue`, equal-scale alignment), **VMD** (4-layer Tcl, Tachyon ray-tracing, two-pass FFmpeg GIFs), **WebGL (`Three.js` `PF1B` binary CAD & `3Dmol.js`)**, and **Live Prompt Playground / noVNC DVR + 50x Time-Warp** (`interactive_3d_lab_helper.py`).
 
 ---
 

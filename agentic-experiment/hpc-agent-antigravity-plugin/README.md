@@ -5,7 +5,7 @@
 
 This project is a standalone **Antigravity Plugin** and AI agent built for managing High-Performance Computing (HPC) environments, infrastructure provisioning, and batch workloads on Google Cloud Platform.
 
-It packages a specialized agent persona alongside 7 modular skills for automated capacity validation, quota inspection, Cluster Toolkit blueprint management, Slurm orchestration, Nextflow optimization, and 30-day HPC/Slurm/Storage & Google Cloud Batch telemetry with interactive GUI dashboards.
+It packages a specialized agent persona alongside 19 modular skills for automated capacity validation, quota inspection, GCE instance selection and flexibility, Cluster Toolkit blueprint management, Slurm orchestration, Nextflow optimization, AlphaEvolve evolutionary optimization, domain-specific HPC workloads (CAE/CFD/FEA, EDA, Weather/Climate, Structural Impact, Energy, Molecular Dynamics, Quantitative Finance), unified 3D visualization (ParaView, VMD, WebGL), and 30-day HPC/Slurm/Storage & Google Cloud Batch telemetry with interactive GUI dashboards.
 
 ---
 
@@ -21,7 +21,7 @@ hpc-agent-antigravity/
 ├── rules/                                          # Plugin rules
 │   ├── credentials-and-project.md                  # Mandatory credential & project onboarding
 │   └── GEMINI.md                                   # Coding agent development guide
-├── skills/                                         # 7 packed skills for selection
+├── skills/                                         # 19 packed skills for selection
 │   ├── vm-availability-checker/                    # Live & dry-run instance testing
 │   │   └── SKILL.md
 │   ├── compute-quota-checker/                      # CPU & storage quota inspection
@@ -36,7 +36,7 @@ hpc-agent-antigravity/
 │   │   ├── reference/
 │   │   ├── resources/
 │   │   └── scripts/
-│   ├── hpc-cluster-slurm-monitor/                  # Skill 6: HPC Instances, Slurm Users & Storage (30d + GUI)
+│   ├── hpc-cluster-slurm-monitor/                  # HPC Instances, Slurm Users & Storage (30d + GUI)
 │   │   ├── SKILL.md
 │   │   ├── scripts/
 │   │   │   └── hpc_cluster_monitor.mjs
@@ -44,14 +44,34 @@ hpc-agent-antigravity/
 │   │       ├── index.html
 │   │       ├── app.js
 │   │       └── styles.css
-│   └── gcp-batch-monitor/                          # Skill 7: Google Batch Nodes, Jobs & Durations (30d + GUI)
-│       ├── SKILL.md
-│       ├── scripts/
-│       │   └── gcp_batch_monitor.mjs
-│       └── assets/
-│           ├── index.html
-│           ├── app.js
-│           └── styles.css
+│   ├── gcp-batch-monitor/                          # Google Batch Nodes, Jobs & Durations (30d + GUI)
+│   │   ├── SKILL.md
+│   │   ├── scripts/
+│   │   │   └── gcp_batch_monitor.mjs
+│   │   └── assets/
+│   │       ├── index.html
+│   │       ├── app.js
+│   │       └── styles.css
+│   ├── gce-instance-selector/                      # GCE machine & Hyperdisk sizing/ranking (instances.json)
+│   │   ├── SKILL.md
+│   │   └── resources/instances.json
+│   ├── gce-flexibility/                            # Multi-shape Bulk Insert, MIG & Cloud Batch flexibility
+│   │   ├── SKILL.md
+│   │   └── references/
+│   ├── gcp-hpc-cluster-toolkit/                    # Cluster Toolkit Slurm platform, canary checks & skills router
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   ├── resources/
+│   │   └── scripts/
+│   ├── hpc-workload-cae/                           # OpenFOAM, Fluent, Abaqus, STAR-CCM+, LS-DYNA & ParaView
+│   ├── hpc-workload-energy/                        # Devito seismic RTM/FWI, OPM Flow reservoir & ResInsight/ParaView
+│   ├── hpc-workload-molecular-dynamics/            # GROMACS, LAMMPS, AlphaFold 2/3, AutoDock Vina, VMD & Science Bridges
+│   ├── hpc-alphaevolve-optimizer/                  # AlphaEvolve # EVOLVE-BLOCK AST splicing, sandbox & 4-island MAP-Elites
+│   ├── hpc-workload-eda/                           # OpenROAD 7nm ASAP7/Sky130HD, adaptive TritonRoute & SPICE PVT sweeps
+│   ├── hpc-workload-weather-climate/               # WRF-ARW, MPAS, NOAA HRRR GRIB2 byte-range & GraphCast/NeuralGCM
+│   ├── hpc-workload-structural-impact/             # OpenRadioss/LS-DYNA crashworthiness (SEA/CFE/VFPCT), SPH bird-strike & stents
+│   ├── hpc-workload-quant-finance/                 # FRTB 99.9% CVaR Defensive Girsanov IS+CV & 5-scheduler risk grids
+│   └── hpc-interactive-3d-lab/                     # ParaView binary pre-bake, VMD Tcl/FFmpeg GIFs, Three.js PF1B, 3Dmol.js & DVR
 ├── sidecars/                                       # Bundled UI Sidecars
 │   └── hpc_spend_monitor/                          # Every-4h HPC Spend & Monthly Budget Monitor + Agent Alert
 │       ├── sidecar.json
@@ -110,6 +130,18 @@ When activated in Antigravity, the agent can autonomously select and execute the
 5. **`nextflow-batch-optimizer`**: Parses `main.nf` workflows, maps bioinformatics processes to GCP hardware tiers, and generates production-ready `nextflow.config` files for Google Cloud Batch.
 6. **`hpc-cluster-slurm-monitor`**: Tracks running HPC instances over time (30-day statistics), Slurm jobs by user, and active storage systems (Managed Lustre, Filestore, GCS FUSE, Local NVMe) with an interactive GUI dashboard.
 7. **`gcp-batch-monitor`**: Tracks Google Cloud Batch nodes in use (Spot vs. Standard), per-user Batch runtime duration statistics, and active/recent Batch jobs with durations over the last 30 days, with an interactive GUI dashboard.
+8. **`gce-instance-selector`**: Selects and ranks GCE machine types (`Gen 4` -> `Gen 3` -> `Gen 2`), boot disks (`hyperdisk-balanced` vs. `pd-balanced`), multi-volume Hyperdisk IOPS/throughput, Tier 1 networking, and `us-central1` pricing (`onDemand`, `Spot`, `1y/3y CUD`, `DWS`) from `resources/instances.json`.
+9. **`gce-flexibility`**: Deploys and manages flexible GCE workloads across ranked machine types using Bulk Insert (`bulkInsert`), Managed Instance Groups (MIGs), and Google Cloud Batch `instanceFlexibilityPolicy` to prevent stockouts.
+10. **`gcp-hpc-cluster-toolkit`**: Comprehensive platform engine for Google Cloud Cluster Toolkit (`ghpc`) and Slurm on Google Cloud, including blueprint generation, canary capacity verification, quota headroom auditing, and external Google/Science Skills routing.
+11. **`hpc-workload-cae`**: Domain expert skill for Computer-Aided Engineering (CAE), CFD, FEA (OpenFOAM, ANSYS Fluent, Abaqus, STAR-CCM+, LS-DYNA), mesh decomposition, ISV licensing, and high-FPS ParaView 3D remote visualization.
+12. **`hpc-workload-energy`**: Domain expert skill for Energy & Subsurface Geoscience HPC on Google Cloud, covering Seismic Exploration (Devito, RTM/FWI), Reservoir Simulation (OPM Flow, SPE 9/10, Norne), and equal-scale 3D remote visualization in ResInsight and ParaView.
+13. **`hpc-workload-molecular-dynamics`**: Domain expert skill for Molecular Dynamics (GROMACS, LAMMPS, NAMD, AMBER), Protein Structure Prediction (AlphaFold 2/3, ColabFold), High-Throughput Virtual Screening (AutoDock Vina), VMD 3D visualization, and DeepMind Science Skills bridges.
+14. **`hpc-alphaevolve-optimizer`**: Evolutionary code, heuristic algorithm, and parametric 3D CAD optimization using `# EVOLVE-BLOCK-START`/`# EVOLVE-BLOCK-END` AST splicing, isolated `python3 -I` candidate sandboxes, 2-manifold STL watertight checks, 4-island MAP-Elites prompting, and Cluster Toolkit Cloud Batch blueprints.
+15. **`hpc-workload-eda`**: Electronic Design Automation (EDA) and silicon physical design covering OpenROAD RTL-to-GDSII flows (ASAP7 7nm, Sky130HD, Nangate45), West/East SRAM banking, closed-loop `TritonRoute` detailed routing schedules, parallel SPICE (`ngspice`/`Xyce`) PVT sweeps, and high-IOPS metadata storage sizing.
+16. **`hpc-workload-weather-climate`**: Numerical Weather Prediction (`WRF-ARW`, `MPAS-Atmosphere`), zero-egress NOAA HRRR v4 GRIB2 byte-range ingestion, DRT `5.3` spatial differencing, Parallel NetCDF I/O quilting on Managed Lustre, 80m wind-power diagnostics, and hybrid AI weather models (`GraphCast`, `NeuralGCM`).
+17. **`hpc-workload-structural-impact`**: Explicit FEA and crashworthiness (`OpenRadioss`, `LS-DYNA` MPP) covering CFL critical time-step and `/DT/NODA/CST` mass-scaling audits, QEPH shells (`I_shell = 24`), `SEA`/`CFE`, `VFPCT` crush triggers, SPH-FEM bird-strike, ASTM F90 stent gates, and `anim_to_vtk` export.
+18. **`hpc-workload-quant-finance`**: Quantitative Finance Basel III FRTB `99.9%` CVaR Monte Carlo, 2-component Defensive Girsanov Importance Sampling, 2nd-order Delta-Gamma Control Variates, Rockafellar-Uryasev CVaR, and multi-scheduler risk grids (Cloud Batch, GKE `Kueue`/`JobSet`, Slurm, IBM Spectrum Symphony, Flux Framework).
+19. **`hpc-interactive-3d-lab`**: Unified 3D scientific visualization lab combining **ParaView** (headless `Xvfb :1`, binary `.vtp`/`.vti` pre-bake, `CellDatatoPointData`, `GetTimeTrack().Enabled=0`, `PythonAnimationCue`, equal-scale alignment), **VMD** (4-layer Tcl pipelines, Tachyon ray-tracing, two-pass FFmpeg GIFs), **WebGL (`Three.js` `PF1B` binary CAD & `3Dmol.js`)**, and **Live Prompt Playground / Cloud Run noVNC DVR + 50x Time-Warp**.
 
 ---
 
@@ -164,7 +196,7 @@ agy plugin validate .
 Expected output:
 ```text
   [ok]    .
-          ✔ skills      : 5 processed
+          ✔ skills      : 19 processed
           ✔ agents      : 1 processed
           - commands    : skipped (not found)
           - mcpServers  : skipped (not found)

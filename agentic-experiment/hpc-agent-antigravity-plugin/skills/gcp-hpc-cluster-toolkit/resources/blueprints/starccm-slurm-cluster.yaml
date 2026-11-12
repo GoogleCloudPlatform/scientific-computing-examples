@@ -1,0 +1,90 @@
+blueprint_name: starccm-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: starccm-cfd-cluster
+    region: us-central1
+    zone: us-central1-a
+
+  deployment_groups:
+    - group: primary
+      modules:
+        # VPC Network with Tier 1 gVNIC
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        # Compact Placement Policy for lowest inter-node MPI latency
+        - id: compact_placement
+          source: community/modules/compute/placement-policy
+          settings:
+            policy_type: COMPACT
+            vm_count: 32
+            region: $(vars.region)
+            zone: $(vars.zone)
+
+        # Filestore High Scale NFS for STAR-CCM+ installation, licenses, and case files
+        - id: shared_storage
+          source: modules/file-system/filestore
+          settings:
+            filestore_tier: HIGH_SCALE_SSD
+            size_gb: 2560
+            file_share_name: nfsshare
+            local_mount: /apps
+            network: $(network.network_name)
+
+        # MPI Optimization Startup Script for Siemens STAR-CCM+
+        - id: mpi_tuning_script
+          source: modules/scripts/startup-script
+          settings:
+            runners:
+              - type: shell
+                content: |
+                  #!/bin/bash
+                  # Tune Intel MPI and OS for HPC high-throughput CFD execution
+                  google_mpi_tuning --hpcthroughput
+                  google_mpi_tuning --nomitigation
+                  echo "export I_MPI_FABRICS=shm:ofi" >> /etc/profile.d/intel_mpi.sh
+                  echo "export I_MPI_PIN_DOMAIN=core" >> /etc/profile.d/intel_mpi.sh
+                destination: /tmp/tune-mpi.sh
+
+        # H3 Compute Partition (Intel Sapphire Rapids 88-core, 1:1 physical core mapping, 8-channel DDR5)
+        - id: starccm_partition
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+          settings:
+            partition_name: starccm
+            machine_type: h3-standard-88
+            max_node_count: 32
+            zone: $(vars.zone)
+            is_default: true
+            bandwidth_tier: TIER_1
+            enable_placement: true
+            placement_policy: $(compact_placement.placement_policy_self_link)
+            boot_disk_type: hyperdisk-balanced
+            boot_disk_size_gb: 100
+
+        # Dedicated Slurm Login Node Module
+        - id: slurm_login
+          source: community/modules/compute/schedmd-slurm-gcp-v6-login
+          use: [network]
+          settings:
+            enable_login_public_ips: true
+            machine_type: n2-standard-4
+            zone: $(vars.zone)
+            boot_disk_type: pd-balanced
+
+        # Slurm Controller Module
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          use:
+            - network
+            - starccm_partition
+            - slurm_login
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            nodeset:
+              - $(starccm_partition)
