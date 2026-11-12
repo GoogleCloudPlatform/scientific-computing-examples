@@ -1,0 +1,69 @@
+{
+  "model_name": "PERRINN 2017 Open-Source Formula 1 Car (Official Onshape CFD-Ready CAD)",
+  "public_cad_reference": {
+    "designer": "PERRINN Limited (Nicolas Perrin)",
+    "onshape_document_name": "PERRINN F1 aero | CFD ready",
+    "onshape_document_id": "56d4b1ffe4b0f9d49cca0e99",
+    "onshape_workspace_id": "f487040ce072f6f71178e968",
+    "onshape_element_id": "ebfe374e635ff3310b8d26b9",
+    "license": "Open-Source PERRINN F1 Community CAD",
+    "validation_publication": "U. Ravelli & M. Savini, 'Aerodynamic Simulation of 2017 Perrinn F1 Car', Journal of Traffic and Transportation Engineering 6(2), 155-163, 2018."
+  },
+  "chassis_dimensions": {
+    "wheelbase_m": 3.475,
+    "overall_width_m": 2.000,
+    "half_car_width_m": 1.000,
+    "front_axle_x_m": 0.000,
+    "rear_axle_x_m": 3.475,
+    "front_tire_width_m": 0.305,
+    "rear_tire_width_m": 0.405,
+    "tire_outer_diameter_m": 0.660,
+    "tire_radius_m": 0.330,
+    "front_wing_span_m": 1.800,
+    "rear_wing_span_m": 0.950,
+    "rear_wing_max_height_m": 0.950
+  },
+  "wind_tunnel_conditions": {
+    "freestream_velocity_m_s": 50.0,
+    "freestream_speed_kmh": 180.0,
+    "air_density_kg_m3": 1.225,
+    "kinematic_viscosity_m2_s": 1.5e-05,
+    "dynamic_pressure_pa": 1531.25,
+    "wheel_angular_velocity_rad_s": -151.5152,
+    "turbulence_model": "SpalartAllmaras",
+    "moving_ground": true,
+    "symmetry_plane": "y = 0.0 (half-car model, forces multiplied by 2.0 for full car)"
+  },
+  "published_fine_mesh_benchmark_ravelli_savini_2018": {
+    "perrinn_baseline_neg_SCz_m2": 3.59,
+    "perrinn_baseline_SCx_m2": 1.23,
+    "perrinn_baseline_L_over_D": 2.92,
+    "perrinn_front_aero_balance": 0.448,
+    "openfoam_120m_cells_sa_neg_SCz_m2": 3.35,
+    "openfoam_120m_cells_sa_SCx_m2": 1.16,
+    "openfoam_120m_cells_sa_L_over_D": 2.89,
+    "openfoam_120m_cells_sa_front_aero_balance": 0.403,
+    "note": "Batch evaluation uses an ~125,000-cell graded hex-dominant snappyHexMesh directly on the 67-part official PERRINN 2017 Onshape CAD assembly, preserving full-car drag area (~1.18-1.32 m^2 vs. 1.16-1.23 m^2 published) and true 3D ground-effect, outwash, and pitch-balance gradients while diffusing peak thin-gap suction relative to 120M-cell prism meshes."
+  },
+  "design_bounds": {
+    "front_ride_height_mm": [18.0, 50.0],
+    "rear_ride_height_mm": [45.0, 95.0],
+    "diffuser_angle_deg": [7.0, 22.0],
+    "diffuser_strake_height_mm": [15.0, 85.0],
+    "fw_flap_angle_deg": [8.0, 28.0],
+    "fw_outwash_toe_deg": [0.0, 12.0],
+    "rw_aoa_deg": [14.0, 38.0],
+    "sidepod_undercut_ratio": [0.05, 0.60]
+  },
+  "fia_2017_guardrails": {
+    "min_front_plank_clearance_mm": 20.0,
+    "min_positive_rake_delta_mm": 5.0,
+    "max_diffuser_box_height_mm": 175.0,
+    "diffuser_expansion_length_mm": 525.0,
+    "diffuser_step_offset_mm": 20.0,
+    "min_strake_ground_clearance_mm": 15.0,
+    "min_sidepod_radiator_inlet_area_m2": 0.088,
+    "target_front_aero_balance": 0.445,
+    "aero_balance_deadband": 0.028
+  }
+}

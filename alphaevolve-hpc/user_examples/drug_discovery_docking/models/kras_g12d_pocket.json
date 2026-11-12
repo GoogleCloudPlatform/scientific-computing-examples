@@ -1,0 +1,73 @@
+{
+  "target_id": "KRAS_G12D_7RPZ",
+  "target_name": "KRAS G12D Switch-II Allosteric Pocket (PDB: 7RPZ)",
+  "pocket_center_A": [12.4, -4.8, 18.2],
+  "pocket_radius_A": 10.5,
+  "pharmacophore_features": [
+    {
+      "feature_id": "ASP12_SALT_BRIDGE",
+      "residue": "ASP12",
+      "type": "neg_charge_acceptor",
+      "xyz": [9.85, -3.20, 16.40],
+      "ideal_ligand_group": "basic_amine_protonated",
+      "optimal_dist_A": 2.85,
+      "energy_weight_kcal": -3.20
+    },
+    {
+      "feature_id": "GLU62_HBOND_ACCEPTOR",
+      "residue": "GLU62",
+      "type": "hbond_acceptor",
+      "xyz": [11.20, -6.45, 15.80],
+      "ideal_ligand_group": "hbond_donor",
+      "optimal_dist_A": 2.90,
+      "energy_weight_kcal": -1.85
+    },
+    {
+      "feature_id": "GLY60_BACKBONE_NH",
+      "residue": "GLY60",
+      "type": "hbond_donor",
+      "xyz": [10.60, -2.10, 19.35],
+      "ideal_ligand_group": "hbond_acceptor",
+      "optimal_dist_A": 2.95,
+      "energy_weight_kcal": -1.65
+    },
+    {
+      "feature_id": "HIS95_TYR96_CRYPTIC_GROOVE",
+      "residue": "HIS95_TYR96",
+      "type": "aromatic_hydrophobic",
+      "xyz": [15.10, -5.30, 19.60],
+      "ideal_ligand_group": "halogenated_bicyclic_aromatic",
+      "optimal_dist_A": 3.70,
+      "energy_weight_kcal": -2.75
+    },
+    {
+      "feature_id": "GLN99_POLAR_SHELF",
+      "residue": "GLN99",
+      "type": "hbond_donor_acceptor",
+      "xyz": [15.80, -3.10, 17.20],
+      "ideal_ligand_group": "nitrile_or_amide_or_fluorine",
+      "optimal_dist_A": 3.10,
+      "energy_weight_kcal": -1.35
+    }
+  ],
+  "receptor_atoms": [
+    {"atom_id": 1, "res": "ASP12", "name": "OD1", "vina_type": "OA", "charge": -0.55, "vdw_r": 1.52, "xyz": [9.60, -3.05, 16.20]},
+    {"atom_id": 2, "res": "ASP12", "name": "OD2", "vina_type": "OA", "charge": -0.55, "vdw_r": 1.52, "xyz": [10.10, -3.35, 16.60]},
+    {"atom_id": 3, "res": "ASP12", "name": "CG",  "vina_type": "C",  "charge":  0.35, "vdw_r": 1.70, "xyz": [9.20, -2.60, 15.80]},
+    {"atom_id": 4, "res": "GLY60", "name": "N",   "vina_type": "HD", "charge":  0.28, "vdw_r": 1.55, "xyz": [10.60, -2.10, 19.35]},
+    {"atom_id": 5, "res": "GLY60", "name": "O",   "vina_type": "OA", "charge": -0.38, "vdw_r": 1.52, "xyz": [11.40, -1.40, 20.40]},
+    {"atom_id": 6, "res": "GLU62", "name": "OE1", "vina_type": "OA", "charge": -0.50, "vdw_r": 1.52, "xyz": [11.20, -6.45, 15.80]},
+    {"atom_id": 7, "res": "GLU62", "name": "OE2", "vina_type": "OA", "charge": -0.50, "vdw_r": 1.52, "xyz": [11.85, -7.10, 16.40]},
+    {"atom_id": 8, "res": "ARG68", "name": "NH1", "vina_type": "HD", "charge":  0.42, "vdw_r": 1.55, "xyz": [13.20, -7.80, 18.90]},
+    {"atom_id": 9, "res": "HIS95", "name": "CE1", "vina_type": "A",  "charge":  0.12, "vdw_r": 1.75, "xyz": [14.70, -5.80, 20.10]},
+    {"atom_id": 10,"res": "HIS95", "name": "ND1", "vina_type": "NA", "charge": -0.25, "vdw_r": 1.55, "xyz": [14.20, -6.60, 19.40]},
+    {"atom_id": 11,"res": "TYR96", "name": "CZ",  "vina_type": "A",  "charge":  0.08, "vdw_r": 1.75, "xyz": [15.50, -4.80, 19.10]},
+    {"atom_id": 12,"res": "TYR96", "name": "CE1", "vina_type": "A",  "charge": -0.10, "vdw_r": 1.75, "xyz": [15.95, -5.45, 18.20]},
+    {"atom_id": 13,"res": "TYR96", "name": "OH",  "vina_type": "OA", "charge": -0.35, "vdw_r": 1.52, "xyz": [16.30, -4.10, 19.90]},
+    {"atom_id": 14,"res": "GLN99", "name": "NE2", "vina_type": "HD", "charge":  0.30, "vdw_r": 1.55, "xyz": [15.80, -3.10, 17.20]},
+    {"atom_id": 15,"res": "GLN99", "name": "OE1", "vina_type": "OA", "charge": -0.40, "vdw_r": 1.52, "xyz": [16.40, -2.35, 17.85]},
+    {"atom_id": 16,"res": "VAL9",  "name": "CG1", "vina_type": "C",  "charge":  0.00, "vdw_r": 1.80, "xyz": [12.90, -2.50, 15.10]},
+    {"atom_id": 17,"res": "MET72", "name": "SD",  "vina_type": "S",  "charge": -0.12, "vdw_r": 1.85, "xyz": [14.10, -7.20, 16.90]},
+    {"atom_id": 18,"res": "THR58", "name": "OG1", "vina_type": "OA", "charge": -0.32, "vdw_r": 1.52, "xyz": [9.40, -4.60, 19.10]}
+  ]
+}

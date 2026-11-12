@@ -1,0 +1,39 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenRADIOSS Bumper Beam & Crash Box Optimization"
+problem_description: |
+  Evolve a structural design generator in Python (`design_bumper_structure` in `main.py`) for a 14-part automotive bumper beam and crash-box assembly (Dual-Phase Steel DP600 crash boxes + DP1000 double-cell bumper beam joined by 156 spotwelds) impacting a 254 mm cylindrical rigid pole at 10 m/s in OpenRADIOSS.
+
+  Optimize the 7 left/right symmetric shell part gauges (`t_crash_box_upper`, `t_crash_box_lower`, `t_beam_upper`, `t_beam_mid`, `t_beam_lower`, `t_beam_front`, `t_beam_rear` in [0.8, 3.5] mm) and the 7 continuous 3D nodal geometry morphing parameters (`beam_arch_depth_mm`, `beam_depth_scale`, `beam_height_taper`, `front_flute_depth_mm`, `mid_rib_corrugation_mm`, `crash_box_taper`, `crash_box_bead_amp_mm`, plus optional callable `custom_morph_fn(x, y, z, region)`) to maximize the composite `crashworthiness_score`:
+    score = SEA * (0.70 + 0.30 * CFE)
+            - 1.5 * max(0, F_peak - 115.0 kN)
+            - 15.0 * max(0, max_intrusion - 44.5 mm)
+            - 0.08 * max(0, 1700.0 J - E_internal)
+  where SEA = E_internal / m_structural (J/kg) is Specific Energy Absorption and CFE = F_mean / F_peak is Crush Force Efficiency.
+
+  Key Structural Insights:
+  1. Shedding dead mass from low-strain backing/flange walls (`t_beam_rear`, `t_beam_upper`, `t_beam_lower`) directly boosts SEA = E_internal / m_structural.
+  2. Increasing central box depth (`beam_depth_scale > 1.0`), forward arch (`beam_arch_depth_mm > 0`), front stiffening flute (`front_flute_depth_mm`), and internal horizontal web corrugation (`mid_rib_corrugation_mm`) increases bending/membrane energy absorption while reducing pole intrusion below 44.5 mm.
+  3. Adding alternating sinusoidal crush-trigger beads (`crash_box_bead_amp_mm`) and axial taper (`crash_box_taper`) initiates progressive folding in the DP600 crash boxes, lowering peak impact force below 115 kN and raising Crush Force Efficiency (CFE).
+program_language: "python"
+primary_metric: "crashworthiness_score"
+initial_score: 47.95
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"

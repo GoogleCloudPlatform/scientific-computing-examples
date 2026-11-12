@@ -1,6 +1,14 @@
 # Adaptive Sort C++
 
-This example optimizes a C++ sorting algorithm to be adaptive to different data patterns (random, sorted, reverse, duplicates).
+This example optimizes a C++ sorting algorithm (`adaptive_sort` in `main.cpp`) to adapt dynamically across diverse input data distributions (`random`, `nearly_sorted`, `reverse_sorted`, `many_duplicates`, and `organ_pipe`).
+
+## Baseline `std::sort` vs. Evolved Adaptive Sort Visualization
+
+![Adaptive Sort C++ Throughput & Distribution Comparison](adaptive_sort_comparison.png)
+
+![Adaptive Sort C++ Evolutionary Progression](adaptive_sort_evolution.gif)
+
+- **Multi-Distribution Adaptation**: Evolves branchless run-detection, Dutch-National-Flag 3-way partitioning for high-cardinality duplicates, and cache-tiled insertion/radix hybrid fast paths to outperform `std::sort` across both structured and unstructured distributions.
 
 ## Details
 - **Optimization Goal**: Maximize sorting performance across various data distributions.

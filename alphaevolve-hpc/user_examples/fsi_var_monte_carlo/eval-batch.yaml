@@ -1,0 +1,168 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+taskGroups:
+- taskSpec:
+    runnables:
+    - container:
+        imageUri: "${_EVALUATOR_IMAGE_URI}"
+        entrypoint: bash
+        commands:
+        - "/app/experiment/run-ssh.sh"
+        volumes:
+        - /etc/ssh:/etc/ssh
+        - /var/tmp:/var/tmp
+        options: "-u 0 -td --network host --uts=host"
+      background: true
+    - script:
+        text: "until [ -f /etc/ssh/started ]; do sleep 1; done; echo sshd started on $(hostname)"
+    - barrier:
+        name: "vms-ready"
+    - script:
+        text: |
+          mkdir -p ${_MOUNT_PATH}
+          chown -f -R 1000:1000 ${_MOUNT_PATH} || true
+          if [ -f /etc/ssh/id_cloud_batch ]; then
+            chown 1000:1000 /etc/ssh/id_cloud_batch
+            chmod 600 /etc/ssh/id_cloud_batch
+          fi
+          if [ -f /etc/ssh/authorized_keys ]; then
+            chown root:root /etc/ssh/authorized_keys
+            chmod 644 /etc/ssh/authorized_keys
+          fi
+    - container:
+        imageUri: "${_EVALUATOR_IMAGE_URI}"
+        entrypoint: bash
+        commands:
+        - -c
+        - |
+          TASK_IDX=$(printenv BATCH_TASK_INDEX)
+          TASK_CNT=$(printenv BATCH_TASK_COUNT)
+          echo "[BATCH DEBUG] Bootstrapping node BATCH_TASK_INDEX=${TASK_IDX} out of BATCH_TASK_COUNT=${TASK_CNT}..."
+          cp -r ${_CANDIDATE_DIR}/* /app/experiment/ 2>/dev/null || true
+          rm -f /var/tmp/var_mc_sim /var/tmp/compilation_failed
+          if ! make -C /app/experiment all > /var/tmp/compile_output.txt 2>&1; then
+            echo "[BATCH DEBUG] Compilation failed on node ${TASK_IDX}!"
+            cat /var/tmp/compile_output.txt
+            touch /var/tmp/compilation_failed
+          fi
+        volumes:
+        - "${_MOUNT_PATH}:${_MOUNT_PATH}"
+        - /var/tmp:/var/tmp
+        options: "--network host --uts=host"
+    - barrier:
+        name: "compile-ready"
+    - container:
+        imageUri: "${_EVALUATOR_IMAGE_URI}"
+        entrypoint: bash
+        commands:
+        - -c
+        - |
+          TASK_IDX=$(printenv BATCH_TASK_INDEX)
+          TASK_CNT=$(printenv BATCH_TASK_COUNT)
+          HOSTS_FILE=$(printenv BATCH_HOSTS_FILE)
+          mkdir -p ${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/logs
+          LOG_FILE="${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/logs/evaluator_${_CANDIDATE_PROGRAM_ID}.log"
+          if [ "${TASK_IDX:-0}" = "0" ]; then
+            if [ ! -f /var/tmp/compilation_failed ]; then
+              CORES_PER_NODE=$(nproc)
+              TOTAL_PROCS=$(( CORES_PER_NODE * ${TASK_CNT:-1} ))
+              {
+                echo "[Coordinator] Launching parallel MPI tail-risk simulation (Detected ${CORES_PER_NODE} cores/node, spawning total of ${TOTAL_PROCS} MPI ranks with OMP_NUM_THREADS=1)..."
+                OMP_NUM_THREADS=1 mpirun --allow-run-as-root --oversubscribe -x OMP_NUM_THREADS=1 --mca btl_tcp_if_exclude docker0,lo --mca oob_tcp_if_exclude docker0,lo --hostfile "${HOSTS_FILE}" -np ${TOTAL_PROCS} -npernode ${CORES_PER_NODE} /var/tmp/var_mc_sim 8192 16 > /app/experiment/simulation_output.txt 2>&1
+                echo "=== CLUSTER SIMULATION OUTPUT ==="
+                cat /app/experiment/simulation_output.txt
+                echo "================================="
+              } | tee -a "${LOG_FILE}"
+            fi
+            if python3 -c "import alpha_evolve.runner" >/dev/null 2>&1; then
+              python3 -m alpha_evolve.runner
+            else
+              cd /app/experiment && python3 /app/src/alpha_evolve/cloud_evaluator.py 2>&1 | tee -a "${LOG_FILE}"
+            fi
+          else
+            echo "[Worker node ${TASK_IDX}] coordinator active, waiting at exit barrier..."
+          fi
+        volumes:
+        - "${_MOUNT_PATH}:${_MOUNT_PATH}"
+        - /etc/cloudbatch-taskgroup-hosts:/etc/cloudbatch-taskgroup-hosts
+        - /etc/ssh:/etc/ssh
+        - /var/tmp:/var/tmp
+        options: "--network host --uts=host"
+    - barrier:
+        name: "finish-mpi"
+    volumes:
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other"
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/data"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/data"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other,ro"
+    - gcs:
+        remotePath: "${_CLOUD_BUCKET_NAME}/${_USER_EXPERIMENT_NAME}/logs"
+      mountPath: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/logs"
+      mountOptions:
+        - "--uid=1000"
+        - "--gid=1000"
+        - "-o"
+        - "allow_other"
+    environment:
+      variables:
+        _PROJECT_ID: "${_PROJECT_ID}"
+        OUTPUT_DIR: "${_MOUNT_PATH}"
+        _JOB_ID: "${_JOB_ID}"
+        _CANDIDATE_PROGRAM_ID: "${_CANDIDATE_PROGRAM_ID}"
+        _CLIENT_EVALUATOR_SCRIPT: "${_CLIENT_EVALUATOR_SCRIPT}"
+        _CLIENT_EVALUATOR_METHOD: "${_CLIENT_EVALUATOR_METHOD}"
+        _PROGRAMS_DIR: "${_PROGRAMS_DIR}"
+        _MOUNT_PATH: "${_MOUNT_PATH}"
+        _CLOUD_BUCKET_NAME: "${_CLOUD_BUCKET_NAME}"
+        _USER_EXPERIMENT_NAME: "${_USER_EXPERIMENT_NAME}"
+        _CANDIDATE_DIR: "${_MOUNT_PATH}/${_USER_EXPERIMENT_NAME}/${_PROGRAMS_DIR}/${_JOB_ID}"
+    maxRunDuration: "${_MAX_DURATION_SECONDS}s"
+    maxRetryCount: 3
+    lifecyclePolicies:
+    - action: RETRY_TASK
+      actionCondition:
+        exitCodes:
+        - 50001
+  taskCount: 1
+  taskCountPerNode: 1
+  requireHostsFile: true
+  permissiveSsh: true
+allocationPolicy:
+  instances:
+  - policy:
+      machineType: "${_EVALUATION_MACHINE_TYPE}"
+      provisioningModel: "${_EVALUATION_PROVISIONING_MODEL}"
+      bootDisk:
+        image: "${_BOOT_DISK_IMAGE}"
+  serviceAccount:
+    email: "${_EVALUATOR_SERVICE_ACCOUNT_EMAIL}"
+logsPolicy:
+  destination: CLOUD_LOGGING
+notifications:
+- pubsubTopic: "projects/${_PROJECT_ID}/topics/${_PUBSUB_TOPIC}"
+  message:
+    type: JOB_STATE_CHANGED

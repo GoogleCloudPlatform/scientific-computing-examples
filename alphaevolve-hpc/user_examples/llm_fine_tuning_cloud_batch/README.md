@@ -22,6 +22,16 @@ AlphaEvolve evolves the `get_training_config()` function inside `main.py`. The s
 
 ---
 
+## Baseline Seed vs. Evolved LoRA Hyperparameter Schedule Visualization
+
+![Gemma 4 E2B LoRA Fine-Tuning Loss Comparison](llm_lora_comparison.png)
+
+![Gemma 4 E2B LoRA Hyperparameter Evolution](llm_lora_evolution.gif)
+
+- **Validation Cross-Entropy Convergence & `neg_eval_loss` Frontier**: Tracks validation loss reduction on `NousResearch/hermes-function-calling-v1` across Cloud Batch `g2-standard-8` (NVIDIA L4) GPU workers as AlphaEvolve jointly tunes adapter rank/alpha (`r=8 -> 32`, `alpha=16 -> 64`), cosine learning-rate warmup, and memory-safe effective batch size.
+
+---
+
 ## Directory Structure
 
 * `main.py`: Initial seed program containing `# EVOLVE-BLOCK-START` and `# EVOLVE-BLOCK-END` markers around `get_training_config()`, alongside the `evaluate()` entry point.

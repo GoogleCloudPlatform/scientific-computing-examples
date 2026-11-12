@@ -1,0 +1,12 @@
+/VERS/2023
+/RUN/wing_bird_strike/1/
+               3.000
+/ANIM/DT
+               0.000               0.200
+/ANIM/ELEM/EPSP
+/ANIM/ELEM/VONM
+/ANIM/VECT/DISP
+/ANIM/VECT/VEL
+/TFILE/0
+              0.0200
+/PRINT/-200

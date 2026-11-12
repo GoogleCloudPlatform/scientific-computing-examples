@@ -1,0 +1,134 @@
+{
+  "design_name": "asap7_riscv_npu_tile",
+  "pdk": "ASAP7_7nm_RVT_SLVT",
+  "clock_period_ps": 500.0,
+  "core_bbox_um": [20.0, 20.0, 1180.0, 1180.0],
+  "die_bbox_um": [0.0, 0.0, 1200.0, 1200.0],
+  "min_channel_spacing_um": 18.0,
+  "min_pin_clearance_um": 42.0,
+  "io_pads": {
+    "IO_CLK_PLL": {"x_um": 600.0, "y_um": 20.0, "side": "S"},
+    "IO_NOC_WEST": {"x_um": 20.0, "y_um": 600.0, "side": "W"},
+    "IO_NOC_EAST": {"x_um": 1180.0, "y_um": 600.0, "side": "E"},
+    "IO_DMA_NORTH": {"x_um": 600.0, "y_um": 1180.0, "side": "N"}
+  },
+  "macros": [
+    {
+      "id": "SRAM_ICACHE_0",
+      "group": "frontend_icache",
+      "width_um": 190.0,
+      "height_um": 130.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 42.0
+    },
+    {
+      "id": "SRAM_ICACHE_1",
+      "group": "frontend_icache",
+      "width_um": 190.0,
+      "height_um": 130.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 42.0
+    },
+    {
+      "id": "SRAM_DCACHE_0",
+      "group": "lsu_dcache",
+      "width_um": 210.0,
+      "height_um": 140.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 48.0
+    },
+    {
+      "id": "SRAM_DCACHE_1",
+      "group": "lsu_dcache",
+      "width_um": 210.0,
+      "height_um": 140.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 48.0
+    },
+    {
+      "id": "SRAM_NPU_WT_0",
+      "group": "npu_weights",
+      "width_um": 230.0,
+      "height_um": 150.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 56.0
+    },
+    {
+      "id": "SRAM_NPU_WT_1",
+      "group": "npu_weights",
+      "width_um": 230.0,
+      "height_um": 150.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 56.0
+    },
+    {
+      "id": "SRAM_NPU_ACT_0",
+      "group": "npu_accum",
+      "width_um": 200.0,
+      "height_um": 135.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 50.0
+    },
+    {
+      "id": "SRAM_L2_BANK_0",
+      "group": "l2_shared",
+      "width_um": 220.0,
+      "height_um": 140.0,
+      "default_pin_side": "E",
+      "clock_load_ff": 52.0
+    }
+  ],
+  "stdcell_clusters": [
+    {"id": "CL_IFETCH_DEC", "area_um2": 42000.0, "gate_count": 5200, "anchor_io": {"IO_NOC_WEST": 35.0, "IO_CLK_PLL": 25.0}},
+    {"id": "CL_EXEC_ALU", "area_um2": 54000.0, "gate_count": 6800, "anchor_io": {"IO_CLK_PLL": 40.0}},
+    {"id": "CL_LSU_MMU", "area_um2": 48000.0, "gate_count": 6100, "anchor_io": {"IO_NOC_WEST": 45.0, "IO_DMA_NORTH": 20.0}},
+    {"id": "CL_VEC_ISSUE", "area_um2": 58000.0, "gate_count": 7200, "anchor_io": {"IO_CLK_PLL": 30.0}},
+    {"id": "CL_NPU_MAC_ARRAY", "area_um2": 82000.0, "gate_count": 11500, "anchor_io": {"IO_NOC_EAST": 35.0, "IO_CLK_PLL": 45.0}},
+    {"id": "CL_NPU_NORM_ACT", "area_um2": 46000.0, "gate_count": 5800, "anchor_io": {"IO_NOC_EAST": 50.0}},
+    {"id": "CL_L2_XBAR", "area_um2": 52000.0, "gate_count": 6400, "anchor_io": {"IO_DMA_NORTH": 65.0}},
+    {"id": "CL_NOC_ROUTER", "area_um2": 38000.0, "gate_count": 4800, "anchor_io": {"IO_NOC_WEST": 40.0, "IO_NOC_EAST": 40.0, "IO_DMA_NORTH": 40.0}}
+  ],
+  "hypergraph_nets": [
+    {"src": "SRAM_ICACHE_0", "dst": "CL_IFETCH_DEC", "weight": 128.0, "activity": 0.28},
+    {"src": "SRAM_ICACHE_1", "dst": "CL_IFETCH_DEC", "weight": 128.0, "activity": 0.28},
+    {"src": "SRAM_ICACHE_0", "dst": "CL_L2_XBAR", "weight": 48.0, "activity": 0.12},
+    {"src": "SRAM_ICACHE_1", "dst": "CL_L2_XBAR", "weight": 48.0, "activity": 0.12},
+    {"src": "SRAM_DCACHE_0", "dst": "CL_LSU_MMU", "weight": 144.0, "activity": 0.34},
+    {"src": "SRAM_DCACHE_1", "dst": "CL_LSU_MMU", "weight": 144.0, "activity": 0.34},
+    {"src": "SRAM_DCACHE_0", "dst": "CL_L2_XBAR", "weight": 64.0, "activity": 0.16},
+    {"src": "SRAM_DCACHE_1", "dst": "CL_L2_XBAR", "weight": 64.0, "activity": 0.16},
+    {"src": "SRAM_NPU_WT_0", "dst": "CL_NPU_MAC_ARRAY", "weight": 192.0, "activity": 0.42},
+    {"src": "SRAM_NPU_WT_1", "dst": "CL_NPU_MAC_ARRAY", "weight": 192.0, "activity": 0.42},
+    {"src": "SRAM_NPU_WT_0", "dst": "CL_L2_XBAR", "weight": 56.0, "activity": 0.14},
+    {"src": "SRAM_NPU_WT_1", "dst": "CL_L2_XBAR", "weight": 56.0, "activity": 0.14},
+    {"src": "SRAM_NPU_ACT_0", "dst": "CL_NPU_MAC_ARRAY", "weight": 160.0, "activity": 0.38},
+    {"src": "SRAM_NPU_ACT_0", "dst": "CL_NPU_NORM_ACT", "weight": 140.0, "activity": 0.36},
+    {"src": "SRAM_L2_BANK_0", "dst": "CL_L2_XBAR", "weight": 176.0, "activity": 0.35},
+    {"src": "SRAM_L2_BANK_0", "dst": "CL_NOC_ROUTER", "weight": 96.0, "activity": 0.22},
+    {"src": "CL_IFETCH_DEC", "dst": "CL_EXEC_ALU", "weight": 110.0, "activity": 0.32},
+    {"src": "CL_EXEC_ALU", "dst": "CL_LSU_MMU", "weight": 120.0, "activity": 0.35},
+    {"src": "CL_EXEC_ALU", "dst": "CL_VEC_ISSUE", "weight": 95.0, "activity": 0.28},
+    {"src": "CL_VEC_ISSUE", "dst": "CL_NPU_MAC_ARRAY", "weight": 135.0, "activity": 0.36},
+    {"src": "CL_NPU_MAC_ARRAY", "dst": "CL_NPU_NORM_ACT", "weight": 150.0, "activity": 0.40},
+    {"src": "CL_NPU_NORM_ACT", "dst": "CL_NOC_ROUTER", "weight": 85.0, "activity": 0.25},
+    {"src": "CL_L2_XBAR", "dst": "CL_NOC_ROUTER", "weight": 130.0, "activity": 0.30},
+    {"src": "CL_LSU_MMU", "dst": "CL_VEC_ISSUE", "weight": 88.0, "activity": 0.26}
+  ],
+  "timing_paths": [
+    {"name": "path_icache0_decode_alu", "stages": ["SRAM_ICACHE_0", "CL_IFETCH_DEC", "CL_EXEC_ALU"], "logic_delay_ps": 275.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_icache1_decode_alu", "stages": ["SRAM_ICACHE_1", "CL_IFETCH_DEC", "CL_EXEC_ALU"], "logic_delay_ps": 275.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_dcache0_lsu_alu", "stages": ["SRAM_DCACHE_0", "CL_LSU_MMU", "CL_EXEC_ALU"], "logic_delay_ps": 282.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_dcache1_lsu_vec", "stages": ["SRAM_DCACHE_1", "CL_LSU_MMU", "CL_VEC_ISSUE"], "logic_delay_ps": 280.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_npu_wt0_mac_act", "stages": ["SRAM_NPU_WT_0", "CL_NPU_MAC_ARRAY", "SRAM_NPU_ACT_0"], "logic_delay_ps": 292.0, "setup_uncertainty_ps": 20.0},
+    {"name": "path_npu_wt1_mac_norm", "stages": ["SRAM_NPU_WT_1", "CL_NPU_MAC_ARRAY", "CL_NPU_NORM_ACT"], "logic_delay_ps": 288.0, "setup_uncertainty_ps": 20.0},
+    {"name": "path_npu_act_norm_noc", "stages": ["SRAM_NPU_ACT_0", "CL_NPU_NORM_ACT", "CL_NOC_ROUTER"], "logic_delay_ps": 270.0, "setup_uncertainty_ps": 16.0},
+    {"name": "path_l2_xbar_dcache0", "stages": ["SRAM_L2_BANK_0", "CL_L2_XBAR", "SRAM_DCACHE_0"], "logic_delay_ps": 278.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_l2_xbar_npu_wt0", "stages": ["SRAM_L2_BANK_0", "CL_L2_XBAR", "SRAM_NPU_WT_0"], "logic_delay_ps": 284.0, "setup_uncertainty_ps": 18.0},
+    {"name": "path_vec_mac_act0", "stages": ["CL_VEC_ISSUE", "CL_NPU_MAC_ARRAY", "SRAM_NPU_ACT_0"], "logic_delay_ps": 286.0, "setup_uncertainty_ps": 19.0}
+  ],
+  "pvt_corners": {
+    "ss_0p63v_100c": {"logic_scale": 1.18, "wire_rc_scale": 1.15, "clock_skew_scale": 1.20, "leakage_mw": 14.5},
+    "tt_0p70v_25c": {"logic_scale": 1.00, "wire_rc_scale": 1.00, "clock_skew_scale": 1.00, "leakage_mw": 8.2},
+    "ff_0p77v_m40c": {"logic_scale": 0.84, "wire_rc_scale": 0.88, "clock_skew_scale": 0.85, "leakage_mw": 11.0}
+  }
+}
