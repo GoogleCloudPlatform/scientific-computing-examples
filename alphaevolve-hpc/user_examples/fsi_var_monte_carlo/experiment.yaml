@@ -1,0 +1,49 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "Financial Services Tail VaR & CVaR Monte Carlo Optimization"
+problem_description: |
+  Optimize `run_rank_tail_mc` inside `// EVOLVE-BLOCK-START` ... `// EVOLVE-BLOCK-END` in `main.cpp`
+  to maximize `effective_speedup_score` across a 4-regime multi-asset exotic derivative portfolio
+  (512 path-dependent up-and-out autocallable barrier & Asian basket options driven by 64 correlated
+  market factors over 16 independent replication seeds of 8,192 paths).
+
+  Strict Statistical & Physics Guardrails:
+  1. Weight Conservation (`WEIGHT_VIOLATION`): Each scenario path weight `w_p` must be positive,
+     and the sum of weights across `num_paths` must equal `num_paths` within `1e-2` relative tolerance.
+  2. Multi-Seed Replication Non-Degeneracy (`DEGENERATE_SEED_VARIANCE`): Standard error across the
+     16 independent replication seeds must be strictly positive (`var_se > 1e-4`). Returning constant
+     or cached tail numbers across seeds is rejected.
+  3. Unbiasedness across 4 Market Regimes (`BIAS_VIOLATION`): Both 99.9% VaR and 99.9% CVaR (Expected
+     Shortfall) across all 4 regimes (Calm Bull, High-Vol Crash, Rates Shock, Correlation Breakdown)
+     must match the 2.1M-path Girsanov Importance Sampling + Control Variate gold reference within
+     `2.5%` relative tolerance.
+
+  Optimization Directions:
+  - Antithetic variates (`+z` and `-z` paired paths) and linear delta/gamma control variates.
+  - Mean-shift Girsanov Importance Sampling (`z_shifted = z + mu_shift`) toward the systemic loss
+    direction with exact likelihood-ratio reweighting `w = exp(-mu.z - 0.5*||mu||^2)`.
+  - Loop reordering, strength reduction of `std::exp`, and AVX2/FMA SIMD vectorization (`<immintrin.h>`
+    is pre-included at the top of `main.cpp`; do NOT add `#include` inside `EVOLVE-BLOCK`).
+program_language: "cpp"
+primary_metric: "effective_speedup_score"
+initial_score: 1.00
+
+seed_files:
+  - "main.cpp"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

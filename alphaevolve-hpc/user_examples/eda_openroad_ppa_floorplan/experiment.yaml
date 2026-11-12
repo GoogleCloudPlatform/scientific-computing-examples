@@ -1,0 +1,44 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenROAD 7nm ASAP7 Macro Floorplanning & PPA Optimization"
+problem_description: |
+  Evolve `compute_macro_floorplan(netlist_graph)` in `main.py` to optimize the
+  placement `(x_um, y_um)`, orientation (`R0`, `R180`, `MY`, `MX`), keep-out
+  halos (`halo_um`), and global routing parameters (`target_density`,
+  `layer_derating`) for the 8 hard SRAM macros in the `asap7_riscv_npu_tile`
+  SoC tile (`1200 x 1200 um` die, `500 ps` / `2.0 GHz` clock period).
+
+  Floorplan Legality & DRC Rules:
+  1. Core Containment: All macros + halos must fit strictly inside the core
+     bounding box `[20.0, 20.0, 1180.0, 1180.0] um`.
+  2. No Sliver Channels: Any gap between a macro and the core boundary must
+     either abut near the perimeter (`gap <= 16.0 um` or `>= 22.0 um`).
+  3. Pairwise Macro Channel Spacing: Macros must have zero overlap and at
+     least `max(18.0, halo_i + halo_j) um` channel separation.
+  4. Directional Pin Access: Every SRAM macro has its signal pins on its
+     default East (`E`) edge under `R0`. Under `MY` or `R180`, the active pin
+     edge flips to West (`W`). Active pins must NEVER face outward within
+     `< 42.0 um` of the core boundary (`PIN_BLOCKED_BY_BOUNDARY`).
+program_language: "python"
+primary_metric: "ppa_composite_score"
+initial_score: -130.2869
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

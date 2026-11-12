@@ -1,0 +1,69 @@
+{
+  "target_id": "EGFR_T790M_3IKA",
+  "target_name": "EGFR T790M Gatekeeper Mutant Kinase Pocket (PDB: 3IKA)",
+  "pocket_center_A": [-6.2, 14.5, -11.0],
+  "pocket_radius_A": 10.0,
+  "pharmacophore_features": [
+    {
+      "feature_id": "MET793_HINGE_NH",
+      "residue": "MET793",
+      "type": "hbond_donor",
+      "xyz": [-8.40, 13.80, -12.10],
+      "ideal_ligand_group": "pyrimidine_or_quinazoline_N",
+      "optimal_dist_A": 2.90,
+      "energy_weight_kcal": -2.40
+    },
+    {
+      "feature_id": "MET793_HINGE_CO",
+      "residue": "MET793",
+      "type": "hbond_acceptor",
+      "xyz": [-8.10, 15.65, -12.40],
+      "ideal_ligand_group": "arylamine_NH_donor",
+      "optimal_dist_A": 2.85,
+      "energy_weight_kcal": -2.10
+    },
+    {
+      "feature_id": "MET790_GATEKEEPER_HYDROPHOBIC",
+      "residue": "MET790",
+      "type": "aromatic_hydrophobic",
+      "xyz": [-5.20, 16.40, -10.30],
+      "ideal_ligand_group": "compact_indole_or_methoxy_phenyl",
+      "optimal_dist_A": 3.65,
+      "energy_weight_kcal": -2.55
+    },
+    {
+      "feature_id": "ASP855_DFG_CARBOXYLATE",
+      "residue": "ASP855",
+      "type": "hbond_acceptor",
+      "xyz": [-3.60, 13.10, -9.40],
+      "ideal_ligand_group": "basic_amine_or_polar_donor",
+      "optimal_dist_A": 2.95,
+      "energy_weight_kcal": -2.20
+    },
+    {
+      "feature_id": "LYS745_CATALYTIC_NH3",
+      "residue": "LYS745",
+      "type": "hbond_donor",
+      "xyz": [-4.30, 15.10, -8.80],
+      "ideal_ligand_group": "hbond_acceptor",
+      "optimal_dist_A": 3.00,
+      "energy_weight_kcal": -1.55
+    }
+  ],
+  "receptor_atoms": [
+    {"atom_id": 1, "res": "MET793", "name": "N",   "vina_type": "HD", "charge":  0.30, "vdw_r": 1.55, "xyz": [-8.40, 13.80, -12.10]},
+    {"atom_id": 2, "res": "MET793", "name": "O",   "vina_type": "OA", "charge": -0.42, "vdw_r": 1.52, "xyz": [-8.10, 15.65, -12.40]},
+    {"atom_id": 3, "res": "GLN791", "name": "O",   "vina_type": "OA", "charge": -0.38, "vdw_r": 1.52, "xyz": [-7.50, 17.10, -11.90]},
+    {"atom_id": 4, "res": "MET790", "name": "SD",  "vina_type": "S",  "charge": -0.15, "vdw_r": 1.85, "xyz": [-5.20, 16.40, -10.30]},
+    {"atom_id": 5, "res": "MET790", "name": "CE",  "vina_type": "C",  "charge":  0.05, "vdw_r": 1.80, "xyz": [-4.80, 17.30, -11.20]},
+    {"atom_id": 6, "res": "ASP855", "name": "OD1", "vina_type": "OA", "charge": -0.52, "vdw_r": 1.52, "xyz": [-3.60, 13.10, -9.40]},
+    {"atom_id": 7, "res": "ASP855", "name": "OD2", "vina_type": "OA", "charge": -0.52, "vdw_r": 1.52, "xyz": [-3.10, 12.40, -10.10]},
+    {"atom_id": 8, "res": "LYS745", "name": "NZ",  "vina_type": "HD", "charge":  0.48, "vdw_r": 1.55, "xyz": [-4.30, 15.10, -8.80]},
+    {"atom_id": 9, "res": "LEU718", "name": "CD1", "vina_type": "C",  "charge":  0.00, "vdw_r": 1.80, "xyz": [-7.90, 11.90, -10.50]},
+    {"atom_id": 10,"res": "VAL726", "name": "CG1", "vina_type": "C",  "charge":  0.00, "vdw_r": 1.80, "xyz": [-6.40, 12.30, -13.20]},
+    {"atom_id": 11,"res": "ALA743", "name": "CB",  "vina_type": "C",  "charge":  0.00, "vdw_r": 1.80, "xyz": [-6.80, 15.90, -13.50]},
+    {"atom_id": 12,"res": "LEU844", "name": "CD2", "vina_type": "C",  "charge":  0.00, "vdw_r": 1.80, "xyz": [-6.50, 13.40, -9.20]},
+    {"atom_id": 13,"res": "CYS797", "name": "SG",  "vina_type": "S",  "charge": -0.18, "vdw_r": 1.85, "xyz": [-6.90, 11.20, -11.40]},
+    {"atom_id": 14,"res": "PHE856", "name": "CZ",  "vina_type": "A",  "charge":  0.00, "vdw_r": 1.75, "xyz": [-2.80, 14.40, -10.90]}
+  ]
+}

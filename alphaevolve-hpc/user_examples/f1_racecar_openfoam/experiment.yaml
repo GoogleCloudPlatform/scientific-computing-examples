@@ -1,0 +1,55 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenFOAM 3D Formula 1 Aerodynamic Evolution (PERRINN 2017 F1 Car)"
+problem_description: |
+  Evolve `design_f1_aero_package(design_bounds)` in `main.py` to optimize the
+  8-parameter 3D aerodynamic setup of the open-source **PERRINN 2017 Formula 1
+  Car** (Nicolas Perrin / PERRINN Limited, official 67-part Onshape CAD
+  `PERRINN F1 aero | CFD ready`, Document `56d4b1ffe4b0f9d49cca0e99`; CFD
+  benchmarked against Ravelli & Savini, *JTTE* 2018) evaluated in 3D steady
+  incompressible Spalart-Allmaras RANS (`blockMesh` + `snappyHexMesh` +
+  OpenFOAM `incompressibleFluid` / `simpleFoam`) at `U_inf = 50.0 m/s`
+  (`180 km/h`, `Re_L = 1.67e7`) with a `50 m/s` moving ground belt and rotating
+  front/rear Pirelli F1 wheels (`omega = -151.5152 rad/s`).
+
+  Aerodynamic Objectives:
+  - Maximize full-car vertical downforce area `-SCz` [m^2] and aerodynamic
+    lift-to-drag efficiency `L/D = -SCz / SCx` across all 6 vehicle patches
+    (`underbody`, `frontWing`, `rearWing`, `chassis`, `frontWheel`, `rearWheel`).
+  - Lock longitudinal pitch stability (`front_aero_balance`) onto the `44.5%`
+    PERRINN 2017 front-axle handling target (`±2.8%` neutral deadband).
+
+  FIA 2017 Technical Regulation & Vehicle Guardrails:
+  1. Dynamic Skid-Block Clearance: `front_ride_height_mm >= 20.0 mm` and positive
+     Venturi rake `rear_ride_height_mm >= front_ride_height_mm + 5.0 mm`.
+  2. FIA Art. 3.5.3 Rear Diffuser Box: Diffuser exit roof height
+     `20.0 + 525.0 * tan(diffuser_angle_deg) <= 175.0 mm` above the reference
+     plane (`diffuser_angle_deg <= 16.44 deg`).
+  3. Diffuser Vortex Strake Ground Clearance: Minimum strake tip clearance above
+     the moving asphalt belt must remain `>= 15.0 mm`.
+  4. V6 Hybrid Cooling Duct Area: Sidepod radiator inlet area
+     `0.145 * (1.0 - 0.82 * sidepod_undercut_ratio)` must remain `>= 0.088 m^2`
+     (`sidepod_undercut_ratio <= 0.479`).
+program_language: "python"
+primary_metric: "f1_aero_lap_score"
+initial_score: -11.0295
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

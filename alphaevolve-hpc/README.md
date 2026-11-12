@@ -70,14 +70,26 @@ We prepackaged a set of examples to get you started. In the following section, w
 
 | Example | Language | Primary Metric | Notes |
 |---|---|---|---|
-| `circle_packing_cloud_batch` | Python/C++ | `sum_of_radii` | Multi-file, triggers compilation |
-| `adaptive_sort_cpp` | C++ | Composite Score | Multi-file, triggers compilation |
-| `netlist_simulation` | SPICE | Performance Score | Uses ngspice for simulation |
-| `signal_processing` | Python | `overall_score` | Uses SciPy |
-| `nbody_molecular_dynamics` | C++ | `simulation_speed_score` | Multi-node MPI orchestration |
-| `airfoil_optimization` | Python | `lift_to_drag_ratio` | Uses NeuralFoil surrogate for 2D airfoil optimization |
-| `airfoil_openfoam` | Python | `lift_to_drag_ratio` | Uses OpenFOAM-14 (`incompressibleFluid` / `airFoil2D`) for 2D RANS CFD simulation |
-| `llm_fine_tuning_cloud_batch` | Python | `neg_eval_loss` | GPU training/evaluation (PyTorch/LoRA) on Cloud Batch |
+| [`circle_packing_cloud_batch`](user_examples/circle_packing_cloud_batch/README.md) | Python/C++ | `sum_of_radii` | Multi-file, triggers compilation |
+| [`adaptive_sort_cpp`](user_examples/adaptive_sort_cpp/README.md) | C++ | Composite Score | Multi-file, triggers compilation |
+| [`netlist_simulation`](user_examples/netlist_simulation/README.md) | SPICE | Performance Score | Uses ngspice for simulation |
+| [`signal_processing`](user_examples/signal_processing/README.md) | Python | `overall_score` | Uses SciPy |
+| [`nbody_molecular_dynamics`](user_examples/nbody_molecular_dynamics/README.md) | C++ | `simulation_speed_score` | Multi-node MPI orchestration |
+| [`airfoil_optimization`](user_examples/airfoil_optimization/README.md) | Python | `lift_to_drag_ratio` | Uses NeuralFoil surrogate for 2D airfoil optimization |
+| [`airfoil_openfoam`](user_examples/airfoil_openfoam/README.md) | Python | `lift_to_drag_ratio` | Uses OpenFOAM-14 (`incompressibleFluid` / `airFoil2D`) for 2D RANS CFD simulation |
+| [`rocket_nozzle_openfoam`](user_examples/rocket_nozzle_openfoam/README.md) | Python | `thrust_coefficient` | Uses OpenFOAM-14 (`shockFluid`) for 2D axisymmetric supersonic Rao bell nozzle contour optimization |
+| [`heatsink_openfoam`](user_examples/heatsink_openfoam/README.md) | Python | `thermal_score` | Uses OpenFOAM-14 (`foamMultiRun` / `snappyHexMesh`) for 3D liquid-cooling cold-plate CHT |
+| [`f1_racecar_openfoam`](user_examples/f1_racecar_openfoam/README.md) | Python | `f1_aero_lap_score` | Motorsport External Aero CFD: 3D PERRINN 2017 Formula 1 ground-effect Venturi floor, outwash & wing evolution with OpenFOAM-14 (`snappyHexMesh` + Spalart-Allmaras RANS) |
+| [`llm_fine_tuning_cloud_batch`](user_examples/llm_fine_tuning_cloud_batch/README.md) | Python | `neg_eval_loss` | GPU training/evaluation (PyTorch/LoRA) on Cloud Batch |
+| [`bumper_beam_crash`](user_examples/bumper_beam_crash/README.md) | Python | `crashworthiness_score` | Automotive Crashworthiness FEA: Uses OpenRADIOSS 3D explicit FEA for 14-part DP600/DP1000 bumper beam & crash-box pole impact optimization |
+| [`cell_phone_drop_openradioss`](user_examples/cell_phone_drop_openradioss/README.md) | Python | `drop_protection_score` | Uses OpenRADIOSS 3D explicit FEA for multi-orientation 1.5 m smartphone drop protection |
+| [`bird_strike_wing`](user_examples/bird_strike_wing/README.md) | Python | `bird_strike_score` | Uses OpenRADIOSS 3D SPH + Shell FEA for aerospace wing leading-edge bird-strike optimization |
+| [`openroad_drt_schedule`](user_examples/openroad_drt_schedule/README.md) | Python | `routing_qor_score` | Semiconductor EDA (Detailed Routing): Uses OpenROAD `TritonRoute` (`drt`) closed-loop search-and-repair schedule across `ISPD-18`/`ISPD-19` |
+| [`eda_openroad_ppa_floorplan`](user_examples/eda_openroad_ppa_floorplan/README.md) | Python | `ppa_composite_score` | Semiconductor EDA (Floorplan & P&R): 7nm ASAP7 RISC-V + NPU tile macro floorplanning, `RePlAce`/`FastRoute` congestion, and 3-corner `OpenSTA` timing closure |
+| [`fsi_var_monte_carlo`](user_examples/fsi_var_monte_carlo/README.md) | C++ | `effective_speedup_score` | Quantitative Finance: 99.9% Tail VaR / CVaR Monte Carlo variance reduction & SIMD/MPI kernel optimization |
+| [`drug_discovery_docking`](user_examples/drug_discovery_docking/README.md) | Python | `multiparameter_docking_score` | Life Sciences: 3D structure-based ligand design (`RDKit` + AutoDock Vina/Coulomb SE(3) pose optimization) across KRAS G12D & held-out EGFR T790M |
+| [`coronary_stent_openradioss`](user_examples/coronary_stent_openradioss/README.md) | Python | `stent_clinical_fitness_score` | Medical Device FEA: 3-stage L605 CoCr coronary stent inflation, elastic recoil unloading, and radial crush optimization with OpenRADIOSS |
+| [`seismic_wave_propagation_stencil`](user_examples/seismic_wave_propagation_stencil/README.md) | C++ | `seismic_accuracy_speedup_score` | Energy & Geoscience: 2D heterogeneous Marmousi-II & sub-salt fault acoustic wave propagation DRP stencil and absorbing sponge optimization |
 
 
 ## Deploying the Solution with a Preconfigured Example

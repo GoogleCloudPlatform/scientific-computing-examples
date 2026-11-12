@@ -1,0 +1,45 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenROAD Detailed Routing (drt) Adaptive Search-and-Repair Schedule"
+problem_description: |
+  Evolve a closed-loop adaptive search-and-repair schedule policy `next_step(it, drvs, history)` in Python for OpenROAD's TritonRoute (`drt`) detailed router (`src/drt/src/dr/FlexDR.cpp`).
+
+  After the fixed evaluation harness executes initial global maze routing at `it = 0` (`size = 7, offset = 0, mazeEndIter = 3, ripupMode = ALL`), `next_step(it, drvs, history)` is queried before each repair iteration `it >= 1` and returns the 9-tuple of `drt::step_dr` parameters:
+  `(size, offset, mazeEndIter, drcCost, markerCost, fixedShapeCost, markerDecay, ripupMode, followGuide)`
+  or `None` to terminate when `drvs == 0`.
+
+  CONSTRAINTS & SOLVER MECHANICS:
+  1. Scale & Runtime Invariance: Do NOT branch on `history[0][1]` (initial DRV count) or `h[2]` (wall-clock seconds). Drive all regime transitions from live `drvs`, relative DRV reduction rate `improvement_rate = (prev_drvs - drvs) / max(1, prev_drvs)`, `stagnant_steps`, and `last_success_size`.
+  2. High-DRV Initial Repair Bound (`it == 1`): At `it == 1` (when `drvs > 200`), use targeted `ripupMode = 0 (DRC)` with compact clips (`size = 5`), `mazeEndIter <= 3`, `drcCost <= 16`, and `fixedShapeCost <= 16` to avoid re-ripping the ~90% of GCell clips that are already DRC-clean after `it = 0`.
+  3. No Whole-Chip `ripupMode = 1 (ALL)` & Mid/High-DRV Escalation (`drvs > 10`): In `FlexDRFlow.cpp`, `ripupMode == 1 (ALL)` forces whole-chip `State::OPTIMIZATION`. Whenever `drvs > 10`, `ripupMode` MUST be `0 (DRC)` or `2 (NEARDRC)` with `mazeEndIter <= 12` (`drvs > 100`) or `<= 16` (`drvs > 15`). For both `drvs > 100` and `10 < drvs <= 100`: (a) when progress slows (`improvement_rate < 0.15` at `drvs > 100`, or `improvement_rate < 0.10` at `10 < drvs <= 100`), stay in `ripupMode = 2 (NEARDRC)` with `size >= 7` (never alternating back to `size = 5` or `ripupMode = 0`), (b) when stalled (`stagnant_steps >= 2`), escalate to `size >= 9, ripupMode = 2 (NEARDRC), drcCost >= 128` at `stagnant_steps == 2` and `size >= 11, ripupMode = 2 (NEARDRC), drcCost >= 256` at `stagnant_steps >= 3`, and (c) track `last_success_size` (`adaptive_size = 9 if last_success_size > 11 else max(5, last_success_size - 2)`) so clip windows step down gradually (`size >= 7`) after a `size >= 9` breakthrough rather than collapsing directly to `5x5`.
+  4. Staged Low-DRV Endgame & Pin-Unboxing (`drvs <= 10`): When stalled at `drvs <= 10`, escalate through `5x5` and `7x7` `NEARDRC (2)` (`stagnant_steps in (2, 3)`), sweep all 3 grid offsets (`0, -1, -2`) of localized `3x3 ALL (1)` pin-unboxing (`stagnant_steps in (4, 5, 6)`, `mazeEndIter <= 12`, `drcCost <= 64`), run a `7x7 DRC (0)` boundary cleanup pass (`stagnant_steps == 7`), and fall back to `DEFAULT[min(64, 30 + (stagnant_steps - 8))]` for `stagnant_steps >= 8`.
+
+  COMPOSITE ROUTING QoR SCORE (`primary_metric: "routing_qor_score"`, maximized):
+  Combines Design Rule Violation (DRV) count, total routed wirelength (`wl`), total via count (`vias`), and Search-and-Repair (`it >= 1`) wall-clock runtime (`wall_s`) relative to the stock OpenROAD `DEFAULT` baseline:
+  - Pre-flight solver-invariance violation: `routing_qor_score = 0.0`.
+  - Unconverged routing (`left_drvs > 0`): `routing_qor_score = -1000.0 * (1 + skipped_designs) - left_drvs`.
+  - Converged (`drvs == 0` on all evaluated designs):
+    `routing_qor_score = 100.0 * (0.5 * geomean_sr_speedup + 0.5 * agg_sr_speedup) - wl_penalty - via_penalty - slowdown_penalty`
+    where `wl_penalty = 1000.0 * max(0.0, worst_wl_ratio - 1.005)`, `via_penalty = 500.0 * max(0.0, worst_via_ratio - 1.020)`, and `slowdown_penalty = 150.0 * sum(max(0.0, cand_sr_s / base_sr_s - 1.0))`.
+program_language: "python"
+primary_metric: "routing_qor_score"
+initial_score: 106.73
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "openroad_drt_evaluation"

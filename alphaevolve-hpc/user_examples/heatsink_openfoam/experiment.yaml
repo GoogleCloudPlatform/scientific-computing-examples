@@ -1,0 +1,47 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "3D Liquid-Cooling Cold-Plate OpenFOAM CHT Optimization"
+problem_description: |
+  Evolve the `design_heatsink(parameters)` generator in Python to synthesize the optimal 3D copper pin-fin layout (`(N, 5)` array of `[x, y, dx, dy, height]`) for an EDA semiconductor liquid-cooling cold plate. Each candidate design is meshed and evaluated with a full 3D OpenFOAM-14 Conjugate Heat Transfer (CHT) simulation (`snappyHexMesh` + `splitMeshRegions` + `foamMultiRun`).
+
+  Physics & Operating Conditions:
+  - Flow channel: `24 mm` long (`x in [0, 0.024] m`), `16 mm` wide (`y in [-0.008, 0.008] m`), `4.5 mm` tall water channel (`z in [0, 0.0045] m`).
+  - Solid baseplate: `1.5 mm` thick copper (`z in [-0.0015, 0] m`, thermal conductivity `kappa = 385 W/m/K`).
+  - Non-uniform EDA chip heat load (total `~156 W`):
+    - Central compute core hotspot: `x in [0.009, 0.017] m`, `y in [-0.0035, 0.0035] m`, volumetric heat generation `q = 2.0e9 W/m^3` (`~101 W`).
+    - Surrounding die periphery: `x in [0.004, 0.020] m`, `y in [-0.0065, 0.0065] m`, volumetric heat generation `q = 0.4e9 W/m^3` (`~55 W`).
+  - Coolant: Liquid water entering at `U_in = 0.50 m/s` (`+x` direction) and `T_in = 300.0 K` (`26.85 C`), exiting at `p_out = 100,000 Pa`.
+  - Objective: Maximize `thermal_score = 400.0 - (T_max_K + dp_penalty_K)`, where `dp_penalty_K = 0.08 * max(0.0, delta_p_pa - 200.0)^1.5`. The uniform 3x4 cylindrical pin baseline achieves `T_max = 374.89 K` (`101.74 C`) and `delta_p = 122.3 Pa` (`thermal_score = 25.11`).
+
+  Parameterization & Constraints:
+  - `design_heatsink(parameters)` must return a 2D NumPy array of shape `(N, 5)` with `4 <= N <= 20`.
+  - Each row `[x, y, dx, dy, height]` is in meters:
+    - `x in [0.0030, 0.0210]`: streamwise center along the 24 mm plate.
+    - `y in [-0.0065, 0.0065]`: spanwise center across the 16 mm channel.
+    - `dx in [0.0008, 0.0030]`: streamwise elliptical diameter (elongated `dx > dy` reduces wake drag).
+    - `dy in [0.0008, 0.0024]`: spanwise elliptical diameter.
+    - `height in [0.0010, 0.0040]`: pin height into the 4.5 mm water channel.
+  - Pairwise surface clearance between any two elliptical pins must be at least `0.0005 m` (`0.5 mm`).
+  - Strictly 1 OpenFOAM CHT simulation is executed per candidate evaluation (`evaluate(parameters)` calls `funct(pins, parameters)` once outside the evolve block). You may use analytical thermal-hydraulic resistance models (e.g., Zukauskas / Khan pin-fin Nusselt and friction-factor correlations, conduction spreading resistance, or `scipy.optimize` over a reduced physics surrogate) inside `design_heatsink` to synthesize the pin array.
+program_language: "python"
+primary_metric: "thermal_score"
+initial_score: 25.11
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"

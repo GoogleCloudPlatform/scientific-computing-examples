@@ -1,0 +1,180 @@
+diff --git a/src/drt/src/dr/FlexDR.cpp b/src/drt/src/dr/FlexDR.cpp
+index cac58f3..1e20554 100644
+--- a/src/drt/src/dr/FlexDR.cpp
++++ b/src/drt/src/dr/FlexDR.cpp
+@@ -1800,6 +1800,119 @@ std::vector<FlexDR::SearchRepairArgs> strategy(const frUInt4 shapeCost,
+   // clang-format on
+ }
+ 
++// Closed-loop adaptive search-and-repair schedule (14_oneshot_r3_winner).
++// Selects per-iteration SearchRepairArgs for it >= 1 from live DRV count and
++// previous iteration history rather than stepping blindly through strategy().
++std::optional<FlexDR::SearchRepairArgs> nextStepStrategy(
++    const int it,
++    const int drvs,
++    const std::vector<FlexDR::SearchRepairArgs>& history_args,
++    const std::vector<int>& history_drvs,
++    const std::vector<FlexDR::SearchRepairArgs>& default_strategy,
++    const frUInt4 shapeCost,
++    const frUInt4 markerCost)
++{
++  if (drvs == 0 || it >= static_cast<int>(default_strategy.size())) {
++    return std::nullopt;
++  }
++
++  // 1. Early Pass (it == 1): Skip whole-chip RipUpMode::ALL; run targeted 5x5 DRC.
++  if (it == 1) {
++    return FlexDR::SearchRepairArgs{
++        5, -5, 3, shapeCost, shapeCost, shapeCost, 0.950f, RipUpMode::DRC, true};
++  }
++
++  // Count consecutive stagnant iterations where DRVs did not decrease.
++  int stagnant_steps = 0;
++  for (int i = static_cast<int>(history_drvs.size()) - 1; i > 0; --i) {
++    if (history_drvs[i] >= history_drvs[i - 1]) {
++      ++stagnant_steps;
++    } else {
++      break;
++    }
++  }
++
++  // Relative DRV reduction rate of the most recent step.
++  const int prev_drvs = history_drvs[history_drvs.size() - 2];
++  const double improvement_rate
++      = static_cast<double>(prev_drvs - drvs) / std::max(1, prev_drvs);
++
++  // Most recent clip size that successfully reduced DRVs.
++  int last_success_size = 5;
++  for (int i = static_cast<int>(history_drvs.size()) - 1; i > 0; --i) {
++    if (history_drvs[i] < history_drvs[i - 1]) {
++      last_success_size = history_args[i].size;
++      break;
++    }
++  }
++
++  const int adaptive_size
++      = (last_success_size > 11) ? 9 : std::max(5, last_success_size - 2);
++  const int low_progress_size = std::min(11, std::max(7, last_success_size));
++
++  // 2. Endgame Tail (drvs <= 10): Staged NEARDRC -> 3x3 ALL Pin-Unboxing -> 7x7 DRC Cleanup.
++  if (drvs <= 10) {
++    if (stagnant_steps == 2) {
++      return FlexDR::SearchRepairArgs{
++          5, -(it % 5), 8, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
++    }
++    if (stagnant_steps == 3) {
++      return FlexDR::SearchRepairArgs{
++          7, -(it % 7), 8, 16 * shapeCost, 4 * markerCost, 16 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
++    }
++    if (stagnant_steps >= 4 && stagnant_steps <= 6) {
++      const int phase = stagnant_steps - 4;
++      return FlexDR::SearchRepairArgs{
++          3, -phase, 12, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, 0.990f, RipUpMode::ALL, false};
++    }
++    if (stagnant_steps == 7) {
++      return FlexDR::SearchRepairArgs{
++          7, -4, 8, 2 * shapeCost, markerCost, 3 * shapeCost, 0.950f, RipUpMode::DRC, false};
++    }
++    if (stagnant_steps >= 8) {
++      const size_t idx = std::min<size_t>(
++          default_strategy.size() - 1,
++          static_cast<size_t>(30 + (stagnant_steps - 8)));
++      return default_strategy[idx];
++    }
++    return FlexDR::SearchRepairArgs{
++        adaptive_size, -(it % adaptive_size), 6, 4 * shapeCost, markerCost, 4 * shapeCost, 0.990f, RipUpMode::DRC, false};
++  }
++
++  // 3. High/Mid-DRV Regimes (drvs > 10):
++  const bool is_very_high = (drvs > 100);
++  if (stagnant_steps >= 2) {
++    if (stagnant_steps == 2) {
++      return FlexDR::SearchRepairArgs{
++          9, -(it % 9), 8, 32 * shapeCost, 8 * markerCost, 32 * shapeCost, 0.990f, RipUpMode::NEARDRC, false};
++    }
++    const float decay = is_very_high
++                            ? ((stagnant_steps == 3) ? 0.990f : 0.995f)
++                            : ((stagnant_steps == 3) ? 0.995f : 0.999f);
++    const frUInt4 drc_cost
++        = (stagnant_steps == 3) ? (64 * shapeCost) : (128 * shapeCost);
++    const frUInt4 mkr_cost
++        = (stagnant_steps == 3) ? (16 * markerCost) : (32 * markerCost);
++    return FlexDR::SearchRepairArgs{
++        11, -(it % 11), 12, drc_cost, mkr_cost, drc_cost, decay, RipUpMode::NEARDRC, false};
++  }
++
++  const double progress_threshold = is_very_high ? 0.15 : 0.10;
++  if (improvement_rate < progress_threshold) {
++    const float decay = is_very_high ? 0.950f : 0.990f;
++    return FlexDR::SearchRepairArgs{
++        low_progress_size, -(it % low_progress_size), 8, 8 * shapeCost, 2 * markerCost, 8 * shapeCost, decay, RipUpMode::NEARDRC, false};
++  }
++
++  const int maze_end = is_very_high ? 4 : 6;
++  const frUInt4 drc_cost = is_very_high ? (2 * shapeCost) : (4 * shapeCost);
++  const frUInt4 mkr_cost = is_very_high ? (2 * shapeCost) : markerCost;
++  const float decay = is_very_high ? 0.950f : 0.990f;
++  const bool follow_guide = is_very_high && (it <= 2);
++  return FlexDR::SearchRepairArgs{
++      adaptive_size, -(it % adaptive_size), maze_end, drc_cost, mkr_cost, drc_cost, decay, RipUpMode::DRC, follow_guide};
++}
++
+ void addRectToPolySet(gtl::polygon_90_set_data<frCoord>& polySet,
+                       odb::Rect rect)
+ {
+@@ -2129,29 +2242,40 @@ int FlexDR::main()
+       break;
+     }
+   }
+-  for (auto& args :
+-       strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST)) {
+-    if (iter_ > router_cfg_->END_ITERATION) {
+-      break;
+-    }
+-    int clipSize = args.size;
+-    if (args.ripupMode != RipUpMode::ALL) {
+-      if (increaseClipsize_) {
+-        clipSizeInc_ += 2;
+-      } else {
+-        clipSizeInc_ = std::max((float) 0, clipSizeInc_ - 0.2f);
++  const auto default_strategy
++      = strategy(router_cfg_->ROUTESHAPECOST, router_cfg_->MARKERCOST);
++  std::vector<SearchRepairArgs> history_args;
++  std::vector<int> history_drvs;
++  history_args.reserve(default_strategy.size());
++  history_drvs.reserve(default_strategy.size());
++
++  while (iter_ <= router_cfg_->END_ITERATION
++         && iter_ < static_cast<int>(default_strategy.size())) {
++    SearchRepairArgs args = default_strategy[0];
++    if (iter_ > 0) {
++      const int drvs = getDesign()->getTopBlock()->getNumMarkers();
++      auto next_args = nextStepStrategy(iter_,
++                                        drvs,
++                                        history_args,
++                                        history_drvs,
++                                        default_strategy,
++                                        router_cfg_->ROUTESHAPECOST,
++                                        router_cfg_->MARKERCOST);
++      if (!next_args.has_value()) {
++        break;
+       }
+-      clipSize += std::min(router_cfg_->MAX_CLIPSIZE_INCREASE,
+-                           (int) round(clipSizeInc_));
++      args = *next_args;
+     }
+-    args.size = clipSize;
++    history_args.push_back(args);
+     if (args.ripupMode == RipUpMode::ALL) {
+       if (hasFixed || (incremental && iter_ <= 2)) {
+         args.ripupMode = RipUpMode::INCR;
+       }
+     }
+     searchRepair(args);
+-    if (getDesign()->getTopBlock()->getNumMarkers() == 0) {
++    const int post_drvs = getDesign()->getTopBlock()->getNumMarkers();
++    history_drvs.push_back(post_drvs);
++    if (post_drvs == 0) {
+       break;
+     }
+     if (logger_->debugCheck(DRT, "snapshot", 1)) {

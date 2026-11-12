@@ -1,0 +1,59 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenRADIOSS Aerospace Wing Leading-Edge Bird Strike Optimization"
+problem_description: |
+  Evolve a generative 3D structural design program in Python (`design_wing_structure` in `main.py`) for a 7-part aerospace wing leading-edge assembly (Al 2024-T3 D-nose skins and chordwise ribs + Al 7075-T6 internal bird-splitter wedge and front spar web) impacted at 120 m/s by a 1.814 kg (4 lb) Smooth Particle Hydrodynamics (SPH) bird model in OpenRADIOSS.
+
+  The outer aerodynamic airfoil mold line (Parts 1, 2, 3) is strictly locked across all evolved candidates. AlphaEvolve optimizes the 7 shell part thickness gauges (`t_nose_cap`, `t_upper_skin`, `t_lower_skin`, `t_splitter_upper`, `t_splitter_lower`, `t_ribs`, `t_front_spar`) and 6 continuous 3D internal nodal morphing parameters (`splitter_apex_x_shift_mm`, `splitter_apex_span_curve_mm`, `splitter_camber_mm`, `splitter_rear_z_scale`, `inner_rib_y_shift_mm`, `rib_corrugation_amp_mm`, plus optional callable `custom_morph_fn(x, y, z, region)`).
+
+  Design Parameters (`BOUNDS` in `main.py`):
+  - `t_nose_cap in [0.8, 3.8]`: Leading-edge nose cap gauge, Part 1 Al 2024-T3 (mm).
+  - `t_upper_skin in [0.8, 3.8]`: Upper D-nose airfoil skin gauge, Part 2 Al 2024-T3 (mm).
+  - `t_lower_skin in [0.8, 3.8]`: Lower D-nose airfoil skin gauge, Part 3 Al 2024-T3 (mm).
+  - `t_splitter_upper in [0.8, 3.8]`: Internal upper bird-splitter diaphragm gauge, Part 4 Al 7075-T6 (mm).
+  - `t_splitter_lower in [0.8, 3.8]`: Internal lower bird-splitter diaphragm gauge, Part 5 Al 7075-T6 (mm).
+  - `t_ribs in [0.8, 3.5]`: Four chordwise stiffening ribs gauge, Part 6 Al 2024-T3 (mm).
+  - `t_front_spar in [1.2, 4.0]`: Rear primary wing-box front spar web gauge, Part 7 Al 7075-T6 (mm).
+  - `splitter_apex_x_shift_mm in [-35.0, 45.0]`: Fore/aft chordwise shift of the internal bird-splitter apex (mm).
+  - `splitter_apex_span_curve_mm in [-25.0, 25.0]`: Spanwise curvature of the splitter apex in the central impact zone (mm).
+  - `splitter_camber_mm in [-22.0, 22.0]`: Cross-sectional camber of the splitter plates (Gothic-arch vs. concave wedge, mm).
+  - `splitter_rear_z_scale in [0.70, 1.15]`: Vertical attachment spread scale of the splitter legs on the front spar.
+  - `inner_rib_y_shift_mm in [-25.0, 35.0]`: Spanwise shift of the two central chordwise ribs around the bird impact centerline (mm).
+  - `rib_corrugation_amp_mm in [-10.0, 10.0]`: Chordwise sinusoidal buckling-wave amplitude on internal ribs and splitter web (mm).
+
+  Objective (`bird_strike_score`, baseline = `22.57`):
+  Maximize `bird_strike_score`:
+    score = 50.0 + 25.0 * (4.621 kg - m_structural)
+            + 15.0 * spar_CFE
+            - 0.8 * max(0, F_spar_peak - 215.0 kN)
+            - 12.0 * max(0, max_spar_deflection - 2.5 mm)
+            - 100.0 * F_bird_to_spar_direct
+            - 2.0 * max(0, max_bird_x - 240.0 mm)
+            - 15.0 * max(0, eroded_shell_mass_pct - 0.6%)
+            - sum_parts(w_p * max(0, max_eps - part_strain_limit))
+  where:
+  - Al 2024-T3 parts (`LE_Nose_Cap`, `LE_Upper_Skin`, `LE_Lower_Skin`, `Chordwise_Ribs`) must stay below 50% of rupture (`max_eps <= 0.11`).
+  - Al 7075-T6 splitter plates (`Splitter_Wedge_Upper`, `Splitter_Wedge_Lower`) must stay below 50% of rupture (`max_eps <= 0.08`).
+  - Al 7075-T6 primary wing-box spar (`Front_Spar_Web`) must remain strictly elastic (`max_eps <= 0.002`).
+program_language: "python"
+primary_metric: "bird_strike_score"
+initial_score: 22.57
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"

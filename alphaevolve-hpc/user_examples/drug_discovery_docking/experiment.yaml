@@ -1,0 +1,52 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "3D Structure-Based Drug Discovery & Multiparameter Lead Optimization"
+problem_description: |
+  Evolve `propose_and_rank_ligands(pocket_spec, seed_scaffolds, top_k=8)` in `main.py`
+  to generate and rank drug-like, synthetically accessible small-molecule ligands
+  that achieve high 3D binding affinity and pharmacophore complementarity across
+  diverse protein pockets.
+
+  Your algorithm receives `pocket_spec`, which provides:
+  - `target_id`: Receptor identifier (`KRAS_G12D_7RPZ` or held-out `EGFR_T790M_3IKA`).
+  - `pocket_center`: 3D `[x, y, z]` center of the binding site in Angstroms.
+  - `residues`: Heavy atoms lining the pocket with 3D `coords`, partial `charge`,
+    `vdw_radius`, and `vina_type` (`HD`, `OA`, `NA`, `C_H`, `C_P`, `SA`).
+  - `pharmacophore_anchors`: Key 3D interaction hotspots (`salt_bridge_anion`,
+    `hbond_donor`, `hbond_acceptor`, `hydrophobic_aromatic`, `covalent_reversible_handle`)
+    with 3D `coords`, `tolerance_radius`, and `weight`.
+
+  Evaluation Cascade:
+  1. Medicinal Chemistry & PAINS Gate: Single-component organic molecule with
+     `220 <= MW <= 580 Da`, `-1.0 <= LogP <= 5.2`, `HBD <= 5`, `HBA <= 10`,
+     `TPSA <= 140 A^2`, `RotBonds <= 10`, `SA_Score <= 5.5`, and zero PAINS warheads.
+  2. 3D Conformer Strain & Vina/Coulomb SE(3) Pose Optimization: Conformers are
+     embedded in 3D (`ETKDGv3` + `MMFF94s`), internal torsional strain is verified
+     (`Delta E_strain <= 6.0 kcal/mol`), and 6-DOF rigid-body SE(3) pose optimization
+     computes `vina_dg_kcal` and 3D pharmacophore anchor matching.
+  3. Held-Out Receptor Generalization & Diversity: Tested on BOTH primary KRAS G12D
+     (PDB: 7RPZ) and held-out EGFR T790M (PDB: 3IKA) with minimum Morgan fingerprint
+     Tanimoto diversity `>= 0.22`.
+program_language: "python"
+primary_metric: "multiparameter_docking_score"
+initial_score: 2.8617
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

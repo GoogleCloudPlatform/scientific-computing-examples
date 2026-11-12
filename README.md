@@ -39,6 +39,15 @@ Here is a curated list of examples from different domains:
 
 - **AlphaEvolve HPC:**
   - [Automated Evolutionary Algorithm Code Discovery & Optimization on Google Cloud Batch](alphaevolve-hpc/README.md)
+  - [Financial Services — 99.9% Tail VaR & CVaR Monte Carlo Variance Reduction + AVX2/OpenMP (`fsi_var_monte_carlo`)](alphaevolve-hpc/user_examples/fsi_var_monte_carlo/README.md)
+  - [Healthcare & Life Sciences — 3D Structure-Based Drug Discovery & RDKit/Vina Docking (`drug_discovery_docking`)](alphaevolve-hpc/user_examples/drug_discovery_docking/README.md)
+  - [Medical Device FEA — 3D L605 CoCr Coronary Stent Deployment & Recoil in OpenRADIOSS (`coronary_stent_openradioss`)](alphaevolve-hpc/user_examples/coronary_stent_openradioss/README.md)
+  - [Semiconductor EDA — 7nm ASAP7 Macro Floorplanning, Global Routing & OpenSTA Timing Closure (`eda_openroad_ppa_floorplan`)](alphaevolve-hpc/user_examples/eda_openroad_ppa_floorplan/README.md)
+  - [Semiconductor EDA — OpenROAD TritonRoute (`drt`) Adaptive Detailed Routing Schedule (`openroad_drt_schedule`)](alphaevolve-hpc/user_examples/openroad_drt_schedule/README.md)
+  - [Energy & Subsurface Geoscience — 2D Marmousi-II & Sub-Salt Seismic Wave Propagation DRP Stencil (`seismic_wave_propagation_stencil`)](alphaevolve-hpc/user_examples/seismic_wave_propagation_stencil/README.md)
+  - [Aerospace & Thermal CFD — OpenFOAM-14 2D Airfoil, Supersonic Rocket Nozzle & 3D Liquid-Cooling Cold-Plate (`airfoil_openfoam`, `rocket_nozzle_openfoam`, `heatsink_openfoam`)](alphaevolve-hpc/user_examples/heatsink_openfoam/README.md)
+  - [Motorsport External Aerodynamics CFD — 3D PERRINN 2017 Formula 1 Ground-Effect Floor, Outwash & Wing Evolution in OpenFOAM-14 (`f1_racecar_openfoam`)](alphaevolve-hpc/user_examples/f1_racecar_openfoam/README.md)
+  - [Structural Impact & Crashworthiness FEA — OpenRADIOSS Automotive Bumper Beam, Wing Bird-Strike & Smartphone Drop Test (`bumper_beam_crash`, `bird_strike_wing`, `cell_phone_drop_openradioss`)](alphaevolve-hpc/user_examples/bird_strike_wing/README.md)
 - **Apptainer:**
   - [Building Apptainer (SIF) Images on Google Cloud](apptainer/builders/README.md)
   - [Apptainer Enabled Slurm Clusters](apptainer/cluster/README.md)

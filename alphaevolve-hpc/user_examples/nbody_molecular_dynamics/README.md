@@ -22,6 +22,12 @@ To evaluate these candidates at scale, AlphaEvolve launches them on a **Google C
 * **MPI (Message Passing Interface)**: This is a protocol that allows multiple computers to act as a single virtual team. Instead of one computer doing all $1,000,000$ calculations, MPI allows us to split the stars across all the VMs in the cluster, calculating gravitational forces in parallel.
 * **Google Cloud Batch**: Automatically provisions the virtual machines, configures network communications, and shuts down the resources the second the evaluation is finished so you only pay for the exact seconds of computation used.
 
+### Baseline Scalar MPI vs. Evolved AVX2/FMA + Newton-3rd-Law Kernel Visualization
+
+![Parallel N-Body MPI + AVX2 Scaling Comparison](nbody_scaling_comparison.png)
+
+![Parallel N-Body Molecular Dynamics Kernel Evolution](nbody_evolution.gif)
+
 ---
 
 ## 🛠️ Part 2: Technical Setup & Architecture (For Developers)

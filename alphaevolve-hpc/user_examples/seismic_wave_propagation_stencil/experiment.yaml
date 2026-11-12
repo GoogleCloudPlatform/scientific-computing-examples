@@ -1,0 +1,45 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "2D Acoustic Seismic Wave Propagation Stencil & Absorbing Sponge Optimization"
+problem_description: |
+  Optimize `propagate_seismic_wavefield` inside `// EVOLVE-BLOCK-START` ...
+  `// EVOLVE-BLOCK-END` in `main.cpp` to maximize `seismic_accuracy_speedup_score`
+  across two heterogeneous 2D subsurface velocity models:
+  1. Marmousi-II Unconformity & High-Contrast Salt Diapir Lens (`1650 -> 4350 m/s`,
+     `f0 = 22 Hz` Ricker source).
+  2. Held-Out Steep 52-Degree Sub-Salt Overthrust Fault (`1720 -> 4420 m/s`,
+     off-center `f0 = 25 Hz` Ricker source).
+
+  Reference Benchmark & Guardrails:
+  - Candidate operates on a `240 x 160` grid (`dx = dz = 10.0 m`, `dt = 1.0 ms`,
+    `Nt = 450` steps) with `n_pad = 24` absorbing sponge cells on the perimeter.
+  - Ground truth is computed on an ultra-wide reflection-free domain (`pad = 112`
+    cells) using an 8th-order dispersion-optimized isotropic 25-point stencil
+    with 4th-order Lax-Wendroff / Dablain temporal dispersion compensation.
+  - Extended-Time CFL Stability Gate: Tested for `1400` time steps (`>3x` horizon);
+    late-time energy ratio `E(1400) / E(700)` must remain `<= 1.05` with zero `NaN`/`Inf`.
+  - Non-Trivial Wavefield Energy Gate: Receiver trace energy ratio must remain within
+    `[0.35, 3.00]` of the reference traces on both models.
+program_language: "cpp"
+primary_metric: "seismic_accuracy_speedup_score"
+initial_score: 1.00
+
+seed_files:
+  - "main.cpp"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

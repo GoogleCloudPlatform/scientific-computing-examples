@@ -1,6 +1,14 @@
 # Adaptive Signal Processing
 
-This example evolves a signal processing algorithm to filter volatile, non-stationary time series data.
+This example evolves a causal real-time signal processing algorithm to filter volatile, non-stationary time-series telemetry with sudden regime shifts and impulse spikes.
+
+## Baseline EMA Filter vs. Evolved Adaptive Filter Visualization
+
+![Adaptive Signal Processing Comparison](signal_processing_comparison.png)
+
+![Adaptive Signal Processing Evolutionary Progression](signal_processing_evolution.gif)
+
+- **Multi-Objective Denoising & Zero-Lag Regime Tracking**: Compares high-frequency noise suppression, step-change phase lag, tracking RMSE, and slope-reversal smoothness between a fixed exponential moving average (EMA) baseline and the evolved innovation-gated Kalman/Savitzky–Golay adaptive filter.
 
 ## Details
 - **Optimization Goal**: Minimize noise while preserving signal dynamics and responsiveness (multi-objective).

@@ -60,7 +60,14 @@ where:
   - **2D Viscous & Boundary-Layer Solver (`viscous_solver.py`)**: Computes upper and lower surface velocities by integrating actual geometric thickness and camber slopes along the chord. Because it uses true surface slopes rather than maximum thickness alone, jagged or unphysical candidates generate sharp velocity spikes that trigger turbulent flow separation and heavy drag penalties—preventing optimizer cheating. Integrates laminar and turbulent boundary-layer drag to compute realistic profile drag (`Cd_profile`).
 - **Post-Optimization Analysis (Polar Sweep)**: At the end of the experiment, a polar sweep is automatically run across 7 Angles of Attack (0.0 to 15.0 deg in steps of 2.5) for the best airfoil. The sweep generates coefficient plots (`polar_coefficients.png` and `polar_lift_drag.png`) and tabular data (`polar_sweep_results.csv`), uploading them to your GCS experiment bucket.
 
-## Baseline Score & Expected Improvements
+## Baseline Score & Evolved Aerodynamic Visualization
+
+![Optimized Kulfan CST Airfoil Comparison](optimized_airfoil.png)
+
+![Airfoil Surrogate Search & CST Evolution](airfoil_evolution.gif)
+
+![Angle-of-Attack Lift-to-Drag Polar Sweep](polar_lift_drag.png)
+
 - **Baseline Score (`BEST_KNOWN_X` at 5.0 deg AoA baseline)**: **`-7.40`** (`Cl/Cd = 7.40`, since `funct` returns `-1.0 * (Cl / Cd)` for minimization). *(Note: At 0.0 deg AoA, the baseline scores `-10.18`).*
 - **Expected Improvement (Evolved Optimization)**: By optimizing the 6 Kulfan CST weights within `BOUNDS`, AlphaEvolve evolves a laminar-flow / pressure-recovery airfoil that delays boundary-layer transition and prevents separation:
   - **Projected Maximum Lift-to-Drag Ratio (`Cl/Cd`)**: **`20 – 30`** (an optimization score of **`-20 to -30`**, roughly tripling the baseline score).

@@ -49,6 +49,17 @@ Following [`OpenFOAM-14/tutorials/incompressibleFluid/airFoil2D`](https://github
 
 ---
 
+## Baseline NACA 0012 vs. Evolved OpenFOAM-14 Airfoil Visualization
+
+![OpenFOAM-14 2D RANS Airfoil Comparison](airfoil_openfoam_comparison.png)
+
+![OpenFOAM-14 2D RANS Airfoil Evolution](airfoil_openfoam_evolution.gif)
+
+- **Panels A & B (2D Kulfan CST Contour & Surface Pressure Recovery)**: Compares the symmetric NACA 0012 seed profile against the evolved cambered CST airfoil in steady-state `incompressibleFluid` (`simpleFoam` + Spalart-Allmaras RANS), replacing the sharp leading-edge suction spike with sustained rooftop suction loading (`-Cp`).
+- **Panels C & D (Aerodynamic Polar & Evolutionary Progression)**: Tracks converged RANS $C_l / C_d$ growth across AlphaEvolve generations (`28.4 -> 71.4` at design $\alpha = 4.0^\circ$, `+151%`, and `12.59 -> 22.8+` at high-lift $\alpha = 8.0^\circ$) alongside the full Angle-of-Attack RANS polar curve.
+
+---
+
 ## Details
 - **Optimization Goal**: Evolve `design_airfoil(parameters)` in `main.py` to generate a 6-parameter CST airfoil maximizing `Cl / Cd` in 1 OpenFOAM simulation per candidate evaluation.
 - **Programming Language**: Python + OpenFOAM 14 (`ubuntu:24.04` evaluator container).

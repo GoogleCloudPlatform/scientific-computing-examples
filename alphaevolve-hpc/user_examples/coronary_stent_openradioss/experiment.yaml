@@ -1,0 +1,46 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenRADIOSS L605 CoCr Coronary Stent Deployment & Recoil Optimization"
+problem_description: |
+  Evolve `generate_stent_cell_parameters(design_bounds)` in `main.py` to optimize
+  the 3D unit-cell geometry of a balloon-expandable L605 Cobalt-Chromium (ASTM F90)
+  coronary stent across a 3-stage deployment protocol:
+  1. Stage 1 (Balloon Inflation): Expansion from crimped `OD_crimp = 1.40 mm`
+     to peak inflation `OD_peak = 3.16 mm`.
+  2. Stage 2 (Balloon Deflation & Elastic Recoil): Unloading to hoop bending
+     equilibrium (`M_theta = 0`), measuring acute radial recoil (`R_recoil %`)
+     and axial foreshortening (`FS %`).
+  3. Stage 3 (Arterial Radial Crush Test): Measuring radial crush stiffness
+     (`K_radial` in kPa) and distal-to-central dogboning (`DB %`).
+
+  Mechanical & Clinical Guardrails:
+  - Plastic Strain Limit: Peak equivalent plastic strain `max_eps_p` in the
+    crown hinges and S-connectors MUST remain `<= 0.160` (safety factor 2.5
+    against L605 CoCr 40% elongation at break).
+  - Crimped Self-Contact Clearance: At `OD_crimp = 1.40 mm`, inter-strut
+    clearance must remain `>= 22.0 um`.
+  - Metallic Surface Coverage Area (`MSA`): Deployed metallic surface coverage
+    must lie in `[10.0%, 22.0%]` (optimal drug-eluting window around `14.5%`).
+program_language: "python"
+primary_metric: "stent_clinical_fitness_score"
+initial_score: -22.3044
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
+  postprocess_method: "postprocess"

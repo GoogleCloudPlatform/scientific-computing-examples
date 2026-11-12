@@ -1,0 +1,55 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: "OpenRADIOSS Cell Phone Drop Test Optimization"
+problem_description: |
+  Evolve a 3D smartphone protective housing and material compliance generator in Python (`design_phone_protection`) for the 17-part OpenRADIOSS `Cell_Phone_Drop` benchmark assembly (76,065 nodes, 130,220 solid elements: brittle `lcd_screen` glass Part 1, elasto-plastic polymer `cover_rear` housing Part 2, `battery` Part 10, `top_pcb` Part 13, `bottom_pcb` Part 28, `camera` Part 12, `camera_conn` Part 11, and 10 surface-mounted microchips/ICs).
+
+  Multi-Orientation 1.5 m Drop Suite (`v_0 = 5.425 m/s` onto rigid floor `/RWALL/PLANE/1`):
+  Every candidate design is evaluated concurrently across TWO impact orientations in OpenRADIOSS:
+  1. `corner_drop`: Canonical angled bottom-left-rear corner impact (`n_corner = (0.5900, 0.6472, 0.4826)`, `T = 0.20 ms`).
+  2. `screen_slap_drop`: Oblique screen-down face/edge slap impact (`n_slap = (0.1200, 0.1000, -0.9877)`, `T = 0.16 ms`).
+
+  Design Parameters (`BOUNDS` in `main.py` + optional `custom_morph_fn(x, y, z, region)`):
+  - `corner_bumper_xy_mm in [-0.5, 3.0]`: Radial X/Y corner bumper lobe extension at the 4 corners (mm).
+  - `corner_bumper_z_mm in [-0.5, 2.0]`: Out-of-plane Z corner bumper cushion extension (mm).
+  - `bezel_lip_height_mm in [-0.3, 2.0]`: Raised perimeter bezel lip around the `lcd_screen` in +Z (mm).
+  - `side_rail_flare_mm in [-0.5, 2.0]`: Perimeter side-rail wall flare thickness (mm).
+  - `rear_arch_thickness_mm in [-0.4, 1.8]`: Rear cover backplate arch/dome thickness offset in -Z (mm).
+  - `rear_rib_depth_mm in [0.0, 0.8]`: Internal shock-relief sinusoidal ribbing amplitude on the rear backplate (mm).
+  - `rear_rib_freq in [2.0, 8.0]`: Spatial frequency of the rear shock-relief ribs (cycles along phone length).
+  - `housing_modulus_mpa in [600.0, 3200.0]`: Polymer housing elastic modulus `E` on `/MAT/PLAS_TAB/1` (MPa, baseline `2000.0`).
+  - `housing_poisson in [0.32, 0.46]`: Polymer housing Poisson ratio `Nu` on `/MAT/PLAS_TAB/1` (baseline `0.40`).
+  - `housing_yield_scale in [0.45, 1.50]`: Plastic yield-stress curve scale factor `Fscale_1` on `/MAT/PLAS_TAB/1` (baseline `1.00`).
+  - `viscosity_qa in [0.50, 2.50]`: Quadratic bulk viscosity damping coefficient `Qa` on `/PROP/SOLID/16` (baseline `1.10`).
+  - `viscosity_qb in [0.01, 0.25]`: Linear bulk viscosity damping coefficient `Qb` on `/PROP/SOLID/16` (baseline `0.05`).
+
+  Objective (`drop_protection_score`, baseline = `55.92`):
+  Maximize `drop_protection_score`:
+    score = cushion_reward + stress_reduction_reward + force_reduction_reward
+            - lcd_stress_penalty - pcb_battery_penalty - force_penalty - mass_penalty
+  where:
+  - Extending corner bumper lobes (`corner_bumper_xy_mm`, `corner_bumper_z_mm`) creates a lower-rear crumple buffer that absorbs corner-drop kinetic energy away from the brittle `lcd_screen` corner, cutting corner-drop LCD peak stress (< 210 MPa) and peak floor force (< 300 N).
+  - Raising the perimeter bezel lip (`bezel_lip_height_mm > 0`) projects the polymer rim ahead of the glass face in +Z, catching the oblique `screen_slap_drop` before the glass strikes the rigid floor and cutting screen-slap LCD 99th-percentile stress (< 120 MPa) and glass strain energy (`IE_lcd`).
+  - Tuning polymer compliance (`housing_modulus_mpa`, `housing_yield_scale`) and bulk viscosity damping (`viscosity_qa`, `viscosity_qb`) cushions the shock wave without bottoming out or exceeding the `6.80 g` housing mass budget.
+program_language: "python"
+primary_metric: "drop_protection_score"
+initial_score: 55.92
+
+seed_files:
+  - "main.py"
+
+evaluator:
+  script: "evaluator.py"
+  method: "evaluate"
