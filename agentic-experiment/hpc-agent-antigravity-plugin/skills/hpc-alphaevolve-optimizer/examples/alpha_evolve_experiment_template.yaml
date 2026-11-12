@@ -1,0 +1,35 @@
+# Cluster Toolkit Blueprint: AlphaEvolve Experiment (alpha-evolve-experiment.yaml)
+# Deploy after alpha-evolve-infra.yaml using:
+#   ghpc create alpha-evolve-experiment.yaml -l alpha-evolve-deployment.yaml
+
+---
+blueprint_name: alpha-evolve-experiment
+
+vars:
+  project_id: my-gcp-hpc-project
+  deployment_name: alpha-evolve-dep
+  region: us-central1
+  zone: us-central1-a
+  eval_machine_type: c4-standard-8
+  llm_flash_model: GEMINI_V3P5_FLASH
+  llm_pro_model: GEMINI_V3P1_PRO_PREVIEW
+  num_islands: 4
+
+deployment_groups:
+- group: experiment
+  modules:
+  - id: controller-job
+    source: community/modules/compute/cloud-batch-job
+    settings:
+      job_name: $(vars.deployment_name)-controller
+      machine_type: e2-standard-4
+      service_account_email: controller-sa@$(vars.project_id).iam.gserviceaccount.com
+      container_image: $(vars.region)-docker.pkg.dev/$(vars.project_id)/alpha-evolve-repo/controller:latest
+      env_vars:
+        EVAL_MACHINE_TYPE: $(vars.eval_machine_type)
+        EVAL_SERVICE_ACCOUNT: eval-sa@$(vars.project_id).iam.gserviceaccount.com
+        LLM_FLASH_MODEL: $(vars.llm_flash_model)
+        LLM_PRO_MODEL: $(vars.llm_pro_model)
+        NUM_ISLANDS: $(vars.num_islands)
+        PUBSUB_SUBSCRIPTION: $(vars.deployment_name)-job-notifications-sub
+        RESULTS_MOUNT: /mnt/disks/results

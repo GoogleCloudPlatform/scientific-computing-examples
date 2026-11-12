@@ -1,0 +1,65 @@
+blueprint_name: slurm-energy-cluster
+spec:
+  vars:
+    project_id: slurm-amw
+    deployment_name: slurm-energy-cluster
+    region: us-central1
+    zone: us-central1-a
+  deployment_groups:
+  - group: primary
+    modules:
+    - id: network
+      source: modules/network/vpc
+      settings:
+        network_name: slurm-energy-cluster-net
+        subnetwork_name: slurm-energy-cluster-sub
+        default_nic_type: GVNIC
+    - id: placement_group
+      source: community/modules/compute/placement-policy
+      settings:
+        policy_type: COMPACT
+        vm_count: 16
+        region: us-central1
+        zone: us-central1-a
+    - id: shared_storage
+      source: modules/file-system/filestore
+      settings:
+        filestore_tier: HIGH_SCALE_SSD
+        size_gb: 2560
+        file_share_name: nfsshare
+        local_mount: /apps
+        network: $(network.network_name)
+    - id: spack_setup
+      source: community/modules/scripts/spack-setup
+      settings:
+        install_dir: /apps/spack
+    - id: compute_partition
+      source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+      settings:
+        partition_name: compute
+        machine_type: h4d-standard-192
+        max_node_count: 16
+        zone: us-central1-a
+        is_default: true
+        enable_placement: true
+        spot: false
+        boot_disk_type: hyperdisk-balanced
+        boot_disk_size_gb: 100
+        bandwidth_tier: TIER_1
+        placement_policy: $(placement_group.placement_policy_self_link)
+        data_disks:
+        - type: hyperdisk-balanced
+          size_gb: 1000
+          mount_path: /scratch
+    - id: slurm_controller
+      source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+      settings:
+        network: $(network.network_name)
+        subnetwork: $(network.subnetwork_name)
+        login_nodes:
+        - machine_type: n4-standard-4
+          zone: us-central1-a
+          count: 1
+          boot_disk_type: hyperdisk-balanced
+        nodeset:
+        - $(compute_partition)

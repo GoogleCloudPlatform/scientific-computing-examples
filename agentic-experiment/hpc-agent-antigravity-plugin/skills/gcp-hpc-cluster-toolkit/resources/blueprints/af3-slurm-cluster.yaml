@@ -1,0 +1,64 @@
+blueprint_name: af3-slurm-cluster
+spec:
+  vars:
+    project_id: $(vars.project_id)
+    deployment_name: af3-inference-cluster
+    region: us-central1
+    zone: us-central1-a
+
+  deployment_groups:
+    - group: primary
+      modules:
+        # VPC Network with Tier 1 gVNIC
+        - id: network
+          source: modules/network/vpc
+          settings:
+            network_name: $(vars.deployment_name)-net
+            subnetwork_name: $(vars.deployment_name)-sub
+            default_nic_type: GVNIC
+
+        # Filestore High Scale for AlphaFold 3 code, conda environments, and model weights
+        - id: shared_storage
+          source: modules/file-system/filestore
+          settings:
+            filestore_tier: HIGH_SCALE_SSD
+            size_gb: 2560
+            file_share_name: nfsshare
+            local_mount: /apps
+            network: $(network.network_name)
+
+        # A3 High GPU Partition (8x NVIDIA H100 SXM5 80GB, NVLink 900 GB/s, Tier 1 Networking)
+        # Configured with attached Hyperdisk Balanced scratch for 3.5TB+ genetic sequence databases (BFD, UniRef30)
+        - id: af3_gpu_partition
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-nodeset
+          settings:
+            partition_name: a3-af3
+            machine_type: a3-highgpu-8g
+            max_node_count: 8
+            zone: $(vars.zone)
+            is_default: true
+            bandwidth_tier: TIER_1
+            boot_disk_type: hyperdisk-balanced
+            boot_disk_size_gb: 100
+            data_disks:
+              - type: hyperdisk-balanced
+                size_gb: 3500
+                mount_path: /scratch/af3_db
+            gpu:
+              type: nvidia-h100-80gb-sxm5
+              count: 8
+            install_gpu_drivers: true
+
+        # Slurm Controller
+        - id: slurm_controller
+          source: community/modules/scheduler/schedmd-slurm-gcp-v6-controller
+          settings:
+            network: $(network.network_name)
+            subnetwork: $(network.subnetwork_name)
+            login_nodes:
+              - machine_type: n2-standard-4
+                zone: $(vars.zone)
+                count: 1
+                boot_disk_type: pd-balanced
+            nodeset:
+              - $(af3_gpu_partition)
