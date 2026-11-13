@@ -3,6 +3,7 @@ import google.oauth2.credentials
 import json
 import logging
 import os
+import shlex
 from datetime import timedelta
 from flask import Flask, request, render_template, redirect, url_for, Response, flash
 from google.auth import default
@@ -296,7 +297,7 @@ def retrieve_signed_url(full_path):
             signed_url = generate_download_url(bucket, blob)
             logging.info(f"Serving url file {signed_url}.")
             file_only_pathlib = Path(blob.name).name
-            download_command = f"!wget -O {file_only_pathlib} '{signed_url}'"
+            download_command = f"!wget -O {shlex.quote(str(file_only_pathlib))} {shlex.quote(signed_url)}"
             return Response(download_command, mimetype='text/plain')
         else:
             return Response(f"File {full_path} not found.", status=404, mimetype='text/plain')
